@@ -4,38 +4,80 @@
  */
 package com.DuAn1.volleyballshoes.app.ui.component;
 
-import com.DuAn1.volleyballshoes.app.ui.Model_Menu;
+
+import com.DuAn1.volleyballshoes.app.ui.event.EventMenu;
+import com.DuAn1.volleyballshoes.app.ui.scrollbar.ScrollBarCustom;
+import com.DuAn1.volleyballshoes.app.ui.swing.ButtonMenu;
 import java.awt.Color;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
-import javax.swing.JFrame;
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import net.miginfocom.swing.MigLayout;
 
 /**
  *
- * @author nickh
+ * @author Admin
  */
 public class Menu extends javax.swing.JPanel {
-
+    private EventMenu event;
     /**
-     * Creates new form Menu
+     * Creates new form Main
      */
     public Menu() {
         initComponents();
         setOpaque(false);
-        listMenu1.setOpaque(false);
-        init();
+        ScrollBarCustom sb = new ScrollBarCustom();
+        sb.setForeground(new Color(130, 130, 130, 100));
+        jScrollPane2.setVerticalScrollBar(sb);
+        panelMenu.setLayout(new MigLayout("wrap, fillx, inset 3", "[fill]", "[]0[]"));
     }
 
-    private void init() {
-        listMenu1.additem(new Model_Menu("dashboards", "Dashboard", Model_Menu.MenuType.MENU));
-        listMenu1.additem(new Model_Menu("people","Product",Model_Menu.MenuType.MENU));
-        // Nếu muốn thêm các mục khác, thêm tương tự dòng trên và thay đổi tên icon, tên menu
+    public void initMenu(EventMenu event) {
+        this.event = event;
+        addMenu(new ImageIcon(getClass().getResource("/com/DuAn1/volleyballshoes/app/icons/shopping-cart-16.png")), "Bán hàng", 0);
+        addMenu(new ImageIcon(getClass().getResource("/com/DuAn1/volleyballshoes/app/icons/package-2-16.png")), "Sản phẩm", 1);
+        addMenu(new ImageIcon(getClass().getResource("/com/DuAn1/volleyballshoes/app/icons/invoice-16.png")), "Hoá đơn", 2);
+        addMenu(new ImageIcon(getClass().getResource("/com/DuAn1/volleyballshoes/app/icons/sale-badge-16.png")), "Voucher", 3);
+        addMenu(new ImageIcon(getClass().getResource("/com/DuAn1/volleyballshoes/app/icons/user-16.png")), "Nhân viên", 4);
+        addMenu(new ImageIcon(getClass().getResource("/com/DuAn1/volleyballshoes/app/icons/moderator-16.png")), "Khách hàng", 5);
+        addMenu(new ImageIcon(getClass().getResource("/com/DuAn1/volleyballshoes/app/icons/positive-dynamic-16.png")), "Thống kê", 6);
+        addEmpty();
+        addMenu(new ImageIcon(getClass().getResource("/com/DuAn1/volleyballshoes/app/icons/logout-16.png")), "Logout", 7);
     }
+
+    private void addEmpty(){
+        panelMenu.add(new JLabel(), "push");
+    }
+    
+
+    private void addMenu(Icon icon, String text, int index) {
+        ButtonMenu menu = new ButtonMenu();
+
+        menu.setIcon(icon);
+        menu.setText(" "+text);
+        panelMenu.add(menu);
+        menu.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                event.selected(index);
+                setSelected(menu);
+            }
+        });
+    }
+
+    private void setSelected(ButtonMenu menu){
+        for (Component com : panelMenu.getComponents()) {
+            if (com instanceof ButtonMenu) {
+                ButtonMenu b = (ButtonMenu) com;
+                b.setSelected(false);
+            }
+        }
+        menu.setSelected(true);
+    }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -46,83 +88,114 @@ public class Menu extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        PanelMoving = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        listMenu1 = new com.DuAn1.volleyballshoes.app.ui.ListMenu<>();
+        roundPanel1 = new com.DuAn1.volleyballshoes.app.ui.swing.RoundPanel();
+        imageAvatar1 = new com.DuAn1.volleyballshoes.app.ui.swing.ImageAvatar();
+        lbl_name = new javax.swing.JLabel();
+        lbl_role = new javax.swing.JLabel();
+        roundPanel2 = new com.DuAn1.volleyballshoes.app.ui.swing.RoundPanel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        panelMenu = new javax.swing.JPanel();
 
-        PanelMoving.setOpaque(false);
+        roundPanel1.setBackground(new java.awt.Color(51, 51, 51));
 
-        jLabel1.setBackground(new java.awt.Color(255, 255, 255));
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel1.setText("VSHOESAPP");
+        imageAvatar1.setBackground(new java.awt.Color(204, 204, 204));
+        imageAvatar1.setBorderSize(2);
+        imageAvatar1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/DuAn1/volleyballshoes/app/icons/profile.jpg"))); // NOI18N
 
-        javax.swing.GroupLayout PanelMovingLayout = new javax.swing.GroupLayout(PanelMoving);
-        PanelMoving.setLayout(PanelMovingLayout);
-        PanelMovingLayout.setHorizontalGroup(
-            PanelMovingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(PanelMovingLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel1)
+        lbl_name.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        lbl_name.setForeground(new java.awt.Color(255, 255, 255));
+        lbl_name.setText("User Name");
+
+        lbl_role.setForeground(new java.awt.Color(255, 255, 255));
+        lbl_role.setText("Admin");
+
+        javax.swing.GroupLayout roundPanel1Layout = new javax.swing.GroupLayout(roundPanel1);
+        roundPanel1.setLayout(roundPanel1Layout);
+        roundPanel1Layout.setHorizontalGroup(
+            roundPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(roundPanel1Layout.createSequentialGroup()
+                .addComponent(imageAvatar1, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(roundPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(lbl_name, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lbl_role))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-        PanelMovingLayout.setVerticalGroup(
-            PanelMovingLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(PanelMovingLayout.createSequentialGroup()
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 6, Short.MAX_VALUE))
+        roundPanel1Layout.setVerticalGroup(
+            roundPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(roundPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(roundPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(imageAvatar1, javax.swing.GroupLayout.PREFERRED_SIZE, 57, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(roundPanel1Layout.createSequentialGroup()
+                        .addComponent(lbl_name)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(lbl_role)
+                        .addGap(6, 6, 6)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        roundPanel2.setBackground(new java.awt.Color(51, 51, 51));
+
+        jScrollPane2.setBorder(null);
+        jScrollPane2.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
+        panelMenu.setBackground(new java.awt.Color(51, 51, 51));
+
+        javax.swing.GroupLayout panelMenuLayout = new javax.swing.GroupLayout(panelMenu);
+        panelMenu.setLayout(panelMenuLayout);
+        panelMenuLayout.setHorizontalGroup(
+            panelMenuLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 246, Short.MAX_VALUE)
+        );
+        panelMenuLayout.setVerticalGroup(
+            panelMenuLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 536, Short.MAX_VALUE)
+        );
+
+        jScrollPane2.setViewportView(panelMenu);
+
+        javax.swing.GroupLayout roundPanel2Layout = new javax.swing.GroupLayout(roundPanel2);
+        roundPanel2.setLayout(roundPanel2Layout);
+        roundPanel2Layout.setHorizontalGroup(
+            roundPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, roundPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 184, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        roundPanel2Layout.setVerticalGroup(
+            roundPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(roundPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 530, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(PanelMoving, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 10, Short.MAX_VALUE))
-            .addComponent(listMenu1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(roundPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(roundPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(PanelMoving, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(listMenu1, javax.swing.GroupLayout.DEFAULT_SIZE, 379, Short.MAX_VALUE))
+                .addComponent(roundPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(roundPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    @Override
-    protected void paintChildren(Graphics grphscs) {
-        Graphics2D g2 = (Graphics2D) grphscs;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        GradientPaint g = new GradientPaint(0, 0, Color.decode("#1FA2FF"), 0, getHeight(), Color.decode("#12D8FA"));
-        g2.setPaint(g);
-        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
-        g2.fillRect(getWidth() - 20, 0, getWidth(), getHeight());
-        super.paintChildren(grphscs);
-    }
-    private int x;
-    private int y;
 
-    public void initMoving(JFrame fram) {
-        PanelMoving.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent me) {
-                x = me.getX();
-                y = me.getY();
-            }
-        });
-        PanelMoving.addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent me) {
-                fram.setLocation(me.getXOnScreen() - x, me.getYOnScreen() - y);
-            }
-
-        });
-    }
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel PanelMoving;
-    private javax.swing.JLabel jLabel1;
-    private com.DuAn1.volleyballshoes.app.ui.ListMenu<String> listMenu1;
+    private com.DuAn1.volleyballshoes.app.ui.swing.ImageAvatar imageAvatar1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JLabel lbl_name;
+    private javax.swing.JLabel lbl_role;
+    private javax.swing.JPanel panelMenu;
+    private com.DuAn1.volleyballshoes.app.ui.swing.RoundPanel roundPanel1;
+    private com.DuAn1.volleyballshoes.app.ui.swing.RoundPanel roundPanel2;
     // End of variables declaration//GEN-END:variables
 }

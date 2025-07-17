@@ -17,15 +17,10 @@ import lombok.*;
 @Builder
 public class Staff {
 
-    private Integer staffId;
-    private String username;
-    private String passwordHash;
-    private String pinCode;
-    private String fullName;
-    private Integer status; // 0: staff, 1: admin
-    private LocalDateTime createdAt;
-
-    public boolean isAdmin() {
-        return status == 1;
-    }
+    private int staffId;
+    private String staffUsername;
+    private String staffPassword;
+    private String staffFullName;
+    private int staffRole;
+    private String staffSdt;
 }

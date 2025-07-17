@@ -8,8 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Brand {
-    private Integer brandId;
-    private String name;
-    private String logoUrl;
-    private LocalDateTime createdAt;
+    private int brandId;
+    private String brandName;
+    private String brandOrigin;
 }

@@ -16,10 +16,9 @@ import lombok.*;
 @Builder
 public class OrderDetail {
 
-    private Integer orderDetailId;
-    private Integer orderId;
-    private Integer variantId;
-    private Integer quantity;
-    private Double unitPrice;
-    private Double subtotal;
+    private int orderDetailId;
+    private int orderId;
+    private int variantId;
+    private int detailQuantity;
+    private double detailUnitPrice;
 }

@@ -9,6 +9,8 @@ package com.DuAn1.volleyballshoes.app.entity;
  * @author nickh
  */
 import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
 import lombok.*;
 
 @Data
@@ -17,14 +19,10 @@ import lombok.*;
 @Builder
 public class Order {
 
-    private Integer orderId;
-    private Integer customerId;
-    private Integer staffId;
-    private Double totalAmount;
-    private Double discountAmount;
-    private Double finalAmount;
-    private String paymentMethod; // 'cash', 'card', 'transfer'
-    private String status; // 'completed', 'cancelled', 'pending'
-    private LocalDateTime createdAt;
-    private String note;
+    private int orderId;
+    private int customerId;
+    private int staffId;
+    private double orderFinalAmount;
+    private String orderPaymentMethod;
+    private String orderStatus;
 }

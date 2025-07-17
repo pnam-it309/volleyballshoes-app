@@ -9,6 +9,7 @@ package com.DuAn1.volleyballshoes.app.entity;
  * @author nickh
  */
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.*;
 
 @Data
@@ -17,12 +18,11 @@ import lombok.*;
 @Builder
 public class ProductVariant {
 
-    private Integer variantId;
-    private Integer productId;
-    private String size;
-    private String color;
-    private String sku;
-    private Double price;
-    private String imageUrl;
-    private LocalDateTime createdAt;
+    private int variantId;
+    private int productId;
+    private int sizeId;
+    private int colorId;
+    private String variantSku;
+    private double variantOrigPrice;
+    private String variantImgUrl;
 }

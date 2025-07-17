@@ -9,7 +9,7 @@ package com.DuAn1.volleyballshoes.app.entity;
  * @author nickh
  */
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Date;
 import lombok.*;
 
 @Data
@@ -18,13 +18,11 @@ import lombok.*;
 @Builder
 public class Promotion {
 
-    private Integer promotionId;
-    private String name;
-    private String description;
-    private String discountType; 
-    private Double discountValue;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
-    private Double minOrderAmount;
-    private LocalDateTime createdAt;
+    private int promotionId;
+    private String promoName;
+    private String promoDesc;
+    private double promoDiscountValue;
+    private LocalDateTime promoStartDate;
+    private LocalDateTime promoEndDate;
+    private String promoCode;
 }

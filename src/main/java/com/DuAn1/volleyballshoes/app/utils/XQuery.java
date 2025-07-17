@@ -72,7 +72,10 @@ public class XQuery {
             String name = method.getName();
             if (name.startsWith("set") && method.getParameterCount() == 1) {
                 try {
-                    Object value = resultSet.getObject(name.substring(3));
+                    // Chuyển tên thuộc tính từ CamelCase sang snake_case
+                    String fieldName = name.substring(3);
+                    String dbColumn = fieldName.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+                    Object value = resultSet.getObject(dbColumn);
                     method.invoke(bean, value);
                 } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | SQLException e) {
                     System.out.printf("+ Column '%s' not found!\r\n", name.substring(3));

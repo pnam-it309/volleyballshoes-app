@@ -1,6 +1,8 @@
 package com.DuAn1.volleyballshoes.app.entity;
 
 import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
 import lombok.*;
 
 @Data
@@ -8,13 +10,12 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Product {
-    private Integer productId;
-    private String name;
-    private String description;
-    private Double basePrice;
-    private Integer brandId;
-    private Integer categoryId;
-    private String mainImage;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private int productId;
+    private int brandId;
+    private int categoryId;
+    private String productName;
+    private String productDesc;
+    private LocalDateTime productCreateAt;
+    private LocalDateTime productUpdatedAt;
+    private List<ProductVariant> variants;
 }

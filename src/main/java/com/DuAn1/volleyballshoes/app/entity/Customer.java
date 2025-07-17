@@ -17,12 +17,11 @@ import lombok.*;
 @Builder
 public class Customer {
 
-    private Integer customerId;
-    private String phone;
-    private String fullName;
-    private String membershipTier;
-    private Double totalSpent;
-    private LocalDateTime lastPurchase;
-    private Integer points;
-    private LocalDateTime createdAt;
+    private int customerId;
+    private String customerUsername;
+    private String customerPassword;
+    private String customerFullName;
+    private String customerEmail;
+    private int customerPoints;
+    private String customerSdt;
 }
