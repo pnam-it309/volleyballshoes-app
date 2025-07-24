@@ -1,6 +1,5 @@
 package com.DuAn1.volleyballshoes.app.entity;
 
-import java.time.LocalDateTime;
 import lombok.*;
 
 @Data
@@ -8,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Brand {
-    private int brandId;
-    private String brandName;
-    private String brandOrigin;
+    public int brand_id;
+    public String brand_name;
+    public String brand_origin;
 }

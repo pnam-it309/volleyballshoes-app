@@ -1,11 +1,13 @@
 package com.DuAn1.volleyballshoes.app.entity;
 
-import java.time.LocalDateTime;
 import lombok.*;
 
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Category {
-    private int categoryId;
-    private String categoryName;
+    public int category_id;
+    public String category_name;
 }
 

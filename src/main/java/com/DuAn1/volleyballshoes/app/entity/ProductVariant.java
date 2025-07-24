@@ -4,12 +4,6 @@
  */
 package com.DuAn1.volleyballshoes.app.entity;
 
-/**
- *
- * @author nickh
- */
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.*;
 
 @Data
@@ -17,12 +11,12 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class ProductVariant {
-
-    private int variantId;
-    private int productId;
-    private int sizeId;
-    private int colorId;
-    private String variantSku;
-    private double variantOrigPrice;
-    private String variantImgUrl;
+    public int variant_id;
+    public int product_id;
+    public int size_id;
+    public int color_id;
+    public int sole_id;
+    public String variant_sku;
+    public double variant_orig_price;
+    public String variant_img_url;
 }

@@ -72,10 +72,29 @@ public class XQuery {
             String name = method.getName();
             if (name.startsWith("set") && method.getParameterCount() == 1) {
                 try {
-                    // Chuyển tên thuộc tính từ CamelCase sang snake_case
                     String fieldName = name.substring(3);
-                    String dbColumn = fieldName.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+                    // Nếu fieldName đã có dấu _, giữ nguyên, nếu không thì chuyển camelCase sang snake_case
+                    String dbColumn;
+                    if (fieldName.contains("_")) {
+                        dbColumn = fieldName.toLowerCase();
+                    } else {
+                        dbColumn = fieldName.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+                    }
                     Object value = resultSet.getObject(dbColumn);
+                    // Nếu kiểu dữ liệu là double, chuyển BigDecimal hoặc String về double
+                    Class<?> paramType = method.getParameterTypes()[0];
+                    if (paramType == double.class || paramType == Double.class) {
+                        if (value instanceof java.math.BigDecimal) {
+                            value = ((java.math.BigDecimal) value).doubleValue();
+                        } else if (value instanceof String) {
+                            String valStr = ((String) value).replace(',', '.');
+                            try {
+                                value = Double.parseDouble(valStr);
+                            } catch (NumberFormatException e) {
+                                value = 0.0;
+                            }
+                        }
+                    }
                     method.invoke(bean, value);
                 } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | SQLException e) {
                     System.out.printf("+ Column '%s' not found!\r\n", name.substring(3));

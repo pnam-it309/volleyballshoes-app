@@ -11,8 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Color {
-
-    private int colorId;
-    private String colorName;
-    private String colorHexCode;
+    public int color_id;
+    public String color_name;
+    public String color_hex_code;
 }

@@ -8,7 +8,6 @@ package com.DuAn1.volleyballshoes.app.entity;
  *
  * @author nickh
  */
-import java.time.LocalDateTime;
 import lombok.*;
 
 @Data
