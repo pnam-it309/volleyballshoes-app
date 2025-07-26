@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Lớp tiện ích hỗ trợ làm việc với CSDL quan hệ
@@ -135,10 +137,32 @@ public class XJdbc {
         return stmt;
     }
 
-    public static void main(String[] args) {
-        demo1();
-        demo2();
-        demo3();
+    // --- RowMapper interface ---
+    public interface RowMapper<T> {
+        T mapRow(ResultSet rs) throws SQLException;
+    }
+
+    /**
+     * Truy vấn trả về List<T> với RowMapper
+     */
+    public static <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
+        List<T> list = new ArrayList<>();
+        try (ResultSet rs = XJdbc.executeQuery(sql, args)) {
+            while (rs.next()) {
+                list.add(mapper.mapRow(rs));
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+        return list;
+    }
+
+    /**
+     * Truy vấn trả về 1 object (hoặc null)
+     */
+    public static <T> T queryForObject(String sql, RowMapper<T> mapper, Object... args) {
+        List<T> list = query(sql, mapper, args);
+        return list.isEmpty() ? null : list.get(0);
     }
 
     private static void demo1() {
