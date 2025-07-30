@@ -66,6 +66,18 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
 
     @Override
     public List<ProductVariant> findAll() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        String sql = "SELECT * FROM ProductVariant";
+        return XJdbc.query(sql, PRODUCT_VARIANT_MAPPER);
+    }
+
+    // Thêm hàm tìm ProductVariant theo SKU
+    public ProductVariant findBySku(String sku) {
+        String sql = "SELECT * FROM ProductVariant WHERE variant_sku = ?";
+        try {
+            return XJdbc.queryForObject(sql, PRODUCT_VARIANT_MAPPER, sku);
+        } catch (Exception ex) {
+            return null;
+        }
     }
 }
+
