@@ -31,10 +31,14 @@ public class Main extends javax.swing.JFrame {
     }
 
     private void initMainInterface() {
+        // Xóa layout cũ và tạo layout mới
+        getContentPane().removeAll();
+        
         // Tạo sidebar panel
         JPanel sidebarPanel = new JPanel();
         sidebarPanel.setLayout(new BorderLayout());
         sidebarPanel.setPreferredSize(new java.awt.Dimension(250, 0));
+        sidebarPanel.setMinimumSize(new java.awt.Dimension(250, 0));
         sidebarPanel.setBackground(new java.awt.Color(33, 105, 249));
 
         // Tạo profile component
@@ -52,7 +56,7 @@ public class Main extends javax.swing.JFrame {
         menu.addEvent(new EventMenuSelected() {
             @Override
             public void menuSelected(int menuIndex, int subMenuIndex) {
-                // Xử lý khi menu được chọn
+                System.out.println("Menu selected: " + menuIndex);
                 showForm(menuIndex);
             }
         });
@@ -67,41 +71,58 @@ public class Main extends javax.swing.JFrame {
         
         // Hiển thị trang chủ mặc định
         showForm(0);
+        
+        // Đảm bảo sidebar hiển thị
+        revalidate();
+        repaint();
     }
 
     private void showForm(int menuIndex) {
         Component form = null;
         
+        System.out.println("Đang load form cho menu index: " + menuIndex);
+        
         try {
             switch (menuIndex) {
                 case 0: // Trang Chủ
+                    System.out.println("Loading ViewTrangChu...");
                     form = new ViewTrangChu();
                     break;
                 case 1: // Bán Hàng
+                    System.out.println("Loading ViewBanHang...");
                     form = new ViewBanHang();
                     break;
                 case 2: // Sản Phẩm
+                    System.out.println("Loading ViewSanPham...");
                     form = new ViewSanPham();
                     break;
                 case 3: // Hóa Đơn
+                    System.out.println("Loading ViewHoaDon...");
                     form = new ViewHoaDon();
                     break;
                 case 4: // Khách Hàng
+                    System.out.println("Loading ViewKhachHang...");
                     form = new ViewKhachHang();
                     break;
                 case 5: // Nhân Viên
+                    System.out.println("Loading ViewNhanVien...");
                     form = new ViewNhanVien();
                     break;
                 case 6: // Thống Kê
+                    System.out.println("Loading ViewThongKe...");
                     form = new ViewThongKe();
                     break;
                 default:
+                    System.out.println("Loading default ViewTrangChu...");
                     form = new ViewTrangChu(); // Mặc định hiển thị trang chủ
                     break;
             }
             
             if (form != null) {
+                System.out.println("Form loaded successfully, showing in mainForm...");
                 mainForm.showForm(form);
+                mainForm.revalidate();
+                mainForm.repaint();
             }
         } catch (Exception e) {
             System.err.println("Lỗi khi load view: " + e.getMessage());

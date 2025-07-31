@@ -4,6 +4,7 @@ import com.DuAn1.volleyballshoes.app.view.viewgiaodien.event.*;
 import com.DuAn1.volleyballshoes.app.view.viewgiaodien.model.ModelMenu;
 import com.DuAn1.volleyballshoes.app.view.viewgiaodien.swing.scrollbar.ScrollBarCustom;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
@@ -36,37 +37,64 @@ public class Menu extends javax.swing.JPanel {
 
     public Menu() {
         initComponents();
-        setOpaque(false);
-        sp.getViewport().setOpaque(false);
+        setOpaque(true);
+        sp.getViewport().setOpaque(true);
         sp.setVerticalScrollBar(new ScrollBarCustom());
     }
 
     public void initMenuItem() {
-        // Thêm các menu items từ viewchucnang
-        addMenu(new ModelMenu("Trang Chủ"), 0);
-        addMenu(new ModelMenu("Bán Hàng"), 1);
-        addMenu(new ModelMenu("Sản Phẩm"), 2);
-        addMenu(new ModelMenu("Hóa Đơn"), 3);
-        addMenu(new ModelMenu("Khách Hàng"), 4);
-        addMenu(new ModelMenu("Nhân Viên"), 5);
-        addMenu(new ModelMenu("Thống Kê"), 6);
+        // Thêm các menu items từ viewchucnang với icon
+        addMenu(new ModelMenu("Trang Chủ"), 0, "1.png");
+        addMenu(new ModelMenu("Bán Hàng"), 1, "2.png");
+        addMenu(new ModelMenu("Sản Phẩm"), 2, "3.png");
+        addMenu(new ModelMenu("Hóa Đơn"), 3, "4.png");
+        addMenu(new ModelMenu("Khách Hàng"), 4, "5.png");
+        addMenu(new ModelMenu("Nhân Viên"), 5, "6.png");
+        addMenu(new ModelMenu("Thống Kê"), 6, "7.png");
     }
 
-    private void addMenu(ModelMenu menu, int index) {
-        // Tạo menu item đơn giản
-        JButton btn = new JButton(menu.getMenuName());
-        btn.setFont(new java.awt.Font("Segoe UI", 0, 14));
+    private void addMenu(ModelMenu menu, int index, String iconPath) {
+        // Tạo menu item với icon
+        JButton btn = new JButton();
+        
+        // Load icon
+        try {
+            // Sử dụng đường dẫn đúng từ resources
+            String fullIconPath = "/com/DuAn1/volleyballshoes/app/icons/" + iconPath;
+            java.net.URL iconUrl = getClass().getResource(fullIconPath);
+            
+            if (iconUrl != null) {
+                System.out.println("Load icon thành công: " + fullIconPath);
+                ImageIcon icon = new ImageIcon(iconUrl);
+                Image img = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                btn.setIcon(new ImageIcon(img));
+            } else {
+                System.err.println("Không tìm thấy icon: " + fullIconPath);
+                // Tạo icon với text thay vì hình vuông trắng
+                btn.setIcon(createTextIcon(menu.getMenuName().substring(0, 1)));
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi load icon: " + iconPath + " - " + e.getMessage());
+            btn.setIcon(createTextIcon(menu.getMenuName().substring(0, 1)));
+        }
+        
+        btn.setText(menu.getMenuName());
+        btn.setFont(new java.awt.Font("Segoe UI", 1, 14));
         btn.setForeground(new java.awt.Color(255, 255, 255));
         btn.setBackground(new java.awt.Color(33, 105, 249));
-        btn.setBorder(new EmptyBorder(10, 20, 10, 20));
-        btn.setPreferredSize(new java.awt.Dimension(220, 45));
+        btn.setBorder(new EmptyBorder(12, 25, 12, 25));
+        btn.setPreferredSize(new java.awt.Dimension(230, 50));
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setOpaque(true);
+        btn.setContentAreaFilled(true);
+        btn.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        btn.setIconTextGap(15);
         
         // Hover effect
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btn.setBackground(new Color(45, 125, 269));
+                btn.setBackground(new Color(45, 125, 255));
             }
             
             public void mouseExited(java.awt.event.MouseEvent evt) {
@@ -85,9 +113,41 @@ public class Menu extends javax.swing.JPanel {
         });
         
         panel.add(btn);
-        panel.add(Box.createVerticalStrut(8)); // Thêm khoảng cách giữa các button
+        panel.add(Box.createVerticalStrut(10)); // Thêm khoảng cách giữa các button
         panel.revalidate();
         panel.repaint();
+        
+        // Đảm bảo panel hiển thị
+        sp.revalidate();
+        sp.repaint();
+    }
+
+    private ImageIcon createTextIcon(String text) {
+        // Tạo icon với text
+        BufferedImage img = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = img.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setColor(Color.WHITE);
+        g2.setFont(new Font("Arial", Font.BOLD, 12));
+        
+        // Căn giữa text
+        FontMetrics fm = g2.getFontMetrics();
+        int x = (20 - fm.stringWidth(text)) / 2;
+        int y = (20 - fm.getHeight()) / 2 + fm.getAscent();
+        
+        g2.drawString(text, x, y);
+        g2.dispose();
+        return new ImageIcon(img);
+    }
+
+    private ImageIcon createDefaultIcon() {
+        // Tạo icon mặc định màu trắng
+        BufferedImage img = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = img.createGraphics();
+        g2.setColor(Color.WHITE);
+        g2.fillRect(0, 0, 20, 20);
+        g2.dispose();
+        return new ImageIcon(img);
     }
 
     private EventMenu getEventMenu() {
@@ -119,23 +179,17 @@ public class Menu extends javax.swing.JPanel {
         sp.setBorder(null);
         sp.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
-        panel.setOpaque(false);
+        panel.setOpaque(true);
         panel.setLayout(new javax.swing.BoxLayout(panel, javax.swing.BoxLayout.Y_AXIS));
+        panel.setBackground(new Color(33, 105, 249));
 
         sp.setViewportView(panel);
+        sp.setOpaque(true);
+        sp.getViewport().setOpaque(true);
+        sp.setBackground(new Color(33, 105, 249));
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(sp, javax.swing.GroupLayout.DEFAULT_SIZE, 230, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(146, 146, 146)
-                .addComponent(sp))
-        );
+        setLayout(new BorderLayout());
+        add(sp, BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
     @Override
