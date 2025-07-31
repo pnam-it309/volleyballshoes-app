@@ -1,15 +1,15 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewTrangChu;
 
 import com.formdev.flatlaf.FlatLightLaf;
-import duan1.view.viewchucnang.ViewDotGiamGia.*;
 
 public class ViewTrangChu extends javax.swing.JPanel {
 
     public ViewTrangChu() {
-                FlatLightLaf.setup();
+        FlatLightLaf.setup();
         initComponents();
         setOpaque(false);
     }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -22,7 +22,7 @@ public class ViewTrangChu extends javax.swing.JPanel {
         jLabel1.setBackground(new java.awt.Color(0, 153, 255));
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 48)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(0, 153, 255));
-        jLabel1.setText("BOOKSTORE");
+        jLabel1.setText("VShoesApp");
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel2.setText("Uy tín - Tận Tâm - Chất Lượng");

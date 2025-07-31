@@ -1,5 +1,7 @@
 package com.DuAn1.volleyballshoes.app.view.viewgiaodien.main;
 
+import com.DuAn1.volleyballshoes.app.view.viewdangnhap.main.MainDangNhap;
+
 
 
 public class Main extends javax.swing.JFrame {
@@ -79,7 +81,7 @@ public class Main extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new Main().setVisible(true);
+                new MainDangNhap().setVisible(true);
             }
         });
     }

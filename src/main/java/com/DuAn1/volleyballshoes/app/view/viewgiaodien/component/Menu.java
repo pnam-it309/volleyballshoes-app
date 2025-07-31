@@ -42,11 +42,22 @@ public class Menu extends javax.swing.JPanel {
     }
 
     public void initMenuItem() {
-
+        // Thêm logo và tên shop ở đầu sidebar
+        
+        
+        // Thêm các menu items
+        addMenu(new ModelMenu(new ImageIcon(getClass().getResource("/icon/home.png")), "Trang Chủ"));
+        addMenu(new ModelMenu(new ImageIcon(getClass().getResource("/icon/cart.png")), "Bán Hàng"));
+        addMenu(new ModelMenu(new ImageIcon(getClass().getResource("/icon/product.png")), "Sản Phẩm", "Sản Phẩm", "Chi Tiết Sản Phẩm", "Thuộc Tính"));
+        addMenu(new ModelMenu(new ImageIcon(getClass().getResource("/icon/invoice.png")), "Hóa Đơn"));
+        addMenu(new ModelMenu(new ImageIcon(getClass().getResource("/icon/stats.png")), "Thống Kê"));
+        addMenu(new ModelMenu(new ImageIcon(getClass().getResource("/icon/employee.png")), "Nhân Viên"));
+        addMenu(new ModelMenu(new ImageIcon(getClass().getResource("/icon/customer.png")), "Khách Hàng"));
+        addMenu(new ModelMenu(new ImageIcon(getClass().getResource("/icon/discount.png")), "Phiếu Giảm Giá"));
     }
 
     private void addMenu(ModelMenu menu) {
-
+//        panel.add(new MenuItem(menu, getEventMenu(), event, panel.getComponentCount()));
     }
 
     private EventMenu getEventMenu() {

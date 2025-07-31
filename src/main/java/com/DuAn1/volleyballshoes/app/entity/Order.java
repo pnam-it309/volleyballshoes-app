@@ -8,6 +8,7 @@ package com.DuAn1.volleyballshoes.app.entity;
  *
  * @author nickh
  */
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -18,11 +19,12 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Order {
-
     private int orderId;
     private int customerId;
     private int staffId;
-    private double orderFinalAmount;
+    private BigDecimal orderFinalAmount;
     private String orderPaymentMethod;
     private String orderStatus;
+    private String orderCode;
+    private LocalDateTime orderCreatedAt;
 }

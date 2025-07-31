@@ -2,82 +2,97 @@ package com.DuAn1.volleyballshoes.app.dao.impl;
 
 import com.DuAn1.volleyballshoes.app.dao.ProductVariantDAO;
 import com.DuAn1.volleyballshoes.app.entity.ProductVariant;
-import com.DuAn1.volleyballshoes.app.utils.XJdbc;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
+@Repository
+@Transactional
 public class ProductVariantDAOImpl implements ProductVariantDAO {
-    private static final XJdbc.RowMapper<ProductVariant> PRODUCT_VARIANT_MAPPER = rs -> ProductVariant.builder()
-        .variant_id(rs.getInt("variant_id"))
-        .product_id(rs.getInt("product_id"))
-        .size_id(rs.getInt("size_id"))
-        .color_id(rs.getInt("color_id"))
-        .sole_id(rs.getInt("sole_id"))
-        .variant_sku(rs.getString("variant_sku"))
-        .variant_orig_price(rs.getDouble("variant_orig_price"))
-        .variant_img_url(rs.getString("variant_img_url"))
-        .build();
 
-    @Override
-    public ProductVariant create(ProductVariant entity) {
-        String sql = "INSERT INTO ProductVariant (product_id, size_id, color_id, sole_id, variant_sku, variant_orig_price, variant_img_url) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        XJdbc.executeUpdate(sql,
-            entity.product_id,
-            entity.size_id,
-            entity.color_id,
-            entity.sole_id,
-            entity.variant_sku,
-            entity.variant_orig_price,
-            entity.variant_img_url
-        );
-        return entity;
-    }
-
-    @Override
-    public void update(ProductVariant entity) {
-        String sql = "UPDATE ProductVariant SET size_id=?, color_id=?, sole_id=?, variant_sku=?, variant_orig_price=?, variant_img_url=? WHERE variant_id=?";
-        XJdbc.executeUpdate(sql,
-            entity.size_id,
-            entity.color_id,
-            entity.sole_id,
-            entity.variant_sku,
-            entity.variant_orig_price,
-            entity.variant_img_url,
-            entity.variant_id
-        );
-    }
-
-    @Override
-    public void deleteById(Integer id) {
-        String sql = "DELETE FROM ProductVariant WHERE variant_id=?";
-        XJdbc.executeUpdate(sql, id);
-    }
-
-    @Override
-    public List<ProductVariant> findByProductId(int productId) {
-        String sql = "SELECT * FROM ProductVariant WHERE product_id=?";
-        return XJdbc.query(sql, PRODUCT_VARIANT_MAPPER, productId);
-    }
-
-    @Override
-    public ProductVariant findById(Integer id) {
-        String sql = "SELECT * FROM ProductVariant WHERE variant_id=?";
-        return XJdbc.queryForObject(sql, PRODUCT_VARIANT_MAPPER, id);
-    }
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public List<ProductVariant> findAll() {
-        String sql = "SELECT * FROM ProductVariant";
-        return XJdbc.query(sql, PRODUCT_VARIANT_MAPPER);
+        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType";
+        return entityManager.createQuery(jpql, ProductVariant.class).getResultList();
     }
 
-    // Thêm hàm tìm ProductVariant theo SKU
-    public ProductVariant findBySku(String sku) {
-        String sql = "SELECT * FROM ProductVariant WHERE variant_sku = ?";
-        try {
-            return XJdbc.queryForObject(sql, PRODUCT_VARIANT_MAPPER, sku);
-        } catch (Exception ex) {
-            return null;
+    @Override
+    public Page<ProductVariant> findAll(Pageable pageable) {
+        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType";
+        String countJpql = "SELECT COUNT(pv) FROM ProductVariant pv";
+        
+        TypedQuery<ProductVariant> query = entityManager.createQuery(jpql, ProductVariant.class);
+        Long total = entityManager.createQuery(countJpql, Long.class).getSingleResult();
+        
+        query.setFirstResult((int) pageable.getOffset());
+        query.setMaxResults(pageable.getPageSize());
+        
+        return new PageImpl<>(query.getResultList(), pageable, total);
+    }
+
+    @Override
+    public List<ProductVariant> findByProductId(Long productId) {
+        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType WHERE pv.product.id = :productId";
+        return entityManager.createQuery(jpql, ProductVariant.class)
+                .setParameter("productId", productId)
+                .getResultList();
+    }
+
+    @Override
+    public List<ProductVariant> findBySku(String sku) {
+        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType WHERE pv.sku LIKE :sku";
+        return entityManager.createQuery(jpql, ProductVariant.class)
+                .setParameter("sku", "%" + sku + "%")
+                .getResultList();
+    }
+
+    @Override
+    public List<ProductVariant> findByBarcode(String barcode) {
+        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType WHERE pv.barcode = :barcode";
+        return entityManager.createQuery(jpql, ProductVariant.class)
+                .setParameter("barcode", barcode)
+                .getResultList();
+    }
+
+    @Override
+    public List<ProductVariant> findByQuantityLessThanEqual(int quantity) {
+        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType WHERE pv.quantity <= :quantity";
+        return entityManager.createQuery(jpql, ProductVariant.class)
+                .setParameter("quantity", quantity)
+                .getResultList();
+    }
+
+    @Override
+    public ProductVariant save(ProductVariant productVariant) {
+        if (productVariant.getId() == null) {
+            entityManager.persist(productVariant);
+            return productVariant;
+        } else {
+            return entityManager.merge(productVariant);
         }
     }
-}
 
+    @Override
+    public void deleteById(Long id) {
+        ProductVariant productVariant = entityManager.find(ProductVariant.class, id);
+        if (productVariant != null) {
+            entityManager.remove(productVariant);
+        }
+    }
+
+    @Override
+    public long count() {
+        String jpql = "SELECT COUNT(pv) FROM ProductVariant pv";
+        return entityManager.createQuery(jpql, Long.class).getSingleResult();
+    }
+}
