@@ -33,6 +33,7 @@ com\DuAn1\volleyballshoes\app\ui\ProductManagement$10.class
 com\DuAn1\volleyballshoes\app\ui\main\mainFrame$3.class
 com\DuAn1\volleyballshoes\app\entity\Size.class
 com\DuAn1\volleyballshoes\app\entity\Order$OrderBuilder.class
+com\DuAn1\volleyballshoes\app\ui\QLKH$1.class
 com\DuAn1\volleyballshoes\app\entity\Category.class
 com\DuAn1\volleyballshoes\app\ui\main\mainFrame$9.class
 com\DuAn1\volleyballshoes\app\ui\ProductManagement$6.class
@@ -47,6 +48,7 @@ com\DuAn1\volleyballshoes\app\dao\CategoryDAO.class
 com\DuAn1\volleyballshoes\app\entity\OrderDetail$OrderDetailBuilder.class
 com\DuAn1\volleyballshoes\app\dao\impl\SizeDAOImpl.class
 com\DuAn1\volleyballshoes\app\ui\ProductManagement$7.class
+com\DuAn1\volleyballshoes\app\ui\QLKH.class
 com\DuAn1\volleyballshoes\app\ui\main\mainFrame$1.class
 com\DuAn1\volleyballshoes\app\utils\ExcelUtil$1.class
 com\DuAn1\volleyballshoes\app\ui\ProductManagement$4.class
