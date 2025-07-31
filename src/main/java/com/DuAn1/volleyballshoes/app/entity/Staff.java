@@ -21,6 +21,8 @@ public class Staff {
     private String staffUsername;
     private String staffPassword;
     private String staffFullName;
+    private String staffEmail;
     private int staffRole;
     private String staffSdt;
+    private String staffCode;
 }

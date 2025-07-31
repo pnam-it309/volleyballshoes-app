@@ -1,16 +1,230 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewKhachHang;
 
+import com.DuAn1.volleyballshoes.app.controller.CustomerController;
+import com.DuAn1.volleyballshoes.app.dto.request.CustomerCreateRequest;
+import com.DuAn1.volleyballshoes.app.entity.Customer;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableModel;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ViewKhachHang extends javax.swing.JPanel {
-
- 
-
+    private final CustomerController customerController;
+    private List<Customer> customerList;
+    private DefaultTableModel tableModel;
+    private DefaultTableModel historyTableModel;
+    private int selectedRow = -1;
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    
     public ViewKhachHang() {
+        this.customerController = new CustomerController();
         initComponents();
-       
+        setupTables();
+        loadData();
+        clearForm();
     }
-
-   
+    
+    private void initializeData() {
+        customerList = customerController.findAll();
+    }
+    
+    private void setupTables() {
+        // Setup main customer table
+        String[] columns = {"Mã KH", "Tên khách hàng", "Giới tính", "Ngày sinh", "SĐT", "Địa chỉ", "Email", "Điểm tích lũy"};
+        tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tbl_bang.setModel(tableModel);
+        
+        // Setup history table
+        String[] historyColumns = {"Mã KH", "Tên khách hàng", "Thao tác", "Thời gian"};
+        historyTableModel = new DefaultTableModel(historyColumns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+            
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                return String.class;
+            }
+        };
+        tbl_bangls.setModel(historyTableModel);
+        
+        // Set column widths for history table
+        tbl_bangls.getColumnModel().getColumn(0).setPreferredWidth(80);  // Mã KH
+        tbl_bangls.getColumnModel().getColumn(1).setPreferredWidth(150); // Tên KH
+        tbl_bangls.getColumnModel().getColumn(2).setPreferredWidth(100); // Thao tác
+        tbl_bangls.getColumnModel().getColumn(3).setPreferredWidth(150); // Thời gian
+        
+        // Setup gender radio buttons
+        buttonGroup1.add(rdo_nam);
+        buttonGroup1.add(rdo_nu);
+        buttonGroup1.add(rdo_khac);
+        
+        // Setup gender filter combo box
+        cbo_gioitinh.addItem("Tất cả");
+        cbo_gioitinh.addItem("Nam");
+        cbo_gioitinh.addItem("Nữ");
+        cbo_gioitinh.addItem("Khác");
+    }
+    
+    private void loadData() {
+        try {
+            customerList = customerController.findAll();
+            updateTableData();
+        } catch (Exception e) {
+            showError("Lỗi khi tải dữ liệu khách hàng: " + e.getMessage());
+        }
+    }
+    
+    private void updateTableData() {
+        tableModel.setRowCount(0);
+        for (Customer customer : customerList) {
+            Object[] row = {
+                customer.getCustomerCode(),
+                customer.getCustomerFullName(),
+                customer.getGenderDisplayName(),
+                customer.getCustomerBirthDate() != null ? 
+                    customer.getCustomerBirthDate().format(dateFormatter) : "",
+                customer.getCustomerPhone(),
+                customer.getCustomerAddress() != null ? customer.getCustomerAddress() : "",
+                customer.getCustomerEmail(),
+                customer.getCustomerPoints()
+            };
+            tableModel.addRow(row);
+        }
+    }
+    
+    private void clearForm() {
+        txt_ma.setText("");
+        txt_ten.setText("");
+        txt_sdt.setText("");
+        txt_diachi.setText("");
+        txt_email.setText("");
+        buttonGroup1.clearSelection();
+        datengaysinh.setDate(null);
+        txt_ma.setEnabled(true);
+        selectedRow = -1;
+    }
+    
+    private void fillForm(Customer customer) {
+        if (customer == null) return;
+        
+        txt_ma.setText(customer.getCustomerCode());
+        txt_ma.setEnabled(false); // Disable code field when editing
+        txt_ten.setText(customer.getCustomerFullName());
+        txt_sdt.setText(customer.getCustomerPhone());
+        txt_email.setText(customer.getCustomerEmail());
+        txt_diachi.setText(customer.getCustomerAddress() != null ? customer.getCustomerAddress() : "");
+        
+        // Set gender radio button
+        if (customer.getCustomerGender() != null) {
+            switch (customer.getCustomerGender()) {
+                case MALE -> rdo_nam.setSelected(true);
+                case FEMALE -> rdo_nu.setSelected(true);
+                case OTHER -> rdo_khac.setSelected(true);
+            }
+        }
+        
+        // Set birth date
+        if (customer.getCustomerBirthDate() != null) {
+            datengaysinh.setDate(Date.from(customer.getCustomerBirthDate()
+                .atStartOfDay(ZoneId.systemDefault())
+                .toInstant()));
+        } else {
+            datengaysinh.setDate(null);
+        }
+    }
+    
+    private CustomerCreateRequest getFormData() {
+        Customer.Gender gender = Customer.Gender.OTHER;
+        if (rdo_nam.isSelected()) {
+            gender = Customer.Gender.MALE;
+        } else if (rdo_nu.isSelected()) {
+            gender = Customer.Gender.FEMALE;
+        }
+        
+        LocalDate birthDate = null;
+        if (datengaysinh.getDate() != null) {
+            birthDate = datengaysinh.getDate().toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+        }
+        
+        return CustomerCreateRequest.builder()
+            .customerCode(txt_ma.getText().trim())
+            .customerFullName(txt_ten.getText().trim())
+            .customerPhone(txt_sdt.getText().trim())
+            .customerEmail(txt_email.getText().trim())
+            .customerAddress(txt_diachi.getText().trim())
+            .customerGender(gender)
+            .customerBirthDate(birthDate)
+            .build();
+    }
+    
+    private boolean validateForm() {
+        if (txt_ma.getText().trim().isEmpty()) {
+            showError("Vui lòng nhập mã khách hàng!");
+            return false;
+        }
+        if (txt_ten.getText().trim().isEmpty()) {
+            showError("Vui lòng nhập tên khách hàng!");
+            return false;
+        }
+        if (txt_sdt.getText().trim().isEmpty()) {
+            showError("Vui lòng nhập số điện thoại!");
+            return false;
+        }
+        if (txt_email.getText().trim().isEmpty()) {
+            showError("Vui lòng nhập email!");
+            return false;
+        }
+        if (!buttonGroup1.isSelected(rdo_nam.getModel()) && 
+            !buttonGroup1.isSelected(rdo_nu.getModel()) && 
+            !buttonGroup1.isSelected(rdo_khac.getModel())) {
+            showError("Vui lòng chọn giới tính!");
+            return false;
+        }
+        return true;
+    }
+    
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(this, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+    }
+    
+    private void showSuccess(String message) {
+        JOptionPane.showMessageDialog(this, message, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void addHistory(Customer customer, String action) {
+        // Add to history table
+        Object[] row = {
+            customer.getCustomerCode(),
+            customer.getCustomerFullName(),
+            action,
+            java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+        };
+        historyTableModel.addRow(row);
+    }
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -397,51 +611,236 @@ public class ViewKhachHang extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-      
+        // Export customer list to Excel
+        try {
+            if (customerList.isEmpty()) {
+                showError("Không có dữ liệu để xuất!");
+                return;
+            }
+            
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Chọn nơi lưu file");
+            fileChooser.setSelectedFile(new File("DanhSachKhachHang_" + 
+                java.time.LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + 
+                ".xlsx"));
+            
+            int userSelection = fileChooser.showSaveDialog(this);
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                File fileToSave = fileChooser.getSelectedFile();
+                
+                try (Workbook workbook = new XSSFWorkbook()) {
+                    Sheet sheet = workbook.createSheet("Danh sách khách hàng");
+                    
+                    // Create header row
+                    Row headerRow = sheet.createRow(0);
+                    String[] headers = {"Mã KH", "Tên khách hàng", "Giới tính", "Ngày sinh", 
+                                      "SĐT", "Địa chỉ", "Email", "Điểm tích lũy"};
+                    
+                    CellStyle headerStyle = workbook.createCellStyle();
+                    Font headerFont = workbook.createFont();
+                    headerFont.setBold(true);
+                    headerStyle.setFont(headerFont);
+                    
+                    for (int i = 0; i < headers.length; i++) {
+                        Cell cell = headerRow.createCell(i);
+                        cell.setCellValue(headers[i]);
+                        cell.setCellStyle(headerStyle);
+                        sheet.autoSizeColumn(i);
+                    }
+                    
+                    // Add data rows
+                    int rowNum = 1;
+                    for (Customer customer : customerList) {
+                        Row row = sheet.createRow(rowNum++);
+                        row.createCell(0).setCellValue(customer.getCustomerCode());
+                        row.createCell(1).setCellValue(customer.getCustomerFullName());
+                        row.createCell(2).setCellValue(customer.getGenderDisplayName());
+                        
+                        if (customer.getCustomerBirthDate() != null) {
+                            row.createCell(3).setCellValue(
+                                customer.getCustomerBirthDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                        } else {
+                            row.createCell(3).setCellValue("");
+                        }
+                        
+                        row.createCell(4).setCellValue(customer.getCustomerPhone());
+                        row.createCell(5).setCellValue(customer.getCustomerAddress() != null ? 
+                            customer.getCustomerAddress() : "");
+                        row.createCell(6).setCellValue(customer.getCustomerEmail());
+                        row.createCell(7).setCellValue(customer.getCustomerPoints());
+                    }
+                    
+                    // Auto-size all columns
+                    for (int i = 0; i < headers.length; i++) {
+                        sheet.autoSizeColumn(i);
+                    }
+                    
+                    // Write the output to a file
+                    try (FileOutputStream fileOut = new FileOutputStream(fileToSave)) {
+                        workbook.write(fileOut);
+                    }
+                    
+                    showSuccess("Xuất dữ liệu thành công ra file: " + fileToSave.getAbsolutePath());
+                } catch (IOException e) {
+                    throw new IOException("Lỗi khi ghi file: " + e.getMessage(), e);
+                }
+            }
+        } catch (Exception e) {
+            showError("Lỗi khi xuất danh sách: " + e.getMessage());
+        }
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    private void txt_tenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txt_tenActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txt_tenActionPerformed
-
-    private void rdo_nuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rdo_nuActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_rdo_nuActionPerformed
-
-    private void tbl_bangMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tbl_bangMouseClicked
-        // TODO add your handling code here:
-
-     
-
-    }//GEN-LAST:event_tbl_bangMouseClicked
-
     private void tbl_themActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_themActionPerformed
-
-        // TODO add your handling code here:
+        if (!validateForm()) {
+            return;
+        }
+        
+        try {
+            CustomerCreateRequest request = getFormData();
+            String validationError = request.validate();
+            if (validationError != null) {
+                showError(validationError);
+                return;
+            }
+            
+            // Check if customer code already exists
+            if (customerController.findByCode(request.getCustomerCode()) != null) {
+                showError("Mã khách hàng đã tồn tại!");
+                return;
+            }
+            
+            Customer customer = customerController.create(request);
+            showSuccess("Thêm khách hàng thành công!");
+            loadData();
+            clearForm();
+            
+            // Add to history
+            addHistory(customer, "Thêm mới");
+            
+            // Auto-scroll to the bottom of the history table
+            if (historyTableModel.getRowCount() > 0) {
+                int lastRow = historyTableModel.getRowCount() - 1;
+                tbl_bangls.scrollRectToVisible(tbl_bangls.getCellRect(lastRow, 0, true));
+            }
+        } catch (Exception e) {
+            showError("Lỗi khi thêm khách hàng: " + e.getMessage());
+        }
     }//GEN-LAST:event_tbl_themActionPerformed
 
     private void tbl_sửaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_sửaActionPerformed
-
-
-// TODO add your handling code here:
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn khách hàng cần cập nhật!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        if (!validateForm()) {
+            return;
+        }
+        
+        try {
+            // Get the original customer to keep the ID
+            Customer originalCustomer = customerList.get(selectedRow);
+            CustomerCreateRequest updateRequest = getFormData();
+            
+            // Update the customer using the controller
+            Customer updatedCustomer = customerController.update(originalCustomer.getCustomerId(), updateRequest);
+            
+            if (updatedCustomer != null) {
+                loadData();
+                clearForm();
+                showSuccess("Cập nhật thông tin khách hàng thành công!");
+                
+                // Add to history
+                addHistory(updatedCustomer, "Cập nhật");
+                
+                // Auto-scroll to the bottom of the history table
+                if (historyTableModel.getRowCount() > 0) {
+                    int lastRow = historyTableModel.getRowCount() - 1;
+                    tbl_bangls.scrollRectToVisible(tbl_bangls.getCellRect(lastRow, 0, true));
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi cập nhật khách hàng: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_tbl_sửaActionPerformed
 
     private void tbl_timkiemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_timkiemActionPerformed
-
-    
-        // TODO add your handling code here:
+        String searchText = txt_nhạptim.getText().trim().toLowerCase();
+        
+        if (searchText.isEmpty()) {
+            loadData();
+            return;
+        }
+        
+        try {
+            List<Customer> filteredList = customerList.stream()
+                .filter(customer -> 
+                    customer.getCustomerCode().toLowerCase().contains(searchText) ||
+                    customer.getCustomerFullName().toLowerCase().contains(searchText) ||
+                    customer.getCustomerPhone().contains(searchText) ||
+                    customer.getCustomerEmail().toLowerCase().contains(searchText)
+                )
+                .collect(Collectors.toList());
+            
+            tableModel.setRowCount(0);
+            for (Customer customer : filteredList) {
+                Object[] row = {
+                    customer.getCustomerCode(),
+                    customer.getCustomerFullName(),
+                    "Nam",
+                    "01/01/1990",
+                    customer.getCustomerPhone(),
+                    "Địa chỉ",
+                    customer.getCustomerEmail(),
+                    customer.getCustomerPoints()
+                };
+                tableModel.addRow(row);
+            }
+            
+            JOptionPane.showMessageDialog(this, "Tìm thấy " + filteredList.size() + " kết quả!", "Kết quả tìm kiếm", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tìm kiếm: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_tbl_timkiemActionPerformed
 
     private void tbl_lammoiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_lammoiActionPerformed
-   
-        // TODO add your handling code here:
+        clearForm();
+        loadData();
+        txt_nhạptim.setText("");
+        cbo_gioitinh.setSelectedIndex(0);
+        JOptionPane.showMessageDialog(this, "Đã làm mới dữ liệu!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }//GEN-LAST:event_tbl_lammoiActionPerformed
 
     private void tbn_locActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbn_locActionPerformed
-
-    
-
-        // TODO add your handling code here:
+        String selectedGender = cbo_gioitinh.getSelectedItem().toString();
+        
+        if (selectedGender.equals("Tất cả")) {
+            loadData();
+            return;
+        }
+        
+        try {
+            // Filter by gender - this would need gender field in Customer entity
+            tableModel.setRowCount(0);
+            for (Customer customer : customerList) {
+                // For demo purposes, show all customers
+                Object[] row = {
+                    customer.getCustomerCode(),
+                    customer.getCustomerFullName(),
+                    selectedGender, // Show selected gender
+                    "01/01/1990",
+                    customer.getCustomerPhone(),
+                    "Địa chỉ",
+                    customer.getCustomerEmail(),
+                    customer.getCustomerPoints()
+                };
+                tableModel.addRow(row);
+            }
+            
+            JOptionPane.showMessageDialog(this, "Đã lọc theo giới tính: " + selectedGender, "Lọc dữ liệu", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi lọc dữ liệu: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_tbn_locActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

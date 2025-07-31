@@ -7,7 +7,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Brand {
-    public int brand_id;
-    public String brand_name;
-    public String brand_origin;
+    private int brandId;
+    private String brandName;
+    private String brandCode;
+    private String brandOrigin;
 }

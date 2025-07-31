@@ -11,7 +11,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Size {
-    public int size_id;
-    public String size_value;
-    public String size_desc;
+    private int sizeId;
+    private String sizeValue;
+    private String sizeDescription;
+    private String sizeCode;
 }

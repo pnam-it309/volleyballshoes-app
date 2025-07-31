@@ -8,6 +8,7 @@ package com.DuAn1.volleyballshoes.app.entity;
  *
  * @author nickh
  */
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
 import lombok.*;
@@ -20,8 +21,8 @@ public class Promotion {
 
     private int promotionId;
     private String promoName;
-    private String promoDesc;
-    private double promoDiscountValue;
+    private String promoDescription;
+    private BigDecimal promoDiscountValue;
     private LocalDateTime promoStartDate;
     private LocalDateTime promoEndDate;
     private String promoCode;
