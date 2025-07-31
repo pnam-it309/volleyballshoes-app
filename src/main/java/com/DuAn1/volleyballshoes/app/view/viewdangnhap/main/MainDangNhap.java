@@ -4,7 +4,20 @@
  */
 package com.DuAn1.volleyballshoes.app.view.viewdangnhap.main;
 
-
+import com.DuAn1.volleyballshoes.app.view.viewgiaodien.main.Main;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 /**
  *  
@@ -12,9 +25,148 @@ package com.DuAn1.volleyballshoes.app.view.viewdangnhap.main;
  */
 public class MainDangNhap extends javax.swing.JFrame {
 
+    private JTextField txtUsername;
+    private JPasswordField txtPassword;
+    private JButton btnDangNhap;
+    private JButton btnThoat;
   
     public MainDangNhap() {
         initComponents();
+        initLoginForm();
+    }
+    
+    private void initLoginForm() {
+        // Tạo panel chính
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.setBackground(new Color(245, 245, 245));
+        
+        // Panel đăng nhập
+        JPanel loginPanel = new JPanel();
+        loginPanel.setLayout(new GridBagLayout());
+        loginPanel.setBackground(Color.WHITE);
+        loginPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 200, 200)),
+            BorderFactory.createEmptyBorder(30, 40, 30, 40)
+        ));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        
+        // Logo/Tiêu đề
+        JLabel titleLabel = new JLabel("VOLLEYBALL SHOES");
+        titleLabel.setFont(new java.awt.Font("Segoe UI", 1, 28));
+        titleLabel.setForeground(new Color(33, 105, 249));
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        loginPanel.add(titleLabel, gbc);
+        
+        JLabel subtitleLabel = new JLabel("Hệ thống quản lý giày bóng chuyền");
+        subtitleLabel.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        subtitleLabel.setForeground(new Color(100, 100, 100));
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        loginPanel.add(subtitleLabel, gbc);
+        
+        // Username
+        JLabel userLabel = new JLabel("Tài khoản:");
+        userLabel.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        loginPanel.add(userLabel, gbc);
+        
+        txtUsername = new JTextField(20);
+        txtUsername.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        loginPanel.add(txtUsername, gbc);
+        
+        // Password
+        JLabel passLabel = new JLabel("Mật khẩu:");
+        passLabel.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.WEST;
+        loginPanel.add(passLabel, gbc);
+        
+        txtPassword = new JPasswordField(20);
+        txtPassword.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        gbc.gridx = 1;
+        gbc.gridy = 3;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        loginPanel.add(txtPassword, gbc);
+        
+        // Buttons panel
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new GridBagLayout());
+        buttonPanel.setOpaque(false);
+        
+        btnDangNhap = new JButton("Đăng nhập");
+        btnDangNhap.setFont(new java.awt.Font("Segoe UI", 1, 14));
+        btnDangNhap.setBackground(new Color(33, 105, 249));
+        btnDangNhap.setForeground(Color.WHITE);
+        btnDangNhap.setFocusPainted(false);
+        btnDangNhap.setPreferredSize(new java.awt.Dimension(120, 35));
+        
+        btnThoat = new JButton("Thoát");
+        btnThoat.setFont(new java.awt.Font("Segoe UI", 1, 14));
+        btnThoat.setBackground(new Color(220, 53, 69));
+        btnThoat.setForeground(Color.WHITE);
+        btnThoat.setFocusPainted(false);
+        btnThoat.setPreferredSize(new java.awt.Dimension(120, 35));
+        
+        GridBagConstraints btnGbc = new GridBagConstraints();
+        btnGbc.insets = new Insets(20, 10, 0, 10);
+        
+        btnGbc.gridx = 0;
+        btnGbc.gridy = 0;
+        buttonPanel.add(btnDangNhap, btnGbc);
+        
+        btnGbc.gridx = 1;
+        btnGbc.gridy = 0;
+        buttonPanel.add(btnThoat, btnGbc);
+        
+        // Thêm button panel vào login panel
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.NONE;
+        loginPanel.add(buttonPanel, gbc);
+        
+        // Thêm login panel vào main panel
+        mainPanel.add(loginPanel, BorderLayout.CENTER);
+        
+        // Thêm vào frame
+        setLayout(new BorderLayout());
+        add(mainPanel, BorderLayout.CENTER);
+        
+        // Thêm event listeners
+        btnDangNhap.addActionListener(e -> {
+            // Đăng nhập thành công luôn
+            this.dispose(); // Đóng form đăng nhập
+            SwingUtilities.invokeLater(() -> {
+                new Main().setVisible(true); // Mở form chính
+            });
+        });
+        
+        btnThoat.addActionListener(e -> {
+            System.exit(0);
+        });
+        
+        // Enter key để đăng nhập
+        txtPassword.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    btnDangNhap.doClick();
+                }
+            }
+        });
     }
    
     /**
@@ -27,17 +179,18 @@ public class MainDangNhap extends javax.swing.JFrame {
     private void initComponents() {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setUndecorated(true);
+        setTitle("Đăng nhập - Volleyball Shoes Management System");
+        setResizable(false);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 654, Short.MAX_VALUE)
+            .addGap(0, 400, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 534, Short.MAX_VALUE)
+            .addGap(0, 300, Short.MAX_VALUE)
         );
 
         pack();

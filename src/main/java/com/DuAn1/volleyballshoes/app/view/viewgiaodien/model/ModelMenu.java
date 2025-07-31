@@ -34,6 +34,10 @@ public class ModelMenu {
         this.subMenu = subMenu;
     }
 
+    public ModelMenu(String menuName) {
+        this.menuName = menuName;
+    }
+
     public ModelMenu() {
     }
 

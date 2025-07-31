@@ -1,7 +1,6 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewTrangChu;
 
 import com.formdev.flatlaf.FlatLightLaf;
-import duan1.view.viewchucnang.ViewDotGiamGia.*;
 
 public class ViewTrangChu extends javax.swing.JPanel {
 
@@ -22,15 +21,16 @@ public class ViewTrangChu extends javax.swing.JPanel {
         jLabel1.setBackground(new java.awt.Color(0, 153, 255));
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 48)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(0, 153, 255));
-        jLabel1.setText("BOOKSTORE");
+        jLabel1.setText("VOLLEYBALL SHOES");
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel2.setText("Uy tín - Tận Tâm - Chất Lượng");
 
         jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jLabel3.setText("Nơi mang vẻ đẹp của văn học Việt Nam đến thế hệ trẻ");
+        jLabel3.setText("Nơi cung cấp giày bóng chuyền chất lượng cao");
 
-        jLabel4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/duan1/view/viewdangnhap/icon/logob.png"))); // NOI18N
+        // Không load icon để tránh lỗi
+        // jLabel4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/duan1/view/viewdangnhap/icon/logob.png"))); // NOI18N
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
