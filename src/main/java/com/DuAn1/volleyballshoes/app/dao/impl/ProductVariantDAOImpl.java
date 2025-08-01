@@ -13,11 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Repository
-@Transactional
 public class ProductVariantDAOImpl implements ProductVariantDAO {
 
-    @PersistenceContext
     private EntityManager entityManager;
 
     @Override
@@ -27,72 +24,41 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
     }
 
     @Override
-    public Page<ProductVariant> findAll(Pageable pageable) {
-        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType";
-        String countJpql = "SELECT COUNT(pv) FROM ProductVariant pv";
-        
-        TypedQuery<ProductVariant> query = entityManager.createQuery(jpql, ProductVariant.class);
-        Long total = entityManager.createQuery(countJpql, Long.class).getSingleResult();
-        
-        query.setFirstResult((int) pageable.getOffset());
-        query.setMaxResults(pageable.getPageSize());
-        
-        return new PageImpl<>(query.getResultList(), pageable, total);
+    public List<ProductVariant> findByProductId(int productId) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
-    public List<ProductVariant> findByProductId(Long productId) {
-        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType WHERE pv.product.id = :productId";
-        return entityManager.createQuery(jpql, ProductVariant.class)
-                .setParameter("productId", productId)
-                .getResultList();
+    public ProductVariant create(ProductVariant entity) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
-    public List<ProductVariant> findBySku(String sku) {
-        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType WHERE pv.sku LIKE :sku";
-        return entityManager.createQuery(jpql, ProductVariant.class)
-                .setParameter("sku", "%" + sku + "%")
-                .getResultList();
+    public ProductVariant update(ProductVariant entity) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
-    public List<ProductVariant> findByBarcode(String barcode) {
-        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType WHERE pv.barcode = :barcode";
-        return entityManager.createQuery(jpql, ProductVariant.class)
-                .setParameter("barcode", barcode)
-                .getResultList();
+    public boolean deleteById(Integer id) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
-    public List<ProductVariant> findByQuantityLessThanEqual(int quantity) {
-        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType WHERE pv.quantity <= :quantity";
-        return entityManager.createQuery(jpql, ProductVariant.class)
-                .setParameter("quantity", quantity)
-                .getResultList();
-    }
-
-    @Override
-    public ProductVariant save(ProductVariant productVariant) {
-        if (productVariant.getId() == null) {
-            entityManager.persist(productVariant);
-            return productVariant;
-        } else {
-            return entityManager.merge(productVariant);
+    public ProductVariant findById(Integer id) {
+        try {
+            String jpql = "SELECT pv FROM ProductVariant pv " +
+                        "LEFT JOIN FETCH pv.product " +
+                        "LEFT JOIN FETCH pv.color " +
+                        "LEFT JOIN FETCH pv.size " +
+                        "LEFT JOIN FETCH pv.soleType " +
+                        "WHERE pv.id = :id";
+            TypedQuery<ProductVariant> query = entityManager.createQuery(jpql, ProductVariant.class);
+            query.setParameter("id", id);
+            return query.getResultStream().findFirst().orElse(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
-    @Override
-    public void deleteById(Long id) {
-        ProductVariant productVariant = entityManager.find(ProductVariant.class, id);
-        if (productVariant != null) {
-            entityManager.remove(productVariant);
-        }
-    }
-
-    @Override
-    public long count() {
-        String jpql = "SELECT COUNT(pv) FROM ProductVariant pv";
-        return entityManager.createQuery(jpql, Long.class).getSingleResult();
-    }
 }

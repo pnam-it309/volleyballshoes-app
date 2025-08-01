@@ -35,24 +35,5 @@ public class BillDetailResponse {
     private LocalDateTime updatedAt;
     
     private List<OrderItemResponse> items;
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class OrderItemResponse {
-        private Long id;
-        private String productName;
-        private String productCode;
-        private String sku;
-        private String color;
-        private String size;
-        private String soleType;
-        private BigDecimal price;
-        private Integer quantity;
-        private BigDecimal subtotal;
-        private BigDecimal discount;
-        private BigDecimal total;
-        private String imageUrl;
-    }
+
 }

@@ -10,18 +10,17 @@ import java.util.List;
 
 @Data
 public class PromotionUpdateRequest {
+
     private String name;
     private String description;
     private String discountType;
-    
-    @Positive(message = "Giá trị giảm giá phải lớn hơn 0")
+
     private BigDecimal discountValue;
-    
+
     private LocalDateTime startDate;
-    
-    @Future(message = "Ngày kết thúc phải trong tương lai")
+
     private LocalDateTime endDate;
-    
+
     private Boolean active;
     private List<Long> productVariantIds;
 }

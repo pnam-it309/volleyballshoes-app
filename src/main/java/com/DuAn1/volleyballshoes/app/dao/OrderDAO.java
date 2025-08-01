@@ -16,4 +16,5 @@ public interface OrderDAO {
     List<Order> findByCustomerId(Integer customerId);
     List<Order> findByStaffId(Integer staffId);
     List<Order> search(String keyword);
+    Order update(Order order);
 }

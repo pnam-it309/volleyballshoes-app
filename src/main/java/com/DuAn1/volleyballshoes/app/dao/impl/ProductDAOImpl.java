@@ -2,131 +2,139 @@ package com.DuAn1.volleyballshoes.app.dao.impl;
 
 import com.DuAn1.volleyballshoes.app.dao.ProductDAO;
 import com.DuAn1.volleyballshoes.app.entity.Product;
+import com.DuAn1.volleyballshoes.app.utils.XJdbc;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ProductDAOImpl implements ProductDAO {
     
-    private List<Product> products;
-    private int nextId = 1;
-    
-    public ProductDAOImpl() {
-        this.products = new ArrayList<>();
-        initializeData();
-    }
-    
-    private void initializeData() {
-        // Sample data initialization
-        products.add(Product.builder()
-            .productId(nextId++)
-            .productCode("SP001")
-            .productName("Nike Air Max 270")
-            .productDescription("Giày thể thao cao cấp với công nghệ Air Max")
-            .brandId(1)
-            .categoryId(1)
-            .productCreateAt(LocalDateTime.now())
-            .build());
-            
-        products.add(Product.builder()
-            .productId(nextId++)
-            .productCode("SP002")
-            .productName("Adidas Ultraboost 22")
-            .productDescription("Giày chạy bộ chuyên nghiệp")
-            .brandId(2)
-            .categoryId(1)
-            .productCreateAt(LocalDateTime.now())
-            .build());
-            
-        products.add(Product.builder()
-            .productId(nextId++)
-            .productCode("SP003")
-            .productName("Puma RS-X")
-            .productDescription("Giày lifestyle thời trang")
-            .brandId(3)
-            .categoryId(2)
-            .productCreateAt(LocalDateTime.now())
-            .build());
-    }
-    
     @Override
     public Product create(Product product) {
-        product.setProductId(nextId++);
+        String sql = "INSERT INTO Products (product_code, product_name, product_desc, brand_id, category_id, product_create_at) "
+                  + "VALUES (?, ?, ?, ?, ?, ?)";
+        
         product.setProductCreateAt(LocalDateTime.now());
-        products.add(product);
+        
+        XJdbc.executeUpdate(sql, 
+            product.getProductCode(),
+            product.getProductName(),
+            product.getProductDescription(),
+            product.getBrandId(),
+            product.getCategoryId(),
+            product.getProductCreateAt()
+        );
+        
+        // Lấy ID vừa tạo
+        sql = "SELECT IDENT_CURRENT('Products') as id";
+        Integer id = XJdbc.getValue(sql, Integer.class);
+        product.setProductId(id);
+        
         return product;
     }
     
     @Override
     public void update(Product product) {
-        for (int i = 0; i < products.size(); i++) {
-            if (products.get(i).getProductId() == product.getProductId()) {
-                product.setProductUpdatedAt(LocalDateTime.now());
-                products.set(i, product);
-                break;
-            }
-        }
+        String sql = "UPDATE Products SET product_code = ?, product_name = ?, product_desc = ?, "
+                  + "brand_id = ?, category_id = ?, product_updated_at = ? "
+                  + "WHERE product_id = ?";
+        
+        product.setProductUpdatedAt(LocalDateTime.now());
+        
+        XJdbc.executeUpdate(sql, 
+            product.getProductCode(),
+            product.getProductName(),
+            product.getProductDescription(),
+            product.getBrandId(),
+            product.getCategoryId(),
+            product.getProductUpdatedAt(),
+            product.getProductId()
+        );
     }
     
     @Override
     public void deleteById(Integer id) {
-        products.removeIf(product -> product.getProductId() == id);
+        String sql = "DELETE FROM Products WHERE product_id = ?";
+        XJdbc.executeUpdate(sql, id);
     }
     
     @Override
     public List<Product> findAll() {
-        return new ArrayList<>(products);
+        String sql = "SELECT * FROM Products";
+        return XJdbc.query(sql, this::mapResultSetToProduct);
     }
     
     @Override
     public Product findById(Integer id) {
-        return products.stream()
-            .filter(product -> product.getProductId() == id)
-            .findFirst()
-            .orElse(null);
+        String sql = "SELECT * FROM Products WHERE product_id = ?";
+        List<Product> list = XJdbc.query(sql, this::mapResultSetToProduct, id);
+        return list.isEmpty() ? null : list.get(0);
     }
     
     @Override
     public Product findByCode(String productCode) {
-        return products.stream()
-            .filter(product -> product.getProductCode().equals(productCode))
-            .findFirst()
-            .orElse(null);
+        String sql = "SELECT * FROM Products WHERE product_code = ?";
+        List<Product> list = XJdbc.query(sql, this::mapResultSetToProduct, productCode);
+        return list.isEmpty() ? null : list.get(0);
     }
     
     @Override
     public List<Product> findByName(String productName) {
-        return products.stream()
-            .filter(product -> product.getProductName().toLowerCase()
-                .contains(productName.toLowerCase()))
-            .collect(Collectors.toList());
+        String sql = "SELECT * FROM Products WHERE product_name LIKE ?";
+        return XJdbc.query(sql, this::mapResultSetToProduct, "%" + productName + "%");
     }
     
     @Override
     public List<Product> findByBrandId(Integer brandId) {
-        return products.stream()
-            .filter(product -> product.getBrandId() == brandId)
-            .collect(Collectors.toList());
+        String sql = "SELECT * FROM Products WHERE brand_id = ?";
+        return XJdbc.query(sql, this::mapResultSetToProduct, brandId);
     }
     
     @Override
     public List<Product> findByCategoryId(Integer categoryId) {
-        return products.stream()
-            .filter(product -> product.getCategoryId() == categoryId)
-            .collect(Collectors.toList());
+        String sql = "SELECT * FROM Products WHERE category_id = ?";
+        return XJdbc.query(sql, this::mapResultSetToProduct, categoryId);
     }
     
     @Override
     public List<Product> findWithPagination(int offset, int limit) {
-        return products.stream()
-            .skip(offset)
-            .limit(limit)
-            .collect(Collectors.toList());
+        String sql = "SELECT * FROM Products ORDER BY product_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        return XJdbc.query(sql, this::mapResultSetToProduct, offset, limit);
     }
     
     @Override
     public long countAll() {
-        return products.size();
+        String sql = "SELECT COUNT(*) FROM Products";
+        return XJdbc.getValue(sql, Long.class);
+    }
+    
+    /**
+     * Chuyển đổi ResultSet thành đối tượng Product
+     * @param rs ResultSet chứa dữ liệu
+     * @return Đối tượng Product
+     * @throws SQLException 
+     */
+    private Product mapResultSetToProduct(ResultSet rs) throws SQLException {
+        Product product = new Product();
+        product.setProductId(rs.getInt("product_id"));
+        product.setProductCode(rs.getString("product_code"));
+        product.setProductName(rs.getString("product_name"));
+        product.setProductDescription(rs.getString("product_desc"));
+        product.setBrandId(rs.getInt("brand_id"));
+        product.setCategoryId(rs.getInt("category_id"));
+        
+        // Xử lý giá trị NULL cho các trường datetime
+        Object createAt = rs.getObject("product_create_at");
+        if (createAt != null) {
+            product.setProductCreateAt((java.time.LocalDateTime) createAt);
+        }
+        
+        Object updatedAt = rs.getObject("product_updated_at");
+        if (updatedAt != null) {
+            product.setProductUpdatedAt((java.time.LocalDateTime) updatedAt);
+        }
+        
+        return product;
     }
 }

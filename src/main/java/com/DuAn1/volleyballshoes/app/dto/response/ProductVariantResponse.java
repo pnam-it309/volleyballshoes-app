@@ -1,6 +1,6 @@
 package com.DuAn1.volleyballshoes.app.dto.response;
 
-import com.DuAn1.volleyballshoes.app.dto.response.ProductResponse.SimpleProductResponse;
+import com.DuAn1.volleyballshoes.app.dto.response.SimpleProductResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,34 +31,7 @@ public class ProductVariantResponse {
     private ColorResponse color;
     private SizeResponse size;
     private SoleTypeResponse soleType;
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ColorResponse {
-        private Long id;
-        private String name;
-        private String code;
-    }
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class SizeResponse {
-        private Long id;
-        private String name;
-        private String description;
-    }
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class SoleTypeResponse {
-        private Long id;
-        private String name;
-        private String description;
-    }
+
+
+
 }

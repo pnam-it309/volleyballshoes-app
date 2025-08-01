@@ -2,115 +2,196 @@ package com.DuAn1.volleyballshoes.app.dao.impl;
 
 import com.DuAn1.volleyballshoes.app.dao.OrderDAO;
 import com.DuAn1.volleyballshoes.app.entity.Order;
-import org.springframework.stereotype.Repository;
+import com.DuAn1.volleyballshoes.app.utils.XJdbc;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
-@Repository
 public class OrderDAOImpl implements OrderDAO {
-    private final List<Order> orders = new ArrayList<>();
-    private final AtomicInteger idGenerator = new AtomicInteger(1);
+    
+    private static final String TABLE_NAME = "[Order]";
+    
+    /**
+     * Chuyển đổi ResultSet thành đối tượng Order
+     */
+    private Order mapResultSetToOrder(ResultSet rs) throws SQLException {
+        Order order = new Order();
+        order.setOrderId(rs.getInt("order_id"));
+        order.setCustomerId(rs.getInt("customer_id"));
+        order.setStaffId(rs.getInt("staff_id"));
+        order.setOrderFinalAmount(rs.getBigDecimal("order_final_amount"));
+        order.setOrderPaymentMethod(rs.getString("order_payment_method"));
+        order.setOrderStatus(rs.getString("order_status"));
+        order.setOrderCode(rs.getString("order_code"));
+        
+        // Xử lý ngày giờ
+        Object createdAt = rs.getObject("order_created_at");
+        if (createdAt != null) {
+            if (createdAt instanceof java.sql.Timestamp) {
+                order.setOrderCreatedAt(((java.sql.Timestamp) createdAt).toLocalDateTime());
+            } else if (createdAt instanceof LocalDateTime) {
+                order.setOrderCreatedAt((LocalDateTime) createdAt);
+            }
+        }
+        
+        return order;
+    }
 
     @Override
     public List<Order> findAll() {
-        return new ArrayList<>(orders);
+        String sql = "SELECT * FROM " + TABLE_NAME + " ORDER BY order_created_at DESC";
+        return XJdbc.query(sql, this::mapResultSetToOrder);
     }
 
     @Override
     public List<Order> findAll(int page, int pageSize) {
-        int start = page * pageSize;
-        int end = Math.min(start + pageSize, orders.size());
+        int offset = (page - 1) * pageSize;
+        String sql = String.format(
+            "SELECT * FROM %s ORDER BY order_created_at DESC OFFSET %d ROWS FETCH NEXT %d ROWS ONLY",
+            TABLE_NAME, offset, pageSize
+        );
         
-        if (start > end) {
-            return new ArrayList<>();
-        }
-        
-        return new ArrayList<>(orders.subList(start, end));
+        return XJdbc.query(sql, this::mapResultSetToOrder);
     }
 
     @Override
     public Optional<Order> findById(Integer id) {
-        return orders.stream()
-            .filter(o -> o.getOrderId().equals(id))
-            .findFirst();
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_id = ?";
+        List<Order> list = XJdbc.query(sql, this::mapResultSetToOrder, id);
+        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
     }
 
     @Override
     public Optional<Order> findByCode(String code) {
-        return orders.stream()
-            .filter(o -> o.getOrderCode().equalsIgnoreCase(code))
-            .findFirst();
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_code = ?";
+        List<Order> list = XJdbc.query(sql, this::mapResultSetToOrder, code);
+        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
     }
 
     @Override
     public Order save(Order order) {
-        if (order.getOrderId() == null) {
-            // Create new order
-            order.setOrderId(idGenerator.getAndIncrement());
-            order.setOrderCode("ORD" + String.format("%06d", order.getOrderId()));
-            order.setOrderCreatedAt(LocalDateTime.now());
-            orders.add(order);
+        if (order.getOrderId() <= 0) {
+            // Thêm mới đơn hàng
+            String sql = "INSERT INTO " + TABLE_NAME + " (customer_id, staff_id, order_final_amount, " +
+                        "order_payment_method, order_status, order_code, order_created_at) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            
+            // Tạo mã đơn hàng nếu chưa có
+            if (order.getOrderCode() == null || order.getOrderCode().isEmpty()) {
+                order.setOrderCode("ORD" + System.currentTimeMillis());
+            }
+            
+            // Đặt thời gian tạo nếu chưa có
+            if (order.getOrderCreatedAt() == null) {
+                order.setOrderCreatedAt(LocalDateTime.now());
+            }
+            
+            XJdbc.executeUpdate(sql,
+                order.getCustomerId(),
+                order.getStaffId(),
+                order.getOrderFinalAmount(),
+                order.getOrderPaymentMethod(),
+                order.getOrderStatus(),
+                order.getOrderCode(),
+                order.getOrderCreatedAt()
+            );
+            
+            // Lấy ID vừa tạo
+            String idSql = "SELECT IDENT_CURRENT('" + TABLE_NAME + "')";
+            List<Integer> ids = XJdbc.query(idSql, rs -> {
+                return rs.next() ? rs.getInt(1) : null;
+            });
+            if (!ids.isEmpty() && ids.get(0) != null) {
+                order.setOrderId(ids.get(0));
+            }
+            
             return order;
         } else {
-            // Update existing order
-            return orders.stream()
-                .filter(o -> o.getOrderId().equals(order.getOrderId()))
-                .findFirst()
-                .map(o -> {
-                    o.setCustomerId(order.getCustomerId());
-                    o.setStaffId(order.getStaffId());
-                    o.setOrderFinalAmount(order.getOrderFinalAmount());
-                    o.setOrderPaymentMethod(order.getOrderPaymentMethod());
-                    o.setOrderStatus(order.getOrderStatus());
-                    return o;
-                })
-                .orElseThrow(() -> new RuntimeException("Order not found with id: " + order.getOrderId()));
+            // Cập nhật đơn hàng hiện có
+            String sql = "UPDATE " + TABLE_NAME + " SET customer_id = ?, staff_id = ?, " +
+                        "order_final_amount = ?, order_payment_method = ?, order_status = ? " +
+                        "WHERE order_id = ?";
+                        
+            XJdbc.executeUpdate(sql,
+                order.getCustomerId(),
+                order.getStaffId(),
+                order.getOrderFinalAmount(),
+                order.getOrderPaymentMethod(),
+                order.getOrderStatus(),
+                order.getOrderId()
+            );
+            
+            return order;
         }
     }
 
     @Override
     public void deleteById(Integer id) {
-        orders.removeIf(o -> o.getOrderId().equals(id));
+        // Xóa chi tiết đơn hàng trước
+        String deleteDetailsSql = "DELETE FROM OrderDetails WHERE order_id = ?";
+        XJdbc.executeUpdate(deleteDetailsSql, id);
+        
+        // Sau đó xóa đơn hàng
+        String sql = "DELETE FROM " + TABLE_NAME + " WHERE order_id = ?";
+        XJdbc.executeUpdate(sql, id);
     }
 
     @Override
     public long count() {
-        return orders.size();
+        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME;
+        List<Long> counts = XJdbc.query(sql, rs -> rs.getLong(1));
+        return counts.isEmpty() ? 0 : counts.get(0);
     }
 
     @Override
     public List<Order> findByCustomerId(Integer customerId) {
-        return orders.stream()
-            .filter(o -> o.getCustomerId().equals(customerId))
-            .collect(Collectors.toList());
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE customer_id = ? ORDER BY order_created_at DESC";
+        return XJdbc.query(sql, this::mapResultSetToOrder, customerId);
     }
 
     @Override
     public List<Order> findByStaffId(Integer staffId) {
-        return orders.stream()
-            .filter(o -> o.getStaffId().equals(staffId))
-            .collect(Collectors.toList());
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE staff_id = ? ORDER BY order_created_at DESC";
+        return XJdbc.query(sql, this::mapResultSetToOrder, staffId);
     }
 
     @Override
     public List<Order> search(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return new ArrayList<>(orders);
+            return new ArrayList<>();
         }
         
-        String searchTerm = keyword.toLowerCase().trim();
-        return orders.stream()
-            .filter(o -> 
-                (o.getOrderCode() != null && o.getOrderCode().toLowerCase().contains(searchTerm)) ||
-                (o.getOrderStatus() != null && o.getOrderStatus().toLowerCase().contains(searchTerm)) ||
-                (o.getOrderPaymentMethod() != null && o.getOrderPaymentMethod().toLowerCase().contains(searchTerm))
-            )
-            .collect(Collectors.toList());
+        String searchPattern = "%" + keyword.trim() + "%";
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_code LIKE ? OR CAST(order_id AS VARCHAR(20)) LIKE ?";
+        
+        return XJdbc.query(sql, this::mapResultSetToOrder, searchPattern, searchPattern);
+    }
+    @Override
+    public Order update(Order order) {
+        if (order.getOrderId() <= 0) {
+            throw new IllegalArgumentException("Order ID must be greater than 0 for update");
+        }
+        
+        String sql = "UPDATE " + TABLE_NAME + " SET customer_id = ?, staff_id = ?, " +
+                    "order_final_amount = ?, order_payment_method = ?, order_status = ?, " +
+                    "order_code = ?, order_created_at = ? " +
+                    "WHERE order_id = ?";
+                    
+        XJdbc.executeUpdate(sql,
+            order.getCustomerId(),
+            order.getStaffId(),
+            order.getOrderFinalAmount(),
+            order.getOrderPaymentMethod(),
+            order.getOrderStatus(),
+            order.getOrderCode(),
+            order.getOrderCreatedAt(),
+            order.getOrderId()
+        );
+        
+        return order;
     }
 }

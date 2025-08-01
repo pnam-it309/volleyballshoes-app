@@ -23,12 +23,12 @@ public class ProductController {
     
     public ProductResponse createProduct(ProductCreateRequest request) {
         if (!request.isValid()) {
-            throw new IllegalArgumentException("Invalid product data");
+            throw new IllegalArgumentException("Dữ liệu sản phẩm không hợp lệ");
         }
         
-        // Check if product code already exists
+        // Kiểm tra mã sản phẩm đã tồn tại chưa
         if (productDAO.findByCode(request.getProductCode()) != null) {
-            throw new IllegalArgumentException("Product code already exists");
+            throw new IllegalArgumentException("Mã sản phẩm đã tồn tại");
         }
         
         Product product = Product.builder()
@@ -45,18 +45,18 @@ public class ProductController {
     
     public ProductResponse updateProduct(ProductUpdateRequest request) {
         if (!request.isValid()) {
-            throw new IllegalArgumentException("Invalid product data");
+            throw new IllegalArgumentException("Dữ liệu sản phẩm không hợp lệ");
         }
         
         Product existingProduct = productDAO.findById(request.getProductId());
         if (existingProduct == null) {
-            throw new IllegalArgumentException("Product not found");
+            throw new IllegalArgumentException("Không tìm thấy sản phẩm");
         }
         
-        // Check if new product code conflicts with existing products
+        // Kiểm tra mã sản phẩm mới có trùng với sản phẩm khác không
         Product productWithSameCode = productDAO.findByCode(request.getProductCode());
         if (productWithSameCode != null && productWithSameCode.getProductId() != request.getProductId()) {
-            throw new IllegalArgumentException("Product code already exists");
+            throw new IllegalArgumentException("Mã sản phẩm đã tồn tại");
         }
         
         Product product = Product.builder()
@@ -75,12 +75,12 @@ public class ProductController {
     
     public void deleteProduct(Integer productId) {
         if (productId == null || productId <= 0) {
-            throw new IllegalArgumentException("Invalid product ID");
+            throw new IllegalArgumentException("ID sản phẩm không hợp lệ");
         }
         
         Product existingProduct = productDAO.findById(productId);
         if (existingProduct == null) {
-            throw new IllegalArgumentException("Product not found");
+            throw new IllegalArgumentException("Không tìm thấy sản phẩm");
         }
         
         productDAO.deleteById(productId);
@@ -94,12 +94,12 @@ public class ProductController {
     
     public ProductResponse getProductById(Integer productId) {
         if (productId == null || productId <= 0) {
-            throw new IllegalArgumentException("Invalid product ID");
+            throw new IllegalArgumentException("ID sản phẩm không hợp lệ");
         }
         
         Product product = productDAO.findById(productId);
         if (product == null) {
-            throw new IllegalArgumentException("Product not found");
+            throw new IllegalArgumentException("Không tìm thấy sản phẩm");
         }
         
         return ProductResponse.fromEntity(product);
@@ -107,12 +107,12 @@ public class ProductController {
     
     public ProductResponse getProductByCode(String productCode) {
         if (productCode == null || productCode.trim().isEmpty()) {
-            throw new IllegalArgumentException("Invalid product code");
+            throw new IllegalArgumentException("Mã sản phẩm không hợp lệ");
         }
         
         Product product = productDAO.findByCode(productCode);
         if (product == null) {
-            throw new IllegalArgumentException("Product not found");
+            throw new IllegalArgumentException("Không tìm thấy sản phẩm");
         }
         
         return ProductResponse.fromEntity(product);
@@ -130,7 +130,7 @@ public class ProductController {
     
     public List<ProductResponse> getProductsWithPagination(int page, int size) {
         if (page < 0 || size <= 0) {
-            throw new IllegalArgumentException("Invalid pagination parameters");
+            throw new IllegalArgumentException("Tham số phân trang không hợp lệ");
         }
         
         int offset = page * size;
@@ -145,7 +145,7 @@ public class ProductController {
     
     public int getTotalPages(int pageSize) {
         if (pageSize <= 0) {
-            throw new IllegalArgumentException("Invalid page size");
+            throw new IllegalArgumentException("Kích thước trang không hợp lệ");
         }
         
         long totalCount = getTotalProductCount();

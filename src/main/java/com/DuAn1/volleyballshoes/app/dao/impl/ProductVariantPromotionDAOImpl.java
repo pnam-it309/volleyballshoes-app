@@ -3,85 +3,82 @@ package com.DuAn1.volleyballshoes.app.dao.impl;
 import com.DuAn1.volleyballshoes.app.dao.ProductVariantPromotionDAO;
 import com.DuAn1.volleyballshoes.app.entity.ProductVariant;
 import com.DuAn1.volleyballshoes.app.entity.ProductVariantPromotion;
-import com.DuAn1.volleyballshoes.app.entity.Promotion;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-
+import com.DuAn1.volleyballshoes.app.utils.XJdbc;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
-@Repository
-@Transactional
 public class ProductVariantPromotionDAOImpl implements ProductVariantPromotionDAO {
-
-    @PersistenceContext
-    private EntityManager entityManager;
+    
+    private ProductVariantPromotion mapResultSetToProductVariantPromotion(ResultSet rs) throws SQLException {
+        ProductVariantPromotion pvp = new ProductVariantPromotion();
+        pvp.setProductVariantId(rs.getInt("productVariantId"));
+        pvp.setPromotionId(rs.getInt("promotionId"));
+        pvp.setActive(rs.getBoolean("isActive"));
+        pvp.setDiscountedPrice(rs.getBigDecimal("discountedPrice"));
+        return pvp;
+    }
+    
+    private ProductVariant mapResultSetToProductVariant(ResultSet rs) throws SQLException {
+        ProductVariant pv = new ProductVariant();
+        pv.setVariantId(rs.getInt("variantId"));
+        pv.setProductId(rs.getInt("productId"));
+        pv.setVariantSku(rs.getString("variantSku"));
+        pv.setVariantOrigPrice(rs.getBigDecimal("variantOrigPrice"));
+        pv.setVariantImgUrl(rs.getString("variantImgUrl"));
+        pv.setSizeId(rs.getInt("sizeId"));
+        pv.setColorId(rs.getInt("colorId"));
+        pv.setSoleId(rs.getInt("soleId"));
+        return pv;
+    }
 
     @Override
     public List<ProductVariantPromotion> findByProductVariantId(Long productVariantId) {
-        return entityManager.createQuery(
-            "SELECT pvp FROM ProductVariantPromotion pvp WHERE pvp.productVariant.id = :productVariantId",
-            ProductVariantPromotion.class)
-            .setParameter("productVariantId", productVariantId)
-            .getResultList();
+        String sql = "SELECT * FROM ProductVariantPromotion WHERE productVariantId = ?";
+        return XJdbc.query(sql, this::mapResultSetToProductVariantPromotion, productVariantId);
     }
 
     @Override
     public List<ProductVariantPromotion> findByPromotionId(Long promotionId) {
-        return entityManager.createQuery(
-            "SELECT pvp FROM ProductVariantPromotion pvp WHERE pvp.promotion.id = :promotionId",
-            ProductVariantPromotion.class)
-            .setParameter("promotionId", promotionId)
-            .getResultList();
+        String sql = "SELECT * FROM ProductVariantPromotion WHERE promotionId = ?";
+        return XJdbc.query(sql, this::mapResultSetToProductVariantPromotion, promotionId);
     }
 
     @Override
-    public List<ProductVariantPromotion> findActivePromotionsForProductVariant(Long productVariantId) {
-        return entityManager.createQuery(
-            "SELECT pvp FROM ProductVariantPromotion pvp " +
-            "JOIN pvp.promotion p " +
-            "WHERE pvp.productVariant.id = :productVariantId AND " +
-            "p.active = true AND " +
-            "p.startDate <= CURRENT_TIMESTAMP AND " +
-            "p.endDate >= CURRENT_TIMESTAMP",
-            ProductVariantPromotion.class)
-            .setParameter("productVariantId", productVariantId)
-            .getResultList();
+    public List<ProductVariantPromotion> findActivePromotionsForProductVariant() {
+        String sql = "SELECT pvp.* FROM ProductVariantPromotion pvp "
+                   + "JOIN Promotion p ON pvp.promotionId = p.promotionId "
+                   + "WHERE p.promoStartDate <= GETDATE() AND p.promoEndDate >= GETDATE() AND pvp.isActive = 1";
+        return XJdbc.query(sql, this::mapResultSetToProductVariantPromotion);
     }
 
     @Override
-    public void deleteByPromotionId(Long promotionId) {
-        entityManager.createQuery("DELETE FROM ProductVariantPromotion pvp WHERE pvp.promotion.id = :promotionId")
-                   .setParameter("promotionId", promotionId)
-                   .executeUpdate();
+    public void deleteByPromotionId(int promotionId) {
+        String sql = "DELETE FROM ProductVariantPromotion WHERE promotionId = ?";
+        XJdbc.executeUpdate(sql, promotionId);
     }
 
     @Override
-    public void deleteByPromotion(Promotion promotion) {
-        entityManager.createQuery("DELETE FROM ProductVariantPromotion pvp WHERE pvp.promotion = :promotion")
-                   .setParameter("promotion", promotion)
-                   .executeUpdate();
+    public void deleteByPromotion(ProductVariantPromotion promotion) {
+        if (promotion != null) {
+            deleteByPromotionId(promotion.getPromotionId());
+        }
     }
 
     @Override
-    public List<ProductVariant> findProductVariantsByPromotionId(Long promotionId) {
-        return entityManager.createQuery(
-            "SELECT pvp.productVariant FROM ProductVariantPromotion pvp WHERE pvp.promotion.id = :promotionId",
-            ProductVariant.class)
-            .setParameter("promotionId", promotionId)
-            .getResultList();
+    public List<ProductVariant> findProductVariantsByPromotionId() {
+        String sql = "SELECT pv.* FROM ProductVariant pv "
+                   + "JOIN ProductVariantPromotion pvp ON pv.variantId = pvp.productVariantId "
+                   + "WHERE pvp.promotionId = ?";
+        return XJdbc.query(sql, this::mapResultSetToProductVariant);
     }
 
     @Override
     public boolean existsByProductVariantIdAndPromotionId(Long productVariantId, Long promotionId) {
-        Long count = entityManager.createQuery(
-            "SELECT COUNT(pvp) FROM ProductVariantPromotion pvp " +
-            "WHERE pvp.productVariant.id = :productVariantId AND pvp.promotion.id = :promotionId",
-            Long.class)
-            .setParameter("productVariantId", productVariantId)
-            .setParameter("promotionId", promotionId)
-            .getSingleResult();
+        String sql = "SELECT COUNT(*) FROM ProductVariantPromotion "
+                   + "WHERE productVariantId = ? AND promotionId = ?";
+        Integer count = XJdbc.getValue(sql, productVariantId, promotionId);
         return count != null && count > 0;
     }
 }

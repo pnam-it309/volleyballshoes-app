@@ -15,18 +15,14 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderCreateRequest {
-    @NotNull(message = "Mã khách hàng không được để trống")
-    @Positive(message = "Mã khách hàng không hợp lệ")
+
     private Integer customerId;
     
-    @NotNull(message = "Mã nhân viên không được để trống")
-    @Positive(message = "Mã nhân viên không hợp lệ")
+
     private Integer staffId;
     
-    @Valid
     private List<OrderItemRequest> items;
     
-    @NotNull(message = "Phương thức thanh toán không được để trống")
     private String paymentMethod;
     
     private String note;

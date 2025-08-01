@@ -43,7 +43,7 @@ public class ViewBanHang extends javax.swing.JPanel {
         
         customerList.add(Customer.builder()
             .customerId(1)
-            .customerFullName("Nguyễn Văn A")
+            .customerUsername("Nguyễn Văn A")
             .customerCode("KH001")
             .customerPhone("0123456789")
             .build());
@@ -77,7 +77,7 @@ public class ViewBanHang extends javax.swing.JPanel {
         for (Order order : orderList) {
             Object[] row = {
                 "HD" + String.format("%03d", order.getOrderId()),
-                order.getOrderCreateAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                order.getOrderCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                 "Khách hàng", // Replace with actual customer name
                 "0 VNĐ", // Replace with actual total
                 "Đang xử lý"
@@ -116,8 +116,8 @@ public class ViewBanHang extends javax.swing.JPanel {
     private void addToCart(Product product, int quantity) {
         // Check if product already exists in cart
         for (OrderDetail item : cartItems) {
-            if (item.getProductId() == product.getProductId()) {
-                item.setQuantity(item.getQuantity() + quantity);
+            if (item.getVariantId()== product.getProductId()) {
+                item.setDetailQuantity(item.getDetailQuantity()+ quantity);
                 updateCartDisplay();
                 return;
             }
@@ -125,9 +125,9 @@ public class ViewBanHang extends javax.swing.JPanel {
         
         // Add new item to cart
         OrderDetail newItem = OrderDetail.builder()
-            .productId(product.getProductId())
-            .quantity(quantity)
-            .unitPrice(BigDecimal.valueOf(100000)) // Sample price
+            .variantId(product.getProductId())
+            .detailQuantity(quantity)
+            .detailUnitPrice(BigDecimal.valueOf(100000)) // Sample price
             .build();
         
         cartItems.add(newItem);
@@ -146,14 +146,14 @@ public class ViewBanHang extends javax.swing.JPanel {
         totalAmount = BigDecimal.ZERO;
         
         for (OrderDetail item : cartItems) {
-            Product product = findProductById(item.getProductId());
-            BigDecimal itemTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            Product product = findProductById(item.getVariantId());
+            BigDecimal itemTotal = item.getDetailUnitPrice().multiply(BigDecimal.valueOf(item.getDetailQuantity()));
             totalAmount = totalAmount.add(itemTotal);
             
             Object[] row = {
                 product != null ? product.getProductName() : "Unknown",
-                item.getQuantity(),
-                formatCurrency(item.getUnitPrice()),
+                item.getDetailQuantity(),
+                formatCurrency(item.getDetailUnitPrice()),
                 formatCurrency(itemTotal)
             };
             cartTableModel.addRow(row);
@@ -248,13 +248,13 @@ public class ViewBanHang extends javax.swing.JPanel {
 
         tblHoaDon.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "STT", "Mã HD", "Ngày Tạo", "Nhân Vien", "Tổng Sản Phảm", "Trạng Thái"
+                "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
         tblHoaDon.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -420,13 +420,13 @@ public class ViewBanHang extends javax.swing.JPanel {
 
         tblSanPham.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "STT", "Mã SPCT", "Tên SP", "NXB", "Tác Giả", "Thể Loại", "Số Lượng", "Giá"
+                "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
         tblSanPham.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -458,13 +458,13 @@ public class ViewBanHang extends javax.swing.JPanel {
 
         tblGioHang.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "STT", "Mã SPCT", "Tên SP", "Loại Bìa", "Loại Giấy", "Kích Thước", "Giá Bán", "Số Lượng", "Thành Tiền"
+                "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
         tblGioHang.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -653,7 +653,7 @@ public class ViewBanHang extends javax.swing.JPanel {
                                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(lbTong, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addGroup(jPanel6Layout.createSequentialGroup()
-                                        .addComponent(btnThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(btnThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addGap(0, 0, Short.MAX_VALUE))))
                             .addGroup(jPanel6Layout.createSequentialGroup()
                                 .addComponent(jLabel17)
@@ -726,10 +726,10 @@ public class ViewBanHang extends javax.swing.JPanel {
                         .addGap(18, 18, 18)
                         .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel18)
-                            .addComponent(lbTong))
-                        .addGap(27, 27, 27)
-                        .addComponent(btnThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(lbTong)))
                     .addComponent(lbTienThua, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(27, 27, 27)
+                .addComponent(btnThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(14, Short.MAX_VALUE))
         );
 
@@ -782,7 +782,7 @@ public class ViewBanHang extends javax.swing.JPanel {
         try {
             currentOrder = Order.builder()
                 .orderId(orderList.size() + 1)
-                .orderCreateAt(LocalDateTime.now())
+                .orderCreatedAt(LocalDateTime.now())
                 .build();
             
             orderList.add(currentOrder);
@@ -936,7 +936,7 @@ public class ViewBanHang extends javax.swing.JPanel {
             Customer newCustomer = Customer.builder()
                 .customerId(customerList.size() + 1)
                 .customerCode(customerCode)
-                .customerFullName(customerName)
+                .customerUsername(customerName)
                 .build();
             
             customerList.add(newCustomer);
@@ -959,8 +959,8 @@ public class ViewBanHang extends javax.swing.JPanel {
                 .orElse(null);
             
             if (customer != null) {
-                txtTenKhach.setText(customer.getCustomerFullName());
-                lbTenKhachHang.setText(customer.getCustomerFullName());
+                txtTenKhach.setText(customer.getCustomerUsername());
+                lbTenKhachHang.setText(customer.getCustomerUsername());
             } else {
                 txtTenKhach.setText("");
                 lbTenKhachHang.setText("Khách lẻ");
