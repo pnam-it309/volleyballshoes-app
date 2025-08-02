@@ -7,9 +7,13 @@ import com.DuAn1.volleyballshoes.app.entity.Order;
 import com.DuAn1.volleyballshoes.app.entity.OrderDetail;
 import com.DuAn1.volleyballshoes.app.utils.ExcelUtil;
 import com.DuAn1.volleyballshoes.app.utils.PDFUtil;
+
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
@@ -468,7 +472,42 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }//GEN-LAST:event_btnSearchGiaActionPerformed
 
     private void CBhinhthucTTActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CBhinhthucTTActionPerformed
-
+  try {
+        // Get the selected payment method
+        String selectedPaymentMethod = CBhinhthucTT.getSelectedItem().toString();
+        
+        // If "Tất cả" is selected, load all orders
+        if ("Tất cả".equals(selectedPaymentMethod)) {
+            loadAllOrders();
+            return;
+        }
+        
+        // Get all orders
+        List<Order> allOrders = orderService.getAllOrders();
+        
+        // Filter orders by selected payment method
+        List<Order> filteredOrders = allOrders.stream()
+            .filter(order -> selectedPaymentMethod.equals(order.getPaymentMethod()))
+            .collect(Collectors.toList());
+        
+        // If no orders found with the selected payment method
+        if (filteredOrders.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Không tìm thấy hóa đơn nào với hình thức thanh toán: " + selectedPaymentMethod,
+                "Thông báo",
+                JOptionPane.INFORMATION_MESSAGE);
+        }
+        
+        // Load the filtered orders into the table
+        loadDataTable(filteredOrders);
+        
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this,
+            "Lỗi khi lọc hóa đơn theo hình thức thanh toán: " + e.getMessage(),
+            "Lỗi",
+            JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
         // TODO add your handling code here:
     }//GEN-LAST:event_CBhinhthucTTActionPerformed
 
@@ -510,15 +549,117 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }//GEN-LAST:event_btnXuatExcelActionPerformed
 
     private void btnLocActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLocActionPerformed
-
-        // TODO add your handling code here:
+        try {
+            // Get the selected dates
+            Date fromDate = txtTuNgay.getDate();
+            Date toDate = txtDenNgay.getDate();
+            
+            // Validate date range
+            if (fromDate == null || toDate == null) {
+                JOptionPane.showMessageDialog(this,
+                    "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc",
+                    "Cảnh báo",
+                    JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            // Make sure fromDate is before or equal to toDate
+            if (fromDate.after(toDate)) {
+                JOptionPane.showMessageDialog(this,
+                    "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Add 1 day to toDate to include the entire end day
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(toDate);
+            cal.add(Calendar.DATE, 1);
+            Date endOfDay = cal.getTime();
+            
+            // Get all orders
+            List<Order> allOrders = orderService.getAllOrders();
+            
+            // Filter orders by date range
+            List<Order> filteredOrders = allOrders.stream()
+                .filter(order -> {
+                    Date orderDate = order.getOrderDate();
+                    return orderDate != null && 
+                           !orderDate.before(fromDate) && 
+                           orderDate.before(endOfDay);
+                })
+                .collect(Collectors.toList());
+            
+            // If no orders found in the date range
+            if (filteredOrders.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                    "Không tìm thấy hóa đơn nào trong khoảng thời gian đã chọn",
+                    "Thông báo",
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+            
+            // Load the filtered orders into the table
+            loadDataTable(filteredOrders);
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                "Lỗi khi lọc hóa đơn theo ngày: " + e.getMessage(),
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }//GEN-LAST:event_btnLocActionPerformed
 
     private void txtQRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtQRActionPerformed
-
-        // TODO add your handling code here:
+ try {
+        String qrCode = txtQR.getText().trim();
+        
+        if (qrCode.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Vui lòng nhập mã QR hoặc mã hóa đơn",
+                "Cảnh báo",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Try to find order by QR code or order ID
+        Order foundOrder = orderService.getOrderByQRCodeOrId(qrCode);
+        
+        if (foundOrder == null) {
+            JOptionPane.showMessageDialog(this,
+                "Không tìm thấy hóa đơn với mã: " + qrCode,
+                "Không tìm thấy",
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        // If found, load the single order into the table
+        List<Order> orders = new ArrayList<>();
+        orders.add(foundOrder);
+        loadDataTable(orders);
+        
+        // Select the row in the table
+        selectOrderInTable(foundOrder.getOrderId());
+        
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this,
+            "Lỗi khi tìm kiếm hóa đơn: " + e.getMessage(),
+            "Lỗi",
+            JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
     }//GEN-LAST:event_txtQRActionPerformed
-
+    private void selectOrderInTable(String orderId) {
+        DefaultTableModel model = (DefaultTableModel) tbl.getModel();
+        for (int i = 0; i < model.getRowCount(); i++) {
+            String currentId = model.getValueAt(i, 0).toString(); // Assuming order ID is in first column
+            if (currentId.equals(orderId)) {
+                tbl.setRowSelectionInterval(i, i);
+                tbl.scrollRectToVisible(tbl.getCellRect(i, 0, true));
+                break;
+            }
+        }
     private void CBtrangThaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CBtrangThaiActionPerformed
         try {
             String trangThai = (String) CBtrangThai.getSelectedItem();

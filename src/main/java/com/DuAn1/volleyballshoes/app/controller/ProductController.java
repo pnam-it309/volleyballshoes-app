@@ -6,6 +6,8 @@ import com.DuAn1.volleyballshoes.app.dto.request.ProductCreateRequest;
 import com.DuAn1.volleyballshoes.app.dto.request.ProductUpdateRequest;
 import com.DuAn1.volleyballshoes.app.dto.response.ProductResponse;
 import com.DuAn1.volleyballshoes.app.entity.Product;
+import com.DuAn1.volleyballshoes.app.entity.ProductVariant;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -150,5 +152,36 @@ public class ProductController {
         
         long totalCount = getTotalProductCount();
         return (int) Math.ceil((double) totalCount / pageSize);
+    }
+    
+    /**
+     * Tìm kiếm sản phẩm theo tên hoặc mã sản phẩm
+     * @param searchText Từ khóa tìm kiếm
+     * @return Danh sách sản phẩm phù hợp
+     */
+    public List<Product> searchProducts(String searchText) {
+        if (searchText == null || searchText.trim().isEmpty()) {
+            return productDAO.findAll();
+        }
+        
+        // Tìm kiếm theo mã sản phẩm trước
+        Product productByCode = productDAO.findByCode(searchText);
+        if (productByCode != null) {
+            return List.of(productByCode);
+        }
+        
+        // Nếu không tìm thấy theo mã, tìm theo tên
+        return productDAO.findByName("%" + searchText + "%");
+    }
+    
+    /**
+     * Lấy danh sách biến thể của sản phẩm
+     * @param productId ID sản phẩm
+     * @return Danh sách biến thể
+     */
+    public List<ProductVariant> getProductVariants(int productId) {
+        // TODO: Implement this method to return product variants
+        // You'll need to inject ProductVariantDAO and implement the logic
+        return Collections.emptyList();
     }
 }
