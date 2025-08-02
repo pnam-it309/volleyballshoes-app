@@ -1,13 +1,75 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham;
 
+import com.DuAn1.volleyballshoes.app.dao.*;
+import com.DuAn1.volleyballshoes.app.dao.impl.*;
+import com.DuAn1.volleyballshoes.app.entity.*;
+import java.util.List;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JOptionPane;
 
 public class ViewThemSanPhamm extends javax.swing.JPanel {
-
-  
-
+    
+ 
+    private final BrandDAO brandDAO;
+    private final CategoryDAO categoryDAO;
+    private final SoleTypeDAO soleTypeDAO;
+    private final SizeDAO sizeDAO;
+    private final ColorDAO colorDAO;
+    
     public ViewThemSanPhamm() {
+        // Initialize DAOs
+        this.brandDAO = new BrandDAOImpl();
+        this.categoryDAO = new CategoryDAOImpl();
+        this.soleTypeDAO = new SoleTypeDAOImpl();
+        this.sizeDAO = new SizeDAOImpl();
+        this.colorDAO = new ColorDAOImpl();
+        
         initComponents();
-
+        loadAllData();
+    }
+    
+    private void loadAllData() {
+        loadDataToComboBox(brandDAO.findAll(), jComboBox1, "brandName"); // Brand
+        loadDataToComboBox(categoryDAO.findAll(), jComboBox2, "categoryName"); // Category
+        loadDataToComboBox(soleTypeDAO.findAll(), jComboBox3, "soleName"); // Sole Type
+        loadDataToComboBox(sizeDAO.findAll(), jComboBox4, "sizeValue"); // Size
+        loadDataToComboBox(colorDAO.findAll(), jComboBox5, "colorName"); // Color
+    }
+    
+    private <T> void loadDataToComboBox(List<T> items, javax.swing.JComboBox<String> comboBox, String propertyName) {
+        try {
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+            
+            for (T item : items) {
+                try {
+                    // Use reflection to get the property value
+                    String methodName = "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+                    String value = (String) item.getClass().getMethod(methodName).invoke(item);
+                    model.addElement(value);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            comboBox.setModel(model);
+            
+            if (model.getSize() > 0) {
+                comboBox.setSelectedIndex(0);
+            }
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Lỗi khi tải dữ liệu: " + ex.getMessage(), 
+                "Lỗi", 
+                JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+    
+    // Method kept for backward compatibility
+    private void loadBrandsToComboBox() {
+        loadDataToComboBox(brandDAO.findAll(), jComboBox1, "brandName");
+    }
     }
 
     
