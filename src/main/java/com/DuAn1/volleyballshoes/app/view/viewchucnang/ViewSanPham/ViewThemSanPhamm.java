@@ -338,43 +338,147 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnThoatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThoatActionPerformed
-     
+    // Đóng cửa sổ hiện tại
+    java.awt.Window window = javax.swing.SwingUtilities.getWindowAncestor(this);
+    if (window != null) {
+        window.dispose();
+    }
     }//GEN-LAST:event_btnThoatActionPerformed
 
     private void btnThem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThem1ActionPerformed
-      
+    // Lấy dữ liệu từ các trường nhập liệu
+    String ma = jTextField2.getText().trim();
+    String ten = (String) jComboBox1.getSelectedItem();
+    String thuongHieu = (String) jComboBox2.getSelectedItem();
+    String mauSac = (String) jComboBox3.getSelectedItem();
+    String kichThuoc = (String) jComboBox4.getSelectedItem();
+    String gia = ""; // Chưa có trường nhập giá, cần bổ sung JTextField cho giá nếu muốn nhập giá!
+
+    // Kiểm tra dữ liệu đầu vào
+    if (ma.isEmpty() || ten.isEmpty() || thuongHieu.isEmpty() || mauSac.isEmpty() || kichThuoc.isEmpty() || gia.isEmpty()) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin sản phẩm!", "Cảnh báo", javax.swing.JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+    
+    try {
+        double giaSanPham = Double.parseDouble(gia);
+        // TODO: Thực hiện thêm mới sản phẩm vào database hoặc danh sách
+        // Ví dụ: gọi ProductController.addProduct(...)
+        javax.swing.JOptionPane.showMessageDialog(this, "Thêm sản phẩm thành công!", "Thành công", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        // TODO: Làm mới form hoặc đóng cửa sổ nếu cần
+    } catch (NumberFormatException ex) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Giá sản phẩm không hợp lệ!", "Lỗi nhập liệu", javax.swing.JOptionPane.ERROR_MESSAGE);
+    }
     }//GEN-LAST:event_btnThem1ActionPerformed
 
     private void btnThem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThem7ActionPerformed
-
+    // Thêm nhanh sản phẩm con vào jComboBox1
+    String ten = javax.swing.JOptionPane.showInputDialog(this, "Nhập tên sản phẩm con mới:");
+    if (ten != null && !ten.trim().isEmpty()) {
+        for (int i = 0; i < jComboBox1.getItemCount(); i++) {
+            if (jComboBox1.getItemAt(i).equalsIgnoreCase(ten.trim())) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Tên sản phẩm con đã tồn tại!", "Cảnh báo", javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+        jComboBox1.addItem(ten.trim());
+        javax.swing.JOptionPane.showMessageDialog(this, "Đã thêm sản phẩm con mới!", "Thành công", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
     }//GEN-LAST:event_btnThem7ActionPerformed
 
     private void btnThemLGActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThemLGActionPerformed
-
+    // Thêm nhanh loại giày vào jComboBox2
+    String ten = javax.swing.JOptionPane.showInputDialog(this, "Nhập tên loại giày mới:");
+    if (ten != null && !ten.trim().isEmpty()) {
+        for (int i = 0; i < jComboBox2.getItemCount(); i++) {
+            if (jComboBox2.getItemAt(i).equalsIgnoreCase(ten.trim())) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Loại giày đã tồn tại!", "Cảnh báo", javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+        jComboBox2.addItem(ten.trim());
+        javax.swing.JOptionPane.showMessageDialog(this, "Đã thêm loại giày mới!", "Thành công", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
     }//GEN-LAST:event_btnThemLGActionPerformed
 
     private void btnThemNhanhTacGiaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThemNhanhTacGiaActionPerformed
-
+    // Thêm nhanh tác giả vào jComboBox3
+    String ten = javax.swing.JOptionPane.showInputDialog(this, "Nhập tên tác giả mới:");
+    if (ten != null && !ten.trim().isEmpty()) {
+        for (int i = 0; i < jComboBox3.getItemCount(); i++) {
+            if (jComboBox3.getItemAt(i).equalsIgnoreCase(ten.trim())) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Tác giả đã tồn tại!", "Cảnh báo", javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+        jComboBox3.addItem(ten.trim());
+        javax.swing.JOptionPane.showMessageDialog(this, "Đã thêm tác giả mới!", "Thành công", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
     }//GEN-LAST:event_btnThemNhanhTacGiaActionPerformed
 
     private void btnThemNhanhNXB(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThemNhanhNXB
-
+    // Thêm nhanh NXB vào jComboBox4
+    String ten = javax.swing.JOptionPane.showInputDialog(this, "Nhập tên NXB mới:");
+    if (ten != null && !ten.trim().isEmpty()) {
+        for (int i = 0; i < jComboBox4.getItemCount(); i++) {
+            if (jComboBox4.getItemAt(i).equalsIgnoreCase(ten.trim())) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Nhà xuất bản đã tồn tại!", "Cảnh báo", javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+        jComboBox4.addItem(ten.trim());
+        javax.swing.JOptionPane.showMessageDialog(this, "Đã thêm NXB mới!", "Thành công", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
     }//GEN-LAST:event_btnThemNhanhNXB
 
     private void btnThemKichThuocActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThemKichThuocActionPerformed
-
+    // Thêm nhanh kích thước vào jComboBox5
+    String ten = javax.swing.JOptionPane.showInputDialog(this, "Nhập kích thước mới:");
+    if (ten != null && !ten.trim().isEmpty()) {
+        for (int i = 0; i < jComboBox5.getItemCount(); i++) {
+            if (jComboBox5.getItemAt(i).equalsIgnoreCase(ten.trim())) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Kích thước đã tồn tại!", "Cảnh báo", javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+        jComboBox5.addItem(ten.trim());
+        javax.swing.JOptionPane.showMessageDialog(this, "Đã thêm kích thước mới!", "Thành công", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
     }//GEN-LAST:event_btnThemKichThuocActionPerformed
 
     private void btnThemLBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThemLBActionPerformed
-
+    // Thêm nhanh label/phụ trợ vào jComboBox1 (hoặc thay bằng combobox phù hợp nếu có)
+    String ten = javax.swing.JOptionPane.showInputDialog(this, "Nhập label mới:");
+    if (ten != null && !ten.trim().isEmpty()) {
+        for (int i = 0; i < jComboBox1.getItemCount(); i++) {
+            if (jComboBox1.getItemAt(i).equalsIgnoreCase(ten.trim())) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Label đã tồn tại!", "Cảnh báo", javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+        jComboBox1.addItem(ten.trim());
+        javax.swing.JOptionPane.showMessageDialog(this, "Đã thêm label mới!", "Thành công", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
     }//GEN-LAST:event_btnThemLBActionPerformed
 
     private void btnThemNhanhTLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThemNhanhTLActionPerformed
-
+    // Thêm nhanh thể loại vào jComboBox2 (hoặc thay bằng combobox phù hợp nếu có)
+    String ten = javax.swing.JOptionPane.showInputDialog(this, "Nhập thể loại mới:");
+    if (ten != null && !ten.trim().isEmpty()) {
+        for (int i = 0; i < jComboBox2.getItemCount(); i++) {
+            if (jComboBox2.getItemAt(i).equalsIgnoreCase(ten.trim())) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Thể loại đã tồn tại!", "Cảnh báo", javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+        jComboBox2.addItem(ten.trim());
+        javax.swing.JOptionPane.showMessageDialog(this, "Đã thêm thể loại mới!", "Thành công", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
     }//GEN-LAST:event_btnThemNhanhTLActionPerformed
 
     private void btnLHActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLHActionPerformed
-
+    // Hiển thị thông tin liên hệ hỗ trợ
+    javax.swing.JOptionPane.showMessageDialog(this, "Liên hệ hỗ trợ: 1900-xxxx hoặc email: support@volleyballshoes.com", "Liên hệ", javax.swing.JOptionPane.INFORMATION_MESSAGE);
     }//GEN-LAST:event_btnLHActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -10,6 +10,7 @@ import java.util.List;
 
 public class ProductVariantDAOImpl implements ProductVariantDAO {
 
+
     @Override
     public List<ProductVariant> findByProductId(int productId) {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
@@ -49,7 +50,12 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
 
     @Override
     public ProductVariant findById(Integer id) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+
+         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
+
+
+
+
 
 }

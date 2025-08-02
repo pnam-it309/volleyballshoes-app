@@ -26,4 +26,7 @@ public interface OrderDAO {
     int getNewCustomersCount();
     Object[][] getRevenueDataByYear(int year);
     Object[][] getCanceledOrderDataByYear(int year);
+    List<Order> findByCreatedDateBetween(Date from, Date to);
+    List<Order> findByTotalAmountBetween(double min, double max);
+
 }

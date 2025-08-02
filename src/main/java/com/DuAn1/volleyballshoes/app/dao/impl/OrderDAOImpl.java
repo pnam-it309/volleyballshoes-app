@@ -324,4 +324,14 @@ public class OrderDAOImpl implements OrderDAO {
         return data;
     }
 
+    @Override
+    public List<Order> findByCreatedDateBetween(Date from, Date to) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public List<Order> findByTotalAmountBetween(double min, double max) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
 }

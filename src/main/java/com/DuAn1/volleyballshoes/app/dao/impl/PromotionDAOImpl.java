@@ -43,6 +43,13 @@ public class PromotionDAOImpl implements PromotionDAO {
     }
 
     @Override
+    public Promotion findByCode(String code) {
+        String sql = "SELECT * FROM Promotions WHERE promo_code = ?";
+        List<Promotion> list = XJdbc.query(sql, this::mapResultSetToPromotion, code);
+        return list.isEmpty() ? null : list.get(0);
+    }
+    
+    @Override
     public List<Promotion> findActivePromotions() {
         String sql = "SELECT * FROM Promotions WHERE promo_start_date <= GETDATE() AND promo_end_date >= GETDATE()";
         return XJdbc.query(sql, this::mapResultSetToPromotion);
