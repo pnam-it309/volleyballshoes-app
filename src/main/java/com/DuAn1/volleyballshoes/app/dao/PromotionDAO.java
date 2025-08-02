@@ -1,10 +1,6 @@
 package com.DuAn1.volleyballshoes.app.dao;
 
 import com.DuAn1.volleyballshoes.app.entity.Promotion;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,7 +16,7 @@ public interface PromotionDAO extends CrudDAO<Promotion, Integer> {
 
     Promotion update(Promotion promotion);
 
-    boolean existsById(@Param("id") Long id);
+    boolean existsById(Long id);
 
     void deleteById();
     
