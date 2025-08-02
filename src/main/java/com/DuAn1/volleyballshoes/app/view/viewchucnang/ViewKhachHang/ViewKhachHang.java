@@ -1,7 +1,10 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewKhachHang;
 
 import com.DuAn1.volleyballshoes.app.controller.CustomerController;
+import com.DuAn1.volleyballshoes.app.dto.request.CustomerCreateRequest;
+import com.DuAn1.volleyballshoes.app.entity.Customer;
 import java.util.List;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
 public class ViewKhachHang extends javax.swing.JPanel {
@@ -35,14 +38,14 @@ public class ViewKhachHang extends javax.swing.JPanel {
     private void loadCustomerData() {
         try {
             customerTableModel.setRowCount(0); // Xóa dữ liệu cũ
-            List<CustomerResponse> customers = customerController.getAllCustomers();
-
-            for (CustomerResponse customer : customers) {
+            List<Customer> customers = customerController.getAllCustomers();
+    
+            for (Customer customer : customers) {
                 customerTableModel.addRow(new Object[]{
-                    customer.getCode(),
-                    customer.getName(),
-                    customer.getPhone(),
-                    customer.getEmail()
+                    customer.getCustomerCode(),    // Mã KH
+                    customer.getCustomerUsername(), // Tên KH
+                    customer.getCustomerPhone(),   // SĐT
+                    customer.getCustomerEmail()    // Email
                 });
             }
         } catch (Exception e) {
@@ -344,15 +347,15 @@ public class ViewKhachHang extends javax.swing.JPanel {
                 return;
             }
 
-            // Tạo đối tượng khách hàng mới
-            CustomerResponse newCustomer = new CustomerResponse();
-            newCustomer.setCode(txt_ma.getText().trim());
-            newCustomer.setName(txt_ten.getText().trim());
-            newCustomer.setPhone(txt_sdt.getText().trim());
-            newCustomer.setEmail(txt_email.getText().trim());
+            // Tạo đối tượng yêu cầu tạo khách hàng mới
+            CustomerCreateRequest request = new CustomerCreateRequest();
+            request.setCustomerCode(txt_ma.getText().trim());
+            request.setCustomerFullName(txt_ten.getText().trim());
+            request.setCustomerSdt(txt_sdt.getText().trim());
+            request.setCustomerEmail(txt_email.getText().trim());
 
             // Gọi controller để thêm khách hàng
-            customerController.addCustomer(newCustomer);
+            customerController.createCustomer(request);
 
             // Làm mới dữ liệu
             loadCustomerData();
@@ -384,10 +387,10 @@ public class ViewKhachHang extends javax.swing.JPanel {
 
             // Cập nhật thông tin khách hàng
             Customer updatedCustomer = new Customer();
-            updatedCustomer.setCode(customerCode);
-            updatedCustomer.setName(txt_ten.getText().trim());
-            updatedCustomer.setPhone(txt_sdt.getText().trim());
-            updatedCustomer.setEmail(txt_email.getText().trim());
+            updatedCustomer.setCustomerCode(customerCode);
+            updatedCustomer.setCustomerUsername(txt_ten.getText().trim());
+            updatedCustomer.setCustomerPhone(txt_sdt.getText().trim());
+            updatedCustomer.setCustomerEmail(txt_email.getText().trim());
 
             // Gọi controller để cập nhật
             customerController.updateCustomer(updatedCustomer);
@@ -429,10 +432,10 @@ public class ViewKhachHang extends javax.swing.JPanel {
 
             for (Customer customer : searchResults) {
                 customerTableModel.addRow(new Object[]{
-                    customer.getCode(),
-                    customer.getName(),
-                    customer.getPhone(),
-                    customer.getEmail()
+                    customer.getCustomerCode(),
+                    customer.getCustomerUsername(),
+                    customer.getCustomerPhone(),
+                    customer.getCustomerEmail()
                 });
             }
         } catch (Exception e) {
