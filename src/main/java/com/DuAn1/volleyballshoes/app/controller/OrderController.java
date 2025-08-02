@@ -251,6 +251,21 @@ public class OrderController {
                 .build();
     }
 
+    public List<OrderResponse> findByStatus(String status) {
+        if (orderDAO == null) {
+            NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
+            return new ArrayList<>();
+        }
+        try {
+            return orderDAO.findByStatus(status).stream()
+                    .map(order -> getOrderResponse(order))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            NotificationUtil.showError(parentFrame, "Lỗi khi tìm kiếm đơn hàng theo trạng thái: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
     public List<OrderResponse> findByCreatedDateBetween(Date from, Date to) {
         if (orderDAO == null) {
             NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
