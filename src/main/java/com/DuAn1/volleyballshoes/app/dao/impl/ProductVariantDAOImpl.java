@@ -5,17 +5,11 @@ import com.DuAn1.volleyballshoes.app.entity.ProductVariant;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 public class ProductVariantDAOImpl implements ProductVariantDAO {
 
-    private EntityManager entityManager;
 
     @Override
     public List<ProductVariant> findAll() {

@@ -225,42 +225,151 @@ public class ViewThuocTinh extends javax.swing.JPanel {
    
 
     private void btnThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThemActionPerformed
-    
-
-    }//GEN-LAST:event_btnThemActionPerformed
+    String ma = txtMa.getText().trim();
+    String ten = txtTen.getText().trim();
+    if(ma.isEmpty() || ten.isEmpty()) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!");
+        return;
+    }
+    try {
+        if (rbTheLoai.isSelected()) {
+            com.DuAn1.volleyballshoes.app.entity.Category entity = new com.DuAn1.volleyballshoes.app.entity.Category();
+            entity.setCategoryCode(ma);
+            entity.setCategoryName(ten);
+            new com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl().create(entity);
+        } else if (rbTacGia.isSelected()) {
+            com.DuAn1.volleyballshoes.app.entity.Brand entity = new com.DuAn1.volleyballshoes.app.entity.Brand();
+            entity.setBrandCode(ma);
+            entity.setBrandName(ten);
+            new com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl().create(entity);
+        } else if (rbLoaiBia.isSelected()) {
+            com.DuAn1.volleyballshoes.app.entity.SoleType entity = new com.DuAn1.volleyballshoes.app.entity.SoleType();
+            entity.setSoleCode(ma);
+            entity.setSoleName(ten);
+            new com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl().create(entity);
+        } else if (rbLoaiGiay.isSelected()) {
+            com.DuAn1.volleyballshoes.app.entity.Size entity = new com.DuAn1.volleyballshoes.app.entity.Size();
+            entity.setSizeCode(ma);
+            entity.setSizeValue(ten);
+            new com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl().create(entity);
+        } else if (rbNXB.isSelected()) {
+            com.DuAn1.volleyballshoes.app.entity.Promotion entity = new com.DuAn1.volleyballshoes.app.entity.Promotion();
+            entity.setPromoCode(ma);
+            entity.setPromoName(ten);
+            new com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl().create(entity);
+        }
+        javax.swing.JOptionPane.showMessageDialog(this, "Thêm thành công!");
+        loadTable();
+    } catch(Exception ex) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Lỗi thêm dữ liệu: " + ex.getMessage());
+    }
+}//GEN-LAST:event_btnThemActionPerformed
 
     private void btnXoaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXoaActionPerformed
-    
-    }//GEN-LAST:event_btnXoaActionPerformed
+    int row = tblThuocTinh.getSelectedRow();
+    if(row == -1) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần xóa!");
+        return;
+    }
+    String ma = tblThuocTinh.getValueAt(row, 1).toString();
+    try {
+        if (rbTheLoai.isSelected()) {
+            com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl();
+            com.DuAn1.volleyballshoes.app.entity.Category cat = dao.findByName(ma);
+            dao.deleteById(cat.getCategoryId());
+        } else if (rbTacGia.isSelected()) {
+            com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl();
+            com.DuAn1.volleyballshoes.app.entity.Brand b = dao.findByCode(ma);
+            dao.deleteById(b.getBrandId());
+        } else if (rbLoaiBia.isSelected()) {
+            com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl();
+            com.DuAn1.volleyballshoes.app.entity.SoleType st = dao.findByCode(ma);
+            dao.deleteById(st.getSoleId());
+        } else if (rbLoaiGiay.isSelected()) {
+            com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl();
+            com.DuAn1.volleyballshoes.app.entity.Size sz = dao.findByCode(ma);
+            dao.deleteById(sz.getSizeId());
+        } else if (rbNXB.isSelected()) {
+            com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl();
+            com.DuAn1.volleyballshoes.app.entity.Promotion pr = dao.findByCode(ma);
+            dao.deleteById(pr.getPromotionId());
+        }
+        javax.swing.JOptionPane.showMessageDialog(this, "Xóa thành công!");
+        loadTable();
+    } catch(Exception ex) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Lỗi xóa dữ liệu: " + ex.getMessage());
+    }
+}//GEN-LAST:event_btnXoaActionPerformed
 
     private void rbTacGiaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbTacGiaActionPerformed
-   
-    }//GEN-LAST:event_rbTacGiaActionPerformed
+    loadTable();
+}//GEN-LAST:event_rbTacGiaActionPerformed
 
     private void rbNXBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbNXBActionPerformed
-    
-    }//GEN-LAST:event_rbNXBActionPerformed
+    loadTable();
+}//GEN-LAST:event_rbNXBActionPerformed
 
     private void rbTheLoaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbTheLoaiActionPerformed
-
-    }//GEN-LAST:event_rbTheLoaiActionPerformed
+    loadTable();
+}//GEN-LAST:event_rbTheLoaiActionPerformed
 
     private void rbLoaiGiayActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbLoaiGiayActionPerformed
-       
-    }//GEN-LAST:event_rbLoaiGiayActionPerformed
+    loadTable();
+}//GEN-LAST:event_rbLoaiGiayActionPerformed
 
     private void rbLoaiBiaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbLoaiBiaActionPerformed
-    
-    }//GEN-LAST:event_rbLoaiBiaActionPerformed
+    loadTable();
+}//GEN-LAST:event_rbLoaiBiaActionPerformed
 
     private void tblThuocTinhMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblThuocTinhMouseClicked
-     
-        
-    }//GEN-LAST:event_tblThuocTinhMouseClicked
+    int row = tblThuocTinh.getSelectedRow();
+    if(row != -1) {
+        txtMa.setText(tblThuocTinh.getValueAt(row, 1).toString());
+        txtTen.setText(tblThuocTinh.getValueAt(row, 2).toString());
+    }
+}//GEN-LAST:event_tblThuocTinhMouseClicked
 
     private void btnsuaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnsuaActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btnsuaActionPerformed
+    int row = tblThuocTinh.getSelectedRow();
+    if(row == -1) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần sửa!");
+        return;
+    }
+    String ma = txtMa.getText().trim();
+    String ten = txtTen.getText().trim();
+    try {
+        if (rbTheLoai.isSelected()) {
+            com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl();
+            com.DuAn1.volleyballshoes.app.entity.Category cat = dao.findByName(ma);
+            cat.setCategoryName(ten);
+            dao.update(cat);
+        } else if (rbTacGia.isSelected()) {
+            com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl();
+            com.DuAn1.volleyballshoes.app.entity.Brand b = dao.findByCode(ma);
+            b.setBrandName(ten);
+            dao.update(b);
+        } else if (rbLoaiBia.isSelected()) {
+            com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl();
+            com.DuAn1.volleyballshoes.app.entity.SoleType st = dao.findByCode(ma);
+            st.setSoleName(ten);
+            dao.update(st);
+        } else if (rbLoaiGiay.isSelected()) {
+            com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl();
+            com.DuAn1.volleyballshoes.app.entity.Size sz = dao.findByCode(ma);
+            sz.setSizeValue(ten);
+            dao.update(sz);
+        } else if (rbNXB.isSelected()) {
+            com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl();
+            com.DuAn1.volleyballshoes.app.entity.Promotion pr = dao.findByCode(ma);
+            pr.setPromoName(ten);
+            dao.update(pr);
+        }
+        javax.swing.JOptionPane.showMessageDialog(this, "Sửa thành công!");
+        loadTable();
+    } catch(Exception ex) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Lỗi sửa dữ liệu: " + ex.getMessage());
+    }
+}//GEN-LAST:event_btnsuaActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnThem;
