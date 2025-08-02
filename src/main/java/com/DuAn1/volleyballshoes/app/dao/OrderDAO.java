@@ -28,5 +28,5 @@ public interface OrderDAO {
     Object[][] getCanceledOrderDataByYear(int year);
     List<Order> findByCreatedDateBetween(Date from, Date to);
     List<Order> findByTotalAmountBetween(double min, double max);
-
+    List<Order> findByStatus(String status);
 }

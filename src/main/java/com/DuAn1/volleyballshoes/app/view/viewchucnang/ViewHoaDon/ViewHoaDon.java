@@ -23,7 +23,9 @@ public class ViewHoaDon extends javax.swing.JPanel {
     // Chuyển đổi tạm thời từ OrderItemResponse sang OrderDetailResponse để hiển thị bảng chi tiết
     private List<OrderDetailResponse> convertToOrderDetailResponses(List<OrderItemResponse> items) {
         List<OrderDetailResponse> result = new ArrayList<>();
-        if (items == null) return result;
+        if (items == null) {
+            return result;
+        }
         for (OrderItemResponse item : items) {
             OrderDetailResponse detail = new OrderDetailResponse();
             // Map các trường cơ bản nếu có
@@ -34,7 +36,6 @@ public class ViewHoaDon extends javax.swing.JPanel {
         }
         return result;
     }
-
 
     private OrderController orderController = new OrderController();
 
@@ -89,35 +90,35 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }
 
     private void loadDetailsTable(List<OrderDetailResponse> details) {
-    try {
-        DefaultTableModel model = (DefaultTableModel) tblHDCT.getModel();
-        model.setRowCount(0);
-
-        if (details != null) {
-    for (OrderDetailResponse detail : details) {
         try {
-            // Lấy thông tin sản phẩm
-            String productName = detail.getProductName() != null ? detail.getProductName() : "";
-            String colorName = detail.getColorName() != null ? detail.getColorName() : "";
-            String sizeName = detail.getSizeName() != null ? detail.getSizeName() : "";
-            int quantity = detail.getQuantity();
-            java.math.BigDecimal unitPrice = detail.getUnitPrice() != null ? detail.getUnitPrice() : java.math.BigDecimal.ZERO;
-            java.math.BigDecimal totalPrice = detail.getTotalPrice() != null ? detail.getTotalPrice() : unitPrice.multiply(java.math.BigDecimal.valueOf(quantity));
+            DefaultTableModel model = (DefaultTableModel) tblHDCT.getModel();
+            model.setRowCount(0);
 
-            model.addRow(new Object[]{
-                productName,
-                colorName,
-                sizeName,
-                quantity,
-                formatCurrency(unitPrice.doubleValue()),
-                formatCurrency(totalPrice.doubleValue())
-            });
+            if (details != null) {
+                for (OrderDetailResponse detail : details) {
+                    try {
+                        // Lấy thông tin sản phẩm
+                        String productName = detail.getProductName() != null ? detail.getProductName() : "";
+                        String colorName = detail.getColorName() != null ? detail.getColorName() : "";
+                        String sizeName = detail.getSizeName() != null ? detail.getSizeName() : "";
+                        int quantity = detail.getQuantity();
+                        java.math.BigDecimal unitPrice = detail.getUnitPrice() != null ? detail.getUnitPrice() : java.math.BigDecimal.ZERO;
+                        java.math.BigDecimal totalPrice = detail.getTotalPrice() != null ? detail.getTotalPrice() : unitPrice.multiply(java.math.BigDecimal.valueOf(quantity));
+
+                        model.addRow(new Object[]{
+                            productName,
+                            colorName,
+                            sizeName,
+                            quantity,
+                            formatCurrency(unitPrice.doubleValue()),
+                            formatCurrency(totalPrice.doubleValue())
+                        });
+                    } catch (Exception e) {
+                        System.err.println("Error processing order detail: " + e.getMessage());
+                    }
+                }
+            }
         } catch (Exception e) {
-            System.err.println("Error processing order detail: " + e.getMessage());
-        }
-    }
-}
-    } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi tải chi tiết hoá đơn: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
@@ -496,42 +497,42 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }//GEN-LAST:event_btnSearchGiaActionPerformed
 
     private void CBhinhthucTTActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CBhinhthucTTActionPerformed
-  try {
-        // Get the selected payment method
-        String selectedPaymentMethod = CBhinhthucTT.getSelectedItem().toString();
-        
-        // If "Tất cả" is selected, load all orders
-        if ("Tất cả".equals(selectedPaymentMethod)) {
-            loadAllOrders();
-            return;
-        }
-        
-        // Lấy tất cả đơn hàng
-        List<OrderResponse> allOrders = orderController.getAllOrders();
-        
-        // Lọc đơn hàng theo hình thức thanh toán đã chọn
-        List<OrderResponse> filteredOrders = allOrders.stream()
-            .filter(order -> selectedPaymentMethod.equals(order.getPaymentMethod()))
-            .collect(Collectors.toList());
-        
-        // If no orders found with the selected payment method
-        if (filteredOrders.isEmpty()) {
+        try {
+            // Get the selected payment method
+            String selectedPaymentMethod = CBhinhthucTT.getSelectedItem().toString();
+
+            // If "Tất cả" is selected, load all orders
+            if ("Tất cả".equals(selectedPaymentMethod)) {
+                loadAllOrders();
+                return;
+            }
+
+            // Lấy tất cả đơn hàng
+            List<OrderResponse> allOrders = orderController.getAllOrders();
+
+            // Lọc đơn hàng theo hình thức thanh toán đã chọn
+            List<OrderResponse> filteredOrders = allOrders.stream()
+                    .filter(order -> selectedPaymentMethod.equals(order.getPaymentMethod()))
+                    .collect(Collectors.toList());
+
+            // If no orders found with the selected payment method
+            if (filteredOrders.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Không tìm thấy hóa đơn nào với hình thức thanh toán: " + selectedPaymentMethod,
+                        "Thông báo",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+
+            // Load the filtered orders into the table
+            loadDataTable(filteredOrders);
+
+        } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                "Không tìm thấy hóa đơn nào với hình thức thanh toán: " + selectedPaymentMethod,
-                "Thông báo",
-                JOptionPane.INFORMATION_MESSAGE);
+                    "Lỗi khi lọc hóa đơn theo hình thức thanh toán: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
-        
-        // Load the filtered orders into the table
-        loadDataTable(filteredOrders);
-        
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(this,
-            "Lỗi khi lọc hóa đơn theo hình thức thanh toán: " + e.getMessage(),
-            "Lỗi",
-            JOptionPane.ERROR_MESSAGE);
-        e.printStackTrace();
-    }
         // TODO add your handling code here:
     }//GEN-LAST:event_CBhinhthucTTActionPerformed
 
@@ -580,106 +581,106 @@ public class ViewHoaDon extends javax.swing.JPanel {
             // Get the selected dates
             Date fromDate = txtTuNgay.getDate();
             Date toDate = txtDenNgay.getDate();
-            
+
             // Validate date range
             if (fromDate == null || toDate == null) {
                 JOptionPane.showMessageDialog(this,
-                    "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc",
-                    "Cảnh báo",
-                    JOptionPane.WARNING_MESSAGE);
+                        "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc",
+                        "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            
+
             // Make sure fromDate is before or equal to toDate
             if (fromDate.after(toDate)) {
                 JOptionPane.showMessageDialog(this,
-                    "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc",
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+                        "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc",
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
             // Add 1 day to toDate to include the entire end day
             Calendar cal = Calendar.getInstance();
             cal.setTime(toDate);
             cal.add(Calendar.DATE, 1);
             Date endOfDay = cal.getTime();
-            
+
             // Get all orders
             List<OrderResponse> allOrders = orderController.getAllOrders();
-            
+
             // Filter orders by date range
             List<OrderResponse> filteredOrders = allOrders.stream()
-                .filter(order -> {
-                    // Convert LocalDateTime to Date for comparison
-                    Date orderDate = null;
-                    if (order.getCreatedAt() != null) {
-                        orderDate = java.sql.Timestamp.valueOf(order.getCreatedAt());
-                    }
-                    return orderDate != null && 
-                           !orderDate.before(fromDate) && 
-                           orderDate.before(endOfDay);
-                })
-                .collect(Collectors.toList());
-            
+                    .filter(order -> {
+                        // Convert LocalDateTime to Date for comparison
+                        Date orderDate = null;
+                        if (order.getCreatedAt() != null) {
+                            orderDate = java.sql.Timestamp.valueOf(order.getCreatedAt());
+                        }
+                        return orderDate != null
+                                && !orderDate.before(fromDate)
+                                && orderDate.before(endOfDay);
+                    })
+                    .collect(Collectors.toList());
+
             // If no orders found in the date range
             if (filteredOrders.isEmpty()) {
                 JOptionPane.showMessageDialog(this,
-                    "Không tìm thấy hóa đơn nào trong khoảng thời gian đã chọn",
-                    "Thông báo",
-                    JOptionPane.INFORMATION_MESSAGE);
+                        "Không tìm thấy hóa đơn nào trong khoảng thời gian đã chọn",
+                        "Thông báo",
+                        JOptionPane.INFORMATION_MESSAGE);
             }
-            
+
             // Load the filtered orders into the table
             loadDataTable(filteredOrders); // filteredOrders là List<OrderResponse>
-            
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                "Lỗi khi lọc hóa đơn theo ngày: " + e.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
+                    "Lỗi khi lọc hóa đơn theo ngày: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }//GEN-LAST:event_btnLocActionPerformed
 
     private void txtQRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtQRActionPerformed
- try {
-        String qrCode = txtQR.getText().trim();
-        
-        if (qrCode.isEmpty()) {
+        try {
+            String qrCode = txtQR.getText().trim();
+
+            if (qrCode.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Vui lòng nhập mã QR hoặc mã hóa đơn",
+                        "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Try to find order by QR code or order ID
+            OrderResponse foundOrder = orderController.getOrderByQRCodeOrId(qrCode);
+
+            if (foundOrder == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Không tìm thấy hóa đơn với mã: " + qrCode,
+                        "Không tìm thấy",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            // If found, load the single order into the table
+            List<OrderResponse> orders = new ArrayList<>();
+            orders.add(foundOrder);
+            loadDataTable(orders);
+
+            // Select the row in the table
+            selectOrderInTable(String.valueOf(foundOrder.getOrderId()));
+
+        } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                "Vui lòng nhập mã QR hoặc mã hóa đơn",
-                "Cảnh báo",
-                JOptionPane.WARNING_MESSAGE);
-            return;
+                    "Lỗi khi tìm kiếm hóa đơn: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
-        
-        // Try to find order by QR code or order ID
-        OrderResponse foundOrder = orderController.getOrderByQRCodeOrId(qrCode);
-        
-        if (foundOrder == null) {
-            JOptionPane.showMessageDialog(this,
-                "Không tìm thấy hóa đơn với mã: " + qrCode,
-                "Không tìm thấy",
-                JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        
-        // If found, load the single order into the table
-        List<OrderResponse> orders = new ArrayList<>();
-        orders.add(foundOrder);
-        loadDataTable(orders);
-        
-        // Select the row in the table
-        selectOrderInTable(String.valueOf(foundOrder.getOrderId()));
-        
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(this,
-            "Lỗi khi tìm kiếm hóa đơn: " + e.getMessage(),
-            "Lỗi",
-            JOptionPane.ERROR_MESSAGE);
-        e.printStackTrace();
-    }
     }//GEN-LAST:event_txtQRActionPerformed
     private void selectOrderInTable(String orderId) {
         DefaultTableModel model = (DefaultTableModel) tbl.getModel();
@@ -691,6 +692,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
                 break;
             }
         }
+    }
     private void CBtrangThaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CBtrangThaiActionPerformed
         try {
             String trangThai = (String) CBtrangThai.getSelectedItem();
@@ -746,6 +748,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
             }
         });
     }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JComboBox<String> CBhinhthucTT;
     private javax.swing.JComboBox<String> CBtrangThai;

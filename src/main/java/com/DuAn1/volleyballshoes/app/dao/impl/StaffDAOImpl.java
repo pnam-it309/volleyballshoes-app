@@ -10,18 +10,23 @@ import java.util.List;
 import java.util.Optional;
 
 public class StaffDAOImpl implements StaffDAO {
-    
+
     private Staff mapResultSetToStaff(ResultSet rs) throws SQLException {
-        Staff staff = new Staff();
-        staff.setStaffId(rs.getInt("staff_id"));
-        staff.setStaffUsername(rs.getString("staff_username"));
-        staff.setStaffPassword(rs.getString("staff_password"));
-        staff.setStaffFullName(rs.getString("staff_full_name"));
-        staff.setStaffEmail(rs.getString("staff_email"));
-        staff.setStaffRole(rs.getInt("staff_role"));
-        staff.setStaffSdt(rs.getString("staff_sdt"));
-        staff.setStaffCode(rs.getString("staff_code"));
-        return staff;
+        try {
+            Staff staff = new Staff();
+            staff.setStaffId(rs.getInt("staff_id"));
+            staff.setStaffUsername(rs.getString("staff_username"));
+            staff.setStaffPassword(rs.getString("staff_password"));
+            staff.setStaffFullName(rs.getString("staff_full_name"));
+            staff.setStaffEmail(rs.getString("staff_email"));
+            staff.setStaffRole(rs.getInt("staff_role"));
+            staff.setStaffSdt(rs.getString("staff_sdt"));
+            staff.setStaffCode(rs.getString("staff_code"));
+            // Nếu có thêm các trường khác, bổ sung ở đây
+            return staff;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -67,8 +72,8 @@ public class StaffDAOImpl implements StaffDAO {
         String sql = "INSERT INTO Staffs (staff_username, staff_password, staff_full_name, "
                 + "staff_email, staff_role, staff_sdt, staff_code) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
-        XJdbc.executeUpdate(sql, 
+
+        XJdbc.executeUpdate(sql,
                 entity.getStaffUsername(),
                 entity.getStaffPassword(),
                 entity.getStaffFullName(),
@@ -77,7 +82,7 @@ public class StaffDAOImpl implements StaffDAO {
                 entity.getStaffSdt(),
                 entity.getStaffCode()
         );
-        
+
         // Lấy ID vừa tạo
         String getIdSql = "SELECT TOP 1 * FROM Staffs ORDER BY staff_id DESC";
         return XJdbc.queryForObject(getIdSql, this::mapResultSetToStaff);
@@ -94,8 +99,8 @@ public class StaffDAOImpl implements StaffDAO {
                 + "staff_sdt = ?, "
                 + "staff_code = ? "
                 + "WHERE staff_id = ?";
-        
-        XJdbc.executeUpdate(sql, 
+
+        XJdbc.executeUpdate(sql,
                 entity.getStaffUsername(),
                 entity.getStaffPassword(),
                 entity.getStaffFullName(),
@@ -105,7 +110,7 @@ public class StaffDAOImpl implements StaffDAO {
                 entity.getStaffCode(),
                 entity.getStaffId()
         );
-        
+
         return entity;
     }
 
@@ -127,4 +132,6 @@ public class StaffDAOImpl implements StaffDAO {
         String sql = "SELECT * FROM Staffs WHERE staff_id = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToStaff, id);
     }
+
+  
 }
