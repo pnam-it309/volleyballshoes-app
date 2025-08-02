@@ -31,14 +31,14 @@ public class StaffDAOImpl implements StaffDAO {
 
     @Override
     public Optional<Staff> findByEmail(String email) {
-        String sql = "SELECT * FROM Staffs WHERE staff_email = ?";
+        String sql = "SELECT * FROM Staff WHERE staff_email = ?";
         Staff staff = XJdbc.queryForObject(sql, this::mapResultSetToStaff, email);
         return Optional.ofNullable(staff);
     }
 
     @Override
     public boolean existsByEmail(String email) {
-        String sql = "SELECT COUNT(*) FROM Staffs WHERE staff_email = ?";
+        String sql = "SELECT COUNT(*) FROM Staff WHERE staff_email = ?";
         Integer count = XJdbc.getValue(sql, email);
         return count != null && count > 0;
     }
@@ -69,7 +69,7 @@ public class StaffDAOImpl implements StaffDAO {
 
     @Override
     public Staff create(Staff entity) {
-        String sql = "INSERT INTO Staffs (staff_username, staff_password, staff_full_name, "
+        String sql = "INSERT INTO Staff (staff_username, staff_password, staff_full_name, "
                 + "staff_email, staff_role, staff_sdt, staff_code) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
@@ -84,13 +84,13 @@ public class StaffDAOImpl implements StaffDAO {
         );
 
         // Lấy ID vừa tạo
-        String getIdSql = "SELECT TOP 1 * FROM Staffs ORDER BY staff_id DESC";
+        String getIdSql = "SELECT TOP 1 * FROM Staff ORDER BY staff_id DESC";
         return XJdbc.queryForObject(getIdSql, this::mapResultSetToStaff);
     }
 
     @Override
     public Staff update(Staff entity) {
-        String sql = "UPDATE Staffs SET "
+        String sql = "UPDATE Staff SET "
                 + "staff_username = ?, "
                 + "staff_password = ?, "
                 + "staff_full_name = ?, "
@@ -116,20 +116,20 @@ public class StaffDAOImpl implements StaffDAO {
 
     @Override
     public boolean deleteById(Integer id) {
-        String sql = "DELETE FROM Staffs WHERE staff_id = ?";
+        String sql = "DELETE FROM Staff WHERE staff_id = ?";
         int rowsAffected = XJdbc.executeUpdate(sql, id);
         return rowsAffected > 0;
     }
 
     @Override
     public List<Staff> findAll() {
-        String sql = "SELECT * FROM Staffs";
+        String sql = "SELECT * FROM Staff";
         return XJdbc.query(sql, this::mapResultSetToStaff);
     }
 
     @Override
     public Staff findById(Integer id) {
-        String sql = "SELECT * FROM Staffs WHERE staff_id = ?";
+        String sql = "SELECT * FROM Staff WHERE staff_id = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToStaff, id);
     }
 
