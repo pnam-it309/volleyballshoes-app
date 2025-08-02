@@ -1,9 +1,56 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewKhachHang;
 
-
+import com.DuAn1.volleyballshoes.app.controller.CustomerController;
+import java.util.List;
+import javax.swing.table.DefaultTableModel;
 
 public class ViewKhachHang extends javax.swing.JPanel {
 
+    private final CustomerController customerController = new CustomerController();
+    private DefaultTableModel customerTableModel;
+    private DefaultTableModel orderHistoryTableModel;
+
+    private void initTable() {
+        // Khởi tạo model cho bảng khách hàng
+        String[] customerColumns = {"Mã KH", "Tên KH", "Số ĐT", "Email"};
+        customerTableModel = new DefaultTableModel(customerColumns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Không cho phép chỉnh sửa trực tiếp trên bảng
+            }
+        };
+        tbl_bang.setModel(customerTableModel);
+
+        // Khởi tạo model cho bảng lịch sử đơn hàng
+        String[] orderColumns = {"Mã ĐH", "Ngày tạo", "Tổng tiền", "Trạng thái"};
+        orderHistoryTableModel = new DefaultTableModel(orderColumns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tbl_bangls.setModel(orderHistoryTableModel);
+    }
+
+    private void loadCustomerData() {
+        try {
+            customerTableModel.setRowCount(0); // Xóa dữ liệu cũ
+            List<CustomerResponse> customers = customerController.getAllCustomers();
+
+            for (CustomerResponse customer : customers) {
+                customerTableModel.addRow(new Object[]{
+                    customer.getCode(),
+                    customer.getName(),
+                    customer.getPhone(),
+                    customer.getEmail()
+                });
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tải dữ liệu khách hàng: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -281,25 +328,132 @@ public class ViewKhachHang extends javax.swing.JPanel {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // Export customer list to Excel
-    
+
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void tbl_themActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_themActionPerformed
-   
+        try {
+            // Kiểm tra dữ liệu đầu vào
+            if (txt_ma.getText().trim().isEmpty()
+                    || txt_ten.getText().trim().isEmpty()
+                    || txt_sdt.getText().trim().isEmpty()
+                    || txt_email.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Vui lòng điền đầy đủ thông tin khách hàng!",
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Tạo đối tượng khách hàng mới
+            CustomerResponse newCustomer = new CustomerResponse();
+            newCustomer.setCode(txt_ma.getText().trim());
+            newCustomer.setName(txt_ten.getText().trim());
+            newCustomer.setPhone(txt_sdt.getText().trim());
+            newCustomer.setEmail(txt_email.getText().trim());
+
+            // Gọi controller để thêm khách hàng
+            customerController.addCustomer(newCustomer);
+
+            // Làm mới dữ liệu
+            loadCustomerData();
+            clearFields();
+
+            JOptionPane.showMessageDialog(this,
+                    "Thêm khách hàng thành công!",
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi thêm khách hàng: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_tbl_themActionPerformed
 
     private void tbl_sửaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_sửaActionPerformed
-     
+        try {
+            int selectedRow = tbl_bang.getSelectedRow();
+            if (selectedRow < 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Vui lòng chọn khách hàng cần cập nhật!",
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Lấy mã khách hàng từ dòng được chọn
+            String customerCode = tbl_bang.getValueAt(selectedRow, 0).toString();
+
+            // Cập nhật thông tin khách hàng
+            Customer updatedCustomer = new Customer();
+            updatedCustomer.setCode(customerCode);
+            updatedCustomer.setName(txt_ten.getText().trim());
+            updatedCustomer.setPhone(txt_sdt.getText().trim());
+            updatedCustomer.setEmail(txt_email.getText().trim());
+
+            // Gọi controller để cập nhật
+            customerController.updateCustomer(updatedCustomer);
+
+            // Làm mới dữ liệu
+            loadCustomerData();
+            clearFields();
+
+            JOptionPane.showMessageDialog(this,
+                    "Cập nhật thông tin khách hàng thành công!",
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi cập nhật khách hàng: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_tbl_sửaActionPerformed
 
     private void tbl_timkiemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_timkiemActionPerformed
- 
+        String keyword = txt_nhạptim.getText().trim();
+        if (keyword.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng nhập từ khóa tìm kiếm!",
+                    "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            customerTableModel.setRowCount(0); // Xóa dữ liệu cũ
+            List<Customer> searchResults = customerController.searchCustomers(keyword);
+
+            if (searchResults.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Không tìm thấy khách hàng phù hợp!",
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            for (Customer customer : searchResults) {
+                customerTableModel.addRow(new Object[]{
+                    customer.getCode(),
+                    customer.getName(),
+                    customer.getPhone(),
+                    customer.getEmail()
+                });
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tìm kiếm: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_tbl_timkiemActionPerformed
 
     private void tbl_lammoiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_lammoiActionPerformed
-
+        clearFields();
+        loadCustomerData();
     }//GEN-LAST:event_tbl_lammoiActionPerformed
-
+    private void clearFields() {
+        txt_ma.setText("");
+        txt_ten.setText("");
+        txt_sdt.setText("");
+        txt_email.setText("");
+        txt_nhạptim.setText("");
+        tbl_bang.clearSelection();
+    }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JButton jButton1;

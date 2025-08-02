@@ -5,12 +5,14 @@ import com.DuAn1.volleyballshoes.app.view.viewgiaodien.component.Profile;
 import com.DuAn1.volleyballshoes.app.view.viewgiaodien.event.EventMenuSelected;
 import com.DuAn1.volleyballshoes.app.view.viewgiaodien.form.MainForm;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewTrangChu.ViewTrangChu;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPham;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.*;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.*;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewHoaDon.ViewHoaDon;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewKhachHang.ViewKhachHang;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewNhanVien.ViewNhanVien;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewThongKe.ViewThongKe;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewDotGiamGia.ViewDotGiamGia;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewPhieuGiamGia.ViewPhieuGiamGia;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -18,6 +20,7 @@ import java.awt.event.ActionListener;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 
 public class Main extends javax.swing.JFrame {
 
@@ -57,7 +60,7 @@ public class Main extends javax.swing.JFrame {
             @Override
             public void menuSelected(int menuIndex, int subMenuIndex) {
                 System.out.println("Menu selected: " + menuIndex);
-                showForm(menuIndex);
+                showForm(menuIndex, subMenuIndex);
             }
         });
 
@@ -70,17 +73,21 @@ public class Main extends javax.swing.JFrame {
         add(mainForm, BorderLayout.CENTER);
         
         // Hiển thị trang chủ mặc định
-        showForm(0);
+        showForm(0,0);
         
         // Đảm bảo sidebar hiển thị
         revalidate();
         repaint();
     }
 
-    private void showForm(int menuIndex) {
+    private void showForm(int menuIndex, int subMenuIndex) {
+        // Đảm bảo subMenuIndex là hợp lệ
+        if (subMenuIndex < 0) {
+            subMenuIndex = 0;
+        }
         Component form = null;
         
-        System.out.println("Đang load form cho menu index: " + menuIndex);
+        System.out.println("Đang load form cho menu index: " + menuIndex + ", subMenuIndex: " + subMenuIndex);
         
         try {
             switch (menuIndex) {
@@ -89,12 +96,46 @@ public class Main extends javax.swing.JFrame {
                     form = new ViewTrangChu();
                     break;
                 case 1: // Bán Hàng
-                    System.out.println("Loading ViewBanHang...");
-                    form = new ViewBanHang();
+                    // Xử lý các màn hình con của Bán Hàng
+                    switch (subMenuIndex) {
+                        case 0: // Tạo hóa đơn bán hàng
+                            System.out.println("Loading ViewBanHang...");
+                            form = new ViewBanHang();
+                            break;
+                        case 1: // Thêm khách hàng mới
+                            System.out.println("Loading ViewThemKhachHang...");
+                            form = new ViewThemKhachHang();
+                            break;
+                        default:
+                            form = new ViewBanHang(); // Mặc định hiển thị tạo hóa đơn
+                    }
                     break;
                 case 2: // Sản Phẩm
-                    System.out.println("Loading ViewSanPham...");
-                    form = new ViewSanPham();
+                    // Xử lý các màn hình con của Sản phẩm
+                    switch (subMenuIndex) {
+                        case 0: // Danh sách sản phẩm
+                            System.out.println("Loading ViewSanPham (Danh sách sản phẩm)...");
+                            form = new ViewSanPham();
+                            break;
+                        case 1: // Thêm sản phẩm mới
+                            System.out.println("Loading ViewThemSanPhamm...");
+                            form = new ViewThemSanPhamm();
+                            break;
+                        case 2: // Chi tiết sản phẩm
+                            System.out.println("Loading ViewSanPhamChiTiet...");
+                            form = new ViewSanPhamChiTiet();
+                            break;
+                        case 3: // Quản lý thuộc tính
+                            System.out.println("Loading ViewThuocTinh...");
+                            form = new ViewThuocTinh();
+                            break;
+                        case 4: // Quét QR sản phẩm
+                            System.out.println("Loading QuetQRSanPham...");
+                            form = new QuetQRSanPham();
+                            break;
+                        default:
+                            form = new ViewSanPham(); // Mặc định hiển thị danh sách sản phẩm
+                    }
                     break;
                 case 3: // Hóa Đơn
                     System.out.println("Loading ViewHoaDon...");
@@ -111,6 +152,21 @@ public class Main extends javax.swing.JFrame {
                 case 6: // Thống Kê
                     System.out.println("Loading ViewThongKe...");
                     form = new ViewThongKe();
+                    break;
+                case 7: // Khuyến Mãi
+                    // Xử lý các màn hình con của Khuyến Mãi
+                    switch (subMenuIndex) {
+                        case 0: // Đợt giảm giá
+                            System.out.println("Loading ViewDotGiamGia...");
+                            form = new ViewDotGiamGia();
+                            break;
+                        case 1: // Phiếu giảm giá
+                            System.out.println("Loading ViewPhieuGiamGia...");
+                            form = new ViewPhieuGiamGia();
+                            break;
+                        default:
+                            form = new ViewDotGiamGia(); // Mặc định hiển thị đợt giảm giá
+                    }
                     break;
                 default:
                     System.out.println("Loading default ViewTrangChu...");

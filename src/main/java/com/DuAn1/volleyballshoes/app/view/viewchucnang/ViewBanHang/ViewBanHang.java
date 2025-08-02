@@ -1,175 +1,75 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang;
 
-import com.DuAn1.volleyballshoes.app.entity.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import javax.swing.JOptionPane;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
-import java.math.BigDecimal;
 
 public class ViewBanHang extends javax.swing.JPanel {
 
-    private List<Order> orderList;
-    private List<Product> productList;
-    private List<Customer> customerList;
-    private List<OrderDetail> cartItems;
-    private DefaultTableModel orderTableModel;
-    private DefaultTableModel productTableModel;
-    private DefaultTableModel cartTableModel;
-    private Order currentOrder;
-    private BigDecimal totalAmount = BigDecimal.ZERO;
-    
+    private DefaultTableModel modelHoaDon;
+    private DefaultTableModel modelSanPham;
+    private DefaultTableModel modelGioHang;
+
     public ViewBanHang() {
         initComponents();
-        initializeData();
-        setupTables();
-        loadData();
-    }
-    
-    private void initializeData() {
-        orderList = new ArrayList<>();
-        productList = new ArrayList<>();
-        customerList = new ArrayList<>();
-        cartItems = new ArrayList<>();
-        
-        // Sample data
-        productList.add(Product.builder()
-            .productId(1)
-            .productName("Nike Air Max")
-            .productCode("SP001")
-            .build());
-        
-        customerList.add(Customer.builder()
-            .customerId(1)
-            .customerUsername("Nguyễn Văn A")
-            .customerCode("KH001")
-            .customerPhone("0123456789")
-            .build());
-    }
-    
-    private void setupTables() {
-        // Setup order table
-        String[] orderColumns = {"Mã HĐ", "Ngày tạo", "Khách hàng", "Tổng tiền", "Trạng thái"};
-        orderTableModel = new DefaultTableModel(orderColumns, 0);
-        tblHoaDon.setModel(orderTableModel);
-        
-        // Setup product table
-        String[] productColumns = {"Mã SP", "Tên sản phẩm", "Giá", "Tồn kho"};
-        productTableModel = new DefaultTableModel(productColumns, 0);
-        tblSanPham.setModel(productTableModel);
-        
-        // Setup cart table
-        String[] cartColumns = {"Sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"};
-        cartTableModel = new DefaultTableModel(cartColumns, 0);
-        tblGioHang.setModel(cartTableModel);
-    }
-    
-    private void loadData() {
-        loadOrders();
-        loadProducts();
-        updateOrderInfo();
-    }
-    
-    private void loadOrders() {
-        orderTableModel.setRowCount(0);
-        for (Order order : orderList) {
-            Object[] row = {
-                "HD" + String.format("%03d", order.getOrderId()),
-                order.getOrderCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                "Khách hàng", // Replace with actual customer name
-                "0 VNĐ", // Replace with actual total
-                "Đang xử lý"
-            };
-            orderTableModel.addRow(row);
-        }
-    }
-    
-    private void loadProducts() {
-        productTableModel.setRowCount(0);
-        for (Product product : productList) {
-            Object[] row = {
-                product.getProductCode(),
-                product.getProductName(),
-                "100,000 VNĐ", // Replace with actual price
-                "50" // Replace with actual stock
-            };
-            productTableModel.addRow(row);
-        }
-    }
-    
-    private void updateOrderInfo() {
-        if (currentOrder != null) {
-            lbMaHD.setText("HD" + String.format("%03d", currentOrder.getOrderId()));
-            lbNgayTao.setText(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-            lbMaNV.setText("NV001"); // Replace with actual staff ID
-        }
-        lbTongTien.setText(formatCurrency(totalAmount));
-        lbTong.setText(formatCurrency(totalAmount));
-    }
-    
-    private String formatCurrency(BigDecimal amount) {
-        return String.format("%,.0f VNĐ", amount.doubleValue());
-    }
-    
-    private void addToCart(Product product, int quantity) {
-        // Check if product already exists in cart
-        for (OrderDetail item : cartItems) {
-            if (item.getVariantId()== product.getProductId()) {
-                item.setDetailQuantity(item.getDetailQuantity()+ quantity);
-                updateCartDisplay();
-                return;
-            }
-        }
-        
-        // Add new item to cart
-        OrderDetail newItem = OrderDetail.builder()
-            .variantId(product.getProductId())
-            .detailQuantity(quantity)
-            .detailUnitPrice(BigDecimal.valueOf(100000)) // Sample price
-            .build();
-        
-        cartItems.add(newItem);
-        updateCartDisplay();
-    }
-    
-    private void removeFromCart(int index) {
-        if (index >= 0 && index < cartItems.size()) {
-            cartItems.remove(index);
-            updateCartDisplay();
-        }
-    }
-    
-    private void updateCartDisplay() {
-        cartTableModel.setRowCount(0);
-        totalAmount = BigDecimal.ZERO;
-        
-        for (OrderDetail item : cartItems) {
-            Product product = findProductById(item.getVariantId());
-            BigDecimal itemTotal = item.getDetailUnitPrice().multiply(BigDecimal.valueOf(item.getDetailQuantity()));
-            totalAmount = totalAmount.add(itemTotal);
-            
-            Object[] row = {
-                product != null ? product.getProductName() : "Unknown",
-                item.getDetailQuantity(),
-                formatCurrency(item.getDetailUnitPrice()),
-                formatCurrency(itemTotal)
-            };
-            cartTableModel.addRow(row);
-        }
-        
-        updateOrderInfo();
-    }
-    
-    private Product findProductById(int productId) {
-        return productList.stream()
-            .filter(p -> p.getProductId() == productId)
-            .findFirst()
-            .orElse(null);
     }
 
- 
+    private void initTables() {
+        // Khởi tạo model cho bảng hóa đơn
+        modelHoaDon = (DefaultTableModel) tblHoaDon.getModel();
+        modelSanPham = (DefaultTableModel) tblSanPham.getModel();
+        modelGioHang = (DefaultTableModel) tblGioHang.getModel();
+
+        // Thiết lập tên cột cho bảng sản phẩm
+        String[] sanPhamColumns = {"STT", "Mã SP", "Tên SP", "Size", "Màu sắc", "Đơn giá", "Số lượng"};
+        for (int i = 0; i < sanPhamColumns.length; i++) {
+            modelSanPham.setColumnIdentifiers(sanPhamColumns);
+        }
+
+        // Thiết lập tên cột cho bảng giỏ hàng
+        String[] gioHangColumns = {"STT", "Mã SP", "Tên SP", "Size", "Màu sắc", "Đơn giá", "Số lượng", "Thành tiền"};
+        for (int i = 0; i < gioHangColumns.length; i++) {
+            modelGioHang.setColumnIdentifiers(gioHangColumns);
+        }
+
+        // Thiết lập tên cột cho bảng hóa đơn
+        String[] hoaDonColumns = {"STT", "Mã HD", "Ngày Tạo", "Nhân Viên", "Tổng tiền", "Trạng thái"};
+        for (int i = 0; i < hoaDonColumns.length; i++) {
+            modelHoaDon.setColumnIdentifiers(hoaDonColumns);
+        }
+    }
+
+    private void updateTongTien() {
+        double tongTien = 0;
+        for (int i = 0; i < modelGioHang.getRowCount(); i++) {
+            double thanhTien = Double.parseDouble(modelGioHang.getValueAt(i, 7).toString());
+            tongTien += thanhTien;
+        }
+
+        lbTongTien.setText(String.format("%,.0f", tongTien));
+        lbTong.setText(String.format("%,.0f", tongTien));
+
+        // Cập nhật tiền thừa nếu có
+        try {
+            double tienKhachDua = Double.parseDouble(txtTienKhachDua.getText().replaceAll("[^\\d.]", ""));
+            double tienThua = tienKhachDua - tongTien;
+            if (tienThua >= 0) {
+                lbTienThua.setText(String.format("%,.0f", tienThua));
+            }
+        } catch (NumberFormatException e) {
+            // Bỏ qua nếu chưa nhập tiền khách đưa
+        }
+    }
+
+    private void updateSTT() {
+        for (int i = 0; i < modelGioHang.getRowCount(); i++) {
+            modelGioHang.setValueAt(i + 1, i, 0);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -653,7 +553,7 @@ public class ViewBanHang extends javax.swing.JPanel {
                                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(lbTong, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addGroup(jPanel6Layout.createSequentialGroup()
-                                        .addComponent(btnThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(btnThanhToan)
                                         .addGap(0, 0, Short.MAX_VALUE))))
                             .addGroup(jPanel6Layout.createSequentialGroup()
                                 .addComponent(jLabel17)
@@ -778,116 +678,146 @@ public class ViewBanHang extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btn_Them1btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_Them1btn_ThemActionPerformed
-        // Create new order
-        try {
-            currentOrder = Order.builder()
-                .orderId(orderList.size() + 1)
-                .orderCreatedAt(LocalDateTime.now())
-                .build();
-            
-            orderList.add(currentOrder);
-            cartItems.clear();
-            totalAmount = BigDecimal.ZERO;
-            
-            loadOrders();
-            updateOrderInfo();
-            cartTableModel.setRowCount(0);
-            
-            JOptionPane.showMessageDialog(this, "Tạo hóa đơn mới thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi tạo hóa đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
+
+        modelGioHang.setRowCount(0);
+
+        // Cập nhật thông tin hóa đơn mới
+        lbMaHD.setText("HD" + System.currentTimeMillis());
+        lbNgayTao.setText(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));
+        lbTongTien.setText("0");
+        lbTong.setText("0");
+        lbTienThua.setText("0");
+        txtTenKhach.setText("Khách Bán Lẻ");
+        txtMaKhachhang.setText("");
     }//GEN-LAST:event_btn_Them1btn_ThemActionPerformed
 
     private void btnTheHoaDonbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTheHoaDonbtn_ThemActionPerformed
-        // Print invoice
-        if (currentOrder == null) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn hóa đơn để in!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        try {
-            // Here you would integrate with JasperReports to print the invoice
-            JOptionPane.showMessageDialog(this, "Đang in hóa đơn...", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi in hóa đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
+
+
     }//GEN-LAST:event_btnTheHoaDonbtn_ThemActionPerformed
 
     private void btn_Them3btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_Them3btn_ThemActionPerformed
-        // Delete selected order
-        int selectedRow = tblHoaDon.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn hóa đơn cần xóa!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "Bạn có chắc chắn muốn xóa hóa đơn này?", 
-            "Xác nhận xóa", 
-            JOptionPane.YES_NO_OPTION);
-        
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                orderList.remove(selectedRow);
-                loadOrders();
-                JOptionPane.showMessageDialog(this, "Xóa hóa đơn thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi xóa hóa đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        // TODO add your handling code here:
+        QuetQRBanHang qrForm = new QuetQRBanHang();
+        qrForm.setQRCodeScannedListener(new QuetQRBanHang.QRCodeScannedListener() {
+            @Override
+            public void onQRCodeScanned(String maSP) {
+                if (maSP != null && !maSP.isEmpty()) {
+                    // Tìm sản phẩm trong bảng sản phẩm theo mã SP
+                    for (int i = 0; i < tblSanPham.getRowCount(); i++) {
+                        if (tblSanPham.getValueAt(i, 1).toString().equals(maSP)) {
+                            // Mô phỏng click vào sản phẩm để thêm vào giỏ hàng
+                            tblSanPham.setRowSelectionInterval(i, i);
+                            tblSanPhamMouseClicked(null);
+                            break;
+                        }
+                    }
+                }
             }
-        }
+        });
+        qrForm.setVisible(true);
     }//GEN-LAST:event_btn_Them3btn_ThemActionPerformed
 
 
     private void btn_Them5btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_Them5btn_ThemActionPerformed
-        // Refresh data
-        try {
-            loadData();
-            JOptionPane.showMessageDialog(this, "Đã làm mới dữ liệu!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi làm mới dữ liệu: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
+
     }//GEN-LAST:event_btn_Them5btn_ThemActionPerformed
 
     private void tblHoaDonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblHoaDonMouseClicked
-        int selectedRow = tblHoaDon.getSelectedRow();
-        if (selectedRow != -1 && selectedRow < orderList.size()) {
-            currentOrder = orderList.get(selectedRow);
-            updateOrderInfo();
-            // Load cart items for selected order
-            // This would typically load from database
-        }
+
+
     }//GEN-LAST:event_tblHoaDonMouseClicked
 
     private void tblSanPhamMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblSanPhamMouseClicked
-        // Add product to cart on double click
-        if (evt.getClickCount() == 2) {
-            int selectedRow = tblSanPham.getSelectedRow();
-            if (selectedRow != -1 && selectedRow < productList.size()) {
-                Product selectedProduct = productList.get(selectedRow);
-                addToCart(selectedProduct, 1);
+        int selectedRow = tblSanPham.getSelectedRow();
+        if (selectedRow >= 0) {
+            // Lấy thông tin sản phẩm từ bảng
+            String maSP = modelSanPham.getValueAt(selectedRow, 1).toString();
+            String tenSP = modelSanPham.getValueAt(selectedRow, 2).toString();
+            String size = modelSanPham.getValueAt(selectedRow, 3).toString();
+            String mauSac = modelSanPham.getValueAt(selectedRow, 4).toString();
+            double donGia = Double.parseDouble(modelSanPham.getValueAt(selectedRow, 5).toString());
+
+            // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
+            boolean found = false;
+            for (int i = 0; i < modelGioHang.getRowCount(); i++) {
+                if (modelGioHang.getValueAt(i, 1).equals(maSP)
+                        && modelGioHang.getValueAt(i, 3).equals(size)) {
+                    // Tăng số lượng nếu đã có
+                    int soLuong = Integer.parseInt(modelGioHang.getValueAt(i, 6).toString()) + 1;
+                    modelGioHang.setValueAt(soLuong, i, 6);
+                    double thanhTien = soLuong * donGia;
+                    modelGioHang.setValueAt(thanhTien, i, 7);
+                    found = true;
+                    break;
+                }
             }
+
+            // Nếu chưa có thì thêm mới
+            if (!found) {
+                Object[] row = {
+                    modelGioHang.getRowCount() + 1,
+                    maSP,
+                    tenSP,
+                    size,
+                    mauSac,
+                    donGia,
+                    1, // Số lượng mặc định là 1
+                    donGia // Thành tiền ban đầu bằng đơn giá
+                };
+                modelGioHang.addRow(row);
+            }
+
+            // Cập nhật tổng tiền
+            updateTongTien();
         }
     }//GEN-LAST:event_tblSanPhamMouseClicked
 
     private void tblGioHangMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblGioHangMouseClicked
-        // Remove item from cart on right click
-        if (evt.getButton() == java.awt.event.MouseEvent.BUTTON3) {
-            int selectedRow = tblGioHang.getSelectedRow();
-            if (selectedRow != -1) {
-                int confirm = JOptionPane.showConfirmDialog(this, 
-                    "Bạn có muốn xóa sản phẩm này khỏi giỏ hàng?", 
-                    "Xác nhận", 
-                    JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.YES_OPTION) {
-                    removeFromCart(selectedRow);
-                }
+        if (SwingUtilities.isRightMouseButton(evt)) {
+            int row = tblGioHang.rowAtPoint(evt.getPoint());
+            if (row >= 0) {
+                // Hiển thị menu ngữ cảnh
+                JPopupMenu popupMenu = new JPopupMenu();
+                JMenuItem menuItemXoa = new JMenuItem("Xóa");
+                JMenuItem menuItemGiamSoLuong = new JMenuItem("Giảm số lượng");
+                JMenuItem menuItemTangSoLuong = new JMenuItem("Tăng số lượng");
+
+                menuItemXoa.addActionListener(e -> {
+                    modelGioHang.removeRow(row);
+                    updateTongTien();
+                    updateSTT();
+                });
+
+                menuItemGiamSoLuong.addActionListener(e -> {
+                    int soLuong = Integer.parseInt(modelGioHang.getValueAt(row, 6).toString());
+                    if (soLuong > 1) {
+                        double donGia = Double.parseDouble(modelGioHang.getValueAt(row, 5).toString());
+                        modelGioHang.setValueAt(soLuong - 1, row, 6);
+                        modelGioHang.setValueAt((soLuong - 1) * donGia, row, 7);
+                        updateTongTien();
+                    }
+                });
+
+                menuItemTangSoLuong.addActionListener(e -> {
+                    int soLuong = Integer.parseInt(modelGioHang.getValueAt(row, 6).toString());
+                    double donGia = Double.parseDouble(modelGioHang.getValueAt(row, 5).toString());
+                    modelGioHang.setValueAt(soLuong + 1, row, 6);
+                    modelGioHang.setValueAt((soLuong + 1) * donGia, row, 7);
+                    updateTongTien();
+                });
+
+                popupMenu.add(menuItemTangSoLuong);
+                popupMenu.add(menuItemGiamSoLuong);
+                popupMenu.add(menuItemXoa);
+                popupMenu.show(tblGioHang, evt.getX(), evt.getY());
             }
         }
+
     }//GEN-LAST:event_tblGioHangMouseClicked
 
     private void txtTimKiemSPCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_txtTimKiemSPCaretUpdate
-      
+
     }//GEN-LAST:event_txtTimKiemSPCaretUpdate
 
     private void tblHoaDonMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblHoaDonMouseEntered
@@ -907,7 +837,17 @@ public class ViewBanHang extends javax.swing.JPanel {
     }//GEN-LAST:event_txtTienKhachCKCaretUpdate
 
     private void txtTienKhachDuaKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtTienKhachDuaKeyReleased
-
+        try {
+            String input = txtTienKhachDua.getText().replaceAll("[^\\d]", "");
+            if (!input.isEmpty()) {
+                double tienKhachDua = Double.parseDouble(input);
+                double tongTien = Double.parseDouble(lbTong.getText().replaceAll("[^\\d.]", ""));
+                double tienThua = tienKhachDua - tongTien;
+                lbTienThua.setText(String.format("%,.0f", Math.max(0, tienThua)));
+            }
+        } catch (NumberFormatException e) {
+            // Bỏ qua nếu nhập không đúng định dạng
+        }
     }//GEN-LAST:event_txtTienKhachDuaKeyReleased
 
     private void txtTienKhachDuaCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_txtTienKhachDuaCaretUpdate
@@ -923,49 +863,16 @@ public class ViewBanHang extends javax.swing.JPanel {
     }//GEN-LAST:event_cbbPhieuGiamGiaActionPerformed
 
     private void btn_Them4btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_Them4btn_ThemActionPerformed
-        // Add new customer
-        String customerCode = txtMaKhachhang.getText().trim();
-        String customerName = txtTenKhach.getText().trim();
-        
-        if (customerCode.isEmpty() || customerName.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin khách hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        try {
-            Customer newCustomer = Customer.builder()
-                .customerId(customerList.size() + 1)
-                .customerCode(customerCode)
-                .customerUsername(customerName)
-                .build();
-            
-            customerList.add(newCustomer);
-            txtMaKhachhang.setText("");
-            txtTenKhach.setText("");
-            
-            JOptionPane.showMessageDialog(this, "Thêm khách hàng thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi thêm khách hàng: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
+        ViewThemKhachHang view = new ViewThemKhachHang();
+        view.setViewBanHangCallback((tenKH, sdt, email) -> {
+            txtTenKhach.setText(tenKH);
+            txtMaKhachhang.setText(sdt); // Sử dụng số điện thoại làm mã khách hàng tạm thời
+        });
+        view.setVisible(true);
     }//GEN-LAST:event_btn_Them4btn_ThemActionPerformed
 
     private void txtMaKhachhangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtMaKhachhangActionPerformed
-        // Search customer by code
-        String customerCode = txtMaKhachhang.getText().trim();
-        if (!customerCode.isEmpty()) {
-            Customer customer = customerList.stream()
-                .filter(c -> c.getCustomerCode().equals(customerCode))
-                .findFirst()
-                .orElse(null);
-            
-            if (customer != null) {
-                txtTenKhach.setText(customer.getCustomerUsername());
-                lbTenKhachHang.setText(customer.getCustomerUsername());
-            } else {
-                txtTenKhach.setText("");
-                lbTenKhachHang.setText("Khách lẻ");
-            }
-        }
+        // TODO add your handling code here:
     }//GEN-LAST:event_txtMaKhachhangActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

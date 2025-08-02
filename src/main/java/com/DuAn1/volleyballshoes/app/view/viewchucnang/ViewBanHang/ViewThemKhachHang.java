@@ -4,6 +4,8 @@
  */
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang;
 
+import javax.swing.table.DefaultTableModel;
+
 
 /**
  *
@@ -17,7 +19,8 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
 
     public ViewThemKhachHang() {
         initComponents();
-  
+        loadTableData();
+
     }
 
    
@@ -36,13 +39,13 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
         jPanel1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblKhachHang = new javax.swing.JTable();
-        btn_Them4 = new javax.swing.JButton();
+        btn_chon = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         txtTenKH = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
         txtSDT = new javax.swing.JTextField();
-        btn_Them5 = new javax.swing.JButton();
+        btn_themkhachhang = new javax.swing.JButton();
         jLabel5 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
 
@@ -64,13 +67,13 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(tblKhachHang);
 
-        btn_Them4.setBackground(new java.awt.Color(0, 102, 255));
-        btn_Them4.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        btn_Them4.setForeground(new java.awt.Color(255, 255, 255));
-        btn_Them4.setText("Chọn");
-        btn_Them4.addActionListener(new java.awt.event.ActionListener() {
+        btn_chon.setBackground(new java.awt.Color(0, 102, 255));
+        btn_chon.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btn_chon.setForeground(new java.awt.Color(255, 255, 255));
+        btn_chon.setText("Chọn");
+        btn_chon.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_Them4btn_ThemActionPerformed(evt);
+                btn_chonbtn_ThemActionPerformed(evt);
             }
         });
 
@@ -84,7 +87,7 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
                 .addContainerGap())
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap(122, Short.MAX_VALUE)
-                .addComponent(btn_Them4, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btn_chon, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(111, 111, 111))
         );
         jPanel1Layout.setVerticalGroup(
@@ -93,7 +96,7 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
                 .addContainerGap(118, Short.MAX_VALUE)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(btn_Them4)
+                .addComponent(btn_chon)
                 .addGap(33, 33, 33))
         );
 
@@ -103,13 +106,13 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
 
         jLabel2.setText("Số Điện Thoại");
 
-        btn_Them5.setBackground(new java.awt.Color(0, 102, 255));
-        btn_Them5.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        btn_Them5.setForeground(new java.awt.Color(255, 255, 255));
-        btn_Them5.setText("thêm");
-        btn_Them5.addActionListener(new java.awt.event.ActionListener() {
+        btn_themkhachhang.setBackground(new java.awt.Color(0, 102, 255));
+        btn_themkhachhang.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btn_themkhachhang.setForeground(new java.awt.Color(255, 255, 255));
+        btn_themkhachhang.setText("thêm");
+        btn_themkhachhang.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_Them5btn_ThemActionPerformed(evt);
+                btn_themkhachhangbtn_ThemActionPerformed(evt);
             }
         });
 
@@ -130,7 +133,7 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
                             .addComponent(jLabel2)))
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGap(106, 106, 106)
-                        .addComponent(btn_Them5, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(btn_themkhachhang, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(jLabel5))
@@ -155,7 +158,7 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(149, 149, 149)
-                .addComponent(btn_Them5)
+                .addComponent(btn_themkhachhang)
                 .addContainerGap(32, Short.MAX_VALUE))
         );
 
@@ -181,17 +184,32 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btn_Them4btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_Them4btn_ThemActionPerformed
+    private void btn_chonbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_chonbtn_ThemActionPerformed
+        int row = tblKhachHang.getSelectedRow();
+        if (row >= 0) {
+            // Lấy thông tin khách hàng từ bảng
+            String tenKH = tblKhachHang.getValueAt(row, 1).toString();
+            String sdt = tblKhachHang.getValueAt(row, 2).toString();
+            String email = tblKhachHang.getValueAt(row, 3).toString();
+            
+            // Gọi phương thức callback từ ViewBanHang (nếu có)
+            if (viewBanHangCallback != null) {
+                viewBanHangCallback.onCustomerSelected(tenKH, sdt, email);
+            }
+            
+            // Đóng cửa sổ
+            this.dispose();
+        }
+    }//GEN-LAST:event_btn_chonbtn_ThemActionPerformed
 
-
-    }//GEN-LAST:event_btn_Them4btn_ThemActionPerformed
-
-    private void btn_Them5btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_Them5btn_ThemActionPerformed
-  
-    }//GEN-LAST:event_btn_Them5btn_ThemActionPerformed
+    private void btn_themkhachhangbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_themkhachhangbtn_ThemActionPerformed
+        themMoiKhachHang();
+    }//GEN-LAST:event_btn_themkhachhangbtn_ThemActionPerformed
 
     private void tblKhachHangMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblKhachHangMouseClicked
-
+        if (evt.getClickCount() == 2) { // Double click
+            btn_chonbtn_ThemActionPerformed(null);
+        }
     }//GEN-LAST:event_tblKhachHangMouseClicked
 
     private void txtTimKiemCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_txtTimKiemCaretUpdate
@@ -234,9 +252,66 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
         });
     }
 
+    // Callback interface để truyền dữ liệu về ViewBanHang
+    public interface ViewBanHangCallback {
+        void onCustomerSelected(String tenKH, String sdt, String email);
+    }
+    
+    private ViewBanHangCallback viewBanHangCallback;
+    
+    // Phương thức để thiết lập callback
+    public void setViewBanHangCallback(ViewBanHangCallback callback) {
+        this.viewBanHangCallback = callback;
+    }
+    
+    // Phương thức thêm mới khách hàng
+    private void themMoiKhachHang() {
+        String tenKH = txtTenKH.getText().trim();
+        String sdt = txtSDT.getText().trim();
+        String email = jTextField1.getText().trim();
+        
+        // Validate dữ liệu
+        if (tenKH.isEmpty() || sdt.isEmpty()) {
+            return;
+        }
+        
+        // Thêm vào bảng
+        DefaultTableModel model = (DefaultTableModel) tblKhachHang.getModel();
+        model.addRow(new Object[]{
+            model.getRowCount() + 1,
+            tenKH,
+            sdt,
+            email,
+            "Mới"
+        });
+        
+        // Xóa dữ liệu form
+        txtTenKH.setText("");
+        txtSDT.setText("");
+        jTextField1.setText("");
+        
+        // Chuyển về tab danh sách
+        jTabbedPane1.setSelectedIndex(0);
+    }
+    
+    // Phương thức tải dữ liệu vào bảng
+    private void loadTableData() {
+        DefaultTableModel model = (DefaultTableModel) tblKhachHang.getModel();
+        model.setRowCount(0); // Xóa dữ liệu cũ
+        
+        // Đặt lại tên cột
+        String[] columnNames = {"STT", "Tên Khách Hàng", "SĐT", "Email", "Trạng thái"};
+        model.setColumnIdentifiers(columnNames);
+        
+        // TODO: Thêm code để tải dữ liệu từ database ở đây
+        // Ví dụ tạm thời thêm dữ liệu mẫu
+        model.addRow(new Object[]{1, "Nguyễn Văn A", "0912345678", "nguyenvana@example.com", "Đã mua hàng"});
+        model.addRow(new Object[]{2, "Trần Thị B", "0987654321", "tranthib@example.com", "Mới"});
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btn_Them4;
-    private javax.swing.JButton btn_Them5;
+    private javax.swing.JButton btn_chon;
+    private javax.swing.JButton btn_themkhachhang;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

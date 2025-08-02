@@ -1,16 +1,103 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewHoaDon;
 
+import com.DuAn1.volleyballshoes.app.controller.OrderController;
+import com.DuAn1.volleyballshoes.app.dto.response.OrderDetailResponse;
+import com.DuAn1.volleyballshoes.app.dto.response.OrderResponse;
+import com.DuAn1.volleyballshoes.app.entity.Order;
+import com.DuAn1.volleyballshoes.app.entity.OrderDetail;
+import com.DuAn1.volleyballshoes.app.utils.ExcelUtil;
+import com.DuAn1.volleyballshoes.app.utils.PDFUtil;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 
 public class ViewHoaDon extends javax.swing.JPanel {
 
+    private OrderController orderController = new OrderController();
 
     public ViewHoaDon() {
-
         initComponents();
-
+        initData();
+        loadAllOrders();
     }
 
+    private void initData() {
+        // Khởi tạo dữ liệu cho combo box trạng thái
+        CBtrangThai.removeAllItems();
+        CBtrangThai.addItem("Tất cả");
+        CBtrangThai.addItem("Đã thanh toán");
+        CBtrangThai.addItem("Chưa thanh toán");
+        CBtrangThai.addItem("Đã huỷ");
 
+        // Khởi tạo dữ liệu cho combo box hình thức thanh toán
+        CBhinhthucTT.removeAllItems();
+        CBhinhthucTT.addItem("Tất cả");
+        CBhinhthucTT.addItem("Tiền mặt");
+        CBhinhthucTT.addItem("Chuyển khoản");
+        CBhinhthucTT.addItem("Ví điện tử");
+
+        // Đặt ngày mặc định là hôm nay
+        txtTuNgay.setDate(new Date());
+        txtDenNgay.setDate(new Date());
+    }
+
+    private void loadAllOrders() {
+        try {
+            List<OrderResponse> orders = orderController.getAllOrders();
+            loadDataTable(orders);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tải danh sách hoá đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadDataTable(List<OrderResponse> orders) {
+        DefaultTableModel model = (DefaultTableModel) tbl.getModel();
+        model.setRowCount(0);
+
+        for (OrderResponse order : orders) {
+            model.addRow(new Object[]{
+                order.getOrderId(),
+                order.getCustomerId(),
+                order.getFinalAmount(),
+                order.getStatus(),
+                order.getPaymentMethod()
+            });
+        }
+    }
+
+    private void loadDetailsTable(List<OrderDetailResponse> details) {
+        try {
+            DefaultTableModel model = (DefaultTableModel) tblHDCT.getModel();
+            model.setRowCount(0);
+
+            if (details != null) {
+                for (OrderDetailResponse detail : details) {
+                    try {
+                        double price = detail.getUnitPrice() != 0 ? detail.getUnitPrice()
+                                : (detail.getPrice() != null ? detail.getPrice().doubleValue() : 0);
+                        model.addRow(new Object[]{
+                            detail.getProductId(),
+                            detail.getProductName() != null ? detail.getProductName() : "",
+                            detail.getQuantity(),
+                            formatCurrency(price),
+                            formatCurrency(price * detail.getQuantity())
+                        });
+                    } catch (Exception e) {
+                        System.err.println("Error processing order detail: " + e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tải chi tiết hoá đơn: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String formatCurrency(double amount) {
+        return String.format("%,.0f đ", amount);
+    }
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -314,18 +401,69 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSearchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSearchActionPerformed
-  
-
+        String keyword = JOptionPane.showInputDialog("Nhập mã hoặc tên khách hàng:");
+        List<OrderResponse> orders = orderController.searchOrders(keyword);
+        loadDataTable(orders);
         //TODO add your handling code here:
     }//GEN-LAST:event_btnSearchActionPerformed
 
     private void btnSearchNgayActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSearchNgayActionPerformed
+        try {
+            Date tuNgay = txtTuNgay.getDate();
+            Date denNgay = txtDenNgay.getDate();
 
+            if (tuNgay == null || denNgay == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc",
+                        "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Đảm bảo ngày kết thúc là cuối ngày
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(denNgay);
+            cal.set(Calendar.HOUR_OF_DAY, 23);
+            cal.set(Calendar.MINUTE, 59);
+            cal.set(Calendar.SECOND, 59);
+            denNgay = cal.getTime();
+
+            List<OrderResponse> orders = orderController.findByCreatedDateBetween(tuNgay, denNgay);
+            loadDataTable(orders);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tìm kiếm theo ngày: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
         // TODO add your handling code here:
     }//GEN-LAST:event_btnSearchNgayActionPerformed
 
     private void btnSearchGiaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSearchGiaActionPerformed
+        try {
+            String minStr = JOptionPane.showInputDialog("Nhập giá thấp nhất:");
+            if (minStr == null) {
+                return;
+            }
+            double giaMin = Double.parseDouble(minStr);
 
+            String maxStr = JOptionPane.showInputDialog("Nhập giá cao nhất:");
+            if (maxStr == null) {
+                return;
+            }
+            double giaMax = Double.parseDouble(maxStr);
+
+            if (giaMin > giaMax) {
+                JOptionPane.showMessageDialog(this, "Giá thấp nhất không thể lớn hơn giá cao nhất",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            List<OrderResponse> orders = orderController.findByTotalAmountBetween(giaMin, giaMax);
+            loadDataTable(orders);
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập số hợp lệ",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tìm kiếm theo giá: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
         // TODO add your handling code here:
     }//GEN-LAST:event_btnSearchGiaActionPerformed
 
@@ -335,18 +473,39 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }//GEN-LAST:event_CBhinhthucTTActionPerformed
 
     private void btnRestartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRestartActionPerformed
-
-
+        loadAllOrders();
+        txtTuNgay.setDate(null);
+        txtDenNgay.setDate(null);
+        CBtrangThai.setSelectedIndex(0);
+        CBhinhthucTT.setSelectedIndex(0);
+        txtQR.setText("");
         // TODO add your handling code here:
     }//GEN-LAST:event_btnRestartActionPerformed
 
     private void tblMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblMouseClicked
+        try {
+            int selectedRow = tbl.getSelectedRow();
+            if (selectedRow < 0) {
+                return;
+            }
 
+            String orderId = tbl.getValueAt(selectedRow, 0).toString();
+            if (orderId == null || orderId.trim().isEmpty()) {
+                return;
+            }
+
+            List<OrderDetailResponse> details = orderController.getOrderDetailsByOrderId(orderId);
+            loadDetailsTable(details);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tải chi tiết đơn hàng: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_tblMouseClicked
 
     private void btnXuatExcelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXuatExcelActionPerformed
-      
-
+        List<OrderResponse> orders = orderController.getAllOrders();
+        ExcelUtil.exportOrdersToExcel(orders, "orders.xlsx");
+        JOptionPane.showMessageDialog(this, "Xuất Excel thành công!");
 // TODO add your handling code here:
     }//GEN-LAST:event_btnXuatExcelActionPerformed
 
@@ -361,15 +520,60 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }//GEN-LAST:event_txtQRActionPerformed
 
     private void CBtrangThaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CBtrangThaiActionPerformed
+        try {
+            String trangThai = (String) CBtrangThai.getSelectedItem();
+            if (trangThai == null || "Tất cả".equals(trangThai)) {
+                loadAllOrders();
+                return;
+            }
 
+            List<OrderResponse> orders = orderController.findByStatus(trangThai);
+            loadDataTable(orders);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi lọc theo trạng thái: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_CBtrangThaiActionPerformed
 
     private void btnXuatPDFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXuatPDFActionPerformed
- 
+        List<OrderResponse> orders = orderController.getAllOrders();
+        PDFUtil.exportOrdersToPDF(orders, "orders.pdf");
+        JOptionPane.showMessageDialog(this, "Xuất PDF thành công!");
         // TODO add your handling code here:
     }//GEN-LAST:event_btnXuatPDFActionPerformed
 
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(ViewHoaDon.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(ViewHoaDon.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(ViewHoaDon.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(ViewHoaDon.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+        //</editor-fold>
 
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new ViewHoaDon().setVisible(true);
+            }
+        });
+    }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JComboBox<String> CBhinhthucTT;
     private javax.swing.JComboBox<String> CBtrangThai;

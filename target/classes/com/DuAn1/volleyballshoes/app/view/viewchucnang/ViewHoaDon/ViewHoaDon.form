@@ -373,19 +373,11 @@
         <Component class="javax.swing.JTable" name="tbl">
           <Properties>
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="12" rowCount="4">
-                <Column editable="true" title="STT" type="java.lang.Object"/>
-                <Column editable="true" title="M&#xe3; H&#x110;" type="java.lang.Object"/>
-                <Column editable="true" title="T&#xea;n SP" type="java.lang.Object"/>
-                <Column editable="true" title="Gi&#xe1; SP" type="java.lang.Object"/>
-                <Column editable="true" title="Ng&#xe0;y t&#x1ea1;o" type="java.lang.Object"/>
-                <Column editable="true" title="T&#x1ed5;ng ti&#x1ec1;n sau gi&#x1ea3;m" type="java.lang.Object"/>
-                <Column editable="true" title="M&#xe3; NV" type="java.lang.Object"/>
-                <Column editable="true" title="T&#xea;n KH" type="java.lang.Object"/>
-                <Column editable="true" title="&#x110;&#x1ecb;a ch&#x1ec9; KH" type="java.lang.Object"/>
-                <Column editable="true" title="S&#x1ed1; &#x111;i&#x1ec7;n tho&#x1ea1;i" type="java.lang.Object"/>
-                <Column editable="true" title="Tr&#x1ea1;ng th&#xe1;i H&#x110;" type="java.lang.Object"/>
-                <Column editable="true" title="H&#xec;nh th&#x1ee9;c TT" type="java.lang.Object"/>
+              <Table columnCount="4" rowCount="4">
+                <Column editable="true" title="Title 1" type="java.lang.Object"/>
+                <Column editable="true" title="Title 2" type="java.lang.Object"/>
+                <Column editable="true" title="Title 3" type="java.lang.Object"/>
+                <Column editable="true" title="Title 4" type="java.lang.Object"/>
               </Table>
             </Property>
           </Properties>
@@ -410,18 +402,11 @@
               </Border>
             </Property>
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="11" rowCount="4">
-                <Column editable="true" title="STT" type="java.lang.Object"/>
-                <Column editable="true" title="M&#xe3; ho&#xe1; &#x111;&#x1a1;n chi ti&#x1ebf;t" type="java.lang.Object"/>
-                <Column editable="true" title="S&#x1ed1; l&#x1b0;&#x1ee3;ng mua" type="java.lang.Object"/>
-                <Column editable="true" title="Phi&#x1ebf;u gi&#x1ea3;m gi&#xe1;" type="java.lang.Object"/>
-                <Column editable="true" title="T&#xea;n s&#x1ea3;n ph&#x1ea9;m" type="java.lang.Object"/>
-                <Column editable="true" title="T&#x1ed5;ng ti&#x1ec1;n" type="java.lang.Object"/>
-                <Column editable="true" title="S&#x1ed1; trang" type="java.lang.Object"/>
-                <Column editable="true" title="Lo&#x1ea1;i b&#xec;a" type="java.lang.Object"/>
-                <Column editable="true" title="Lo&#x1ea1;i gi&#x1ea5;y" type="java.lang.Object"/>
-                <Column editable="true" title="Th&#x1ec3; lo&#x1ea1;i" type="java.lang.Object"/>
-                <Column editable="true" title="Nh&#xe0; xu&#x1ea5;t b&#x1ea3;n" type="java.lang.Object"/>
+              <Table columnCount="4" rowCount="4">
+                <Column editable="true" title="Title 1" type="java.lang.Object"/>
+                <Column editable="true" title="Title 2" type="java.lang.Object"/>
+                <Column editable="true" title="Title 3" type="java.lang.Object"/>
+                <Column editable="true" title="Title 4" type="java.lang.Object"/>
               </Table>
             </Property>
           </Properties>
@@ -443,12 +428,11 @@
               </Border>
             </Property>
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="5" rowCount="4">
-                <Column editable="true" title="STT" type="java.lang.Object"/>
-                <Column editable="true" title="M&#xe3; l&#x1ecb;ch s&#x1eed; H&#x110;" type="java.lang.Object"/>
-                <Column editable="true" title="H&#xe0;nh &#x111;&#x1ed9;ng NV" type="java.lang.Object"/>
-                <Column editable="true" title="H&#xe0;nh &#x111;&#x1ed9;ng KH" type="java.lang.Object"/>
-                <Column editable="true" title="T&#xec;nh tr&#x1ea1;ng &#x111;&#x1a1;n h&#xe0;ng" type="java.lang.Object"/>
+              <Table columnCount="4" rowCount="4">
+                <Column editable="true" title="Title 1" type="java.lang.Object"/>
+                <Column editable="true" title="Title 2" type="java.lang.Object"/>
+                <Column editable="true" title="Title 3" type="java.lang.Object"/>
+                <Column editable="true" title="Title 4" type="java.lang.Object"/>
               </Table>
             </Property>
           </Properties>

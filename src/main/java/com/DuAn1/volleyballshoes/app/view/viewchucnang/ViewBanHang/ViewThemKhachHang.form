@@ -64,7 +64,7 @@
                   </Group>
                   <Group type="102" alignment="1" attributes="0">
                       <EmptySpace pref="122" max="32767" attributes="0"/>
-                      <Component id="btn_Them4" min="-2" pref="174" max="-2" attributes="0"/>
+                      <Component id="btn_chon" min="-2" pref="174" max="-2" attributes="0"/>
                       <EmptySpace min="-2" pref="111" max="-2" attributes="0"/>
                   </Group>
               </Group>
@@ -75,7 +75,7 @@
                       <EmptySpace pref="118" max="32767" attributes="0"/>
                       <Component id="jScrollPane1" min="-2" pref="215" max="-2" attributes="0"/>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
-                      <Component id="btn_Them4" min="-2" max="-2" attributes="0"/>
+                      <Component id="btn_chon" min="-2" max="-2" attributes="0"/>
                       <EmptySpace min="-2" pref="33" max="-2" attributes="0"/>
                   </Group>
               </Group>
@@ -107,7 +107,7 @@
                 </Component>
               </SubComponents>
             </Container>
-            <Component class="javax.swing.JButton" name="btn_Them4">
+            <Component class="javax.swing.JButton" name="btn_chon">
               <Properties>
                 <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                   <Color blue="ff" green="66" red="0" type="rgb"/>
@@ -121,7 +121,7 @@
                 <Property name="text" type="java.lang.String" value="Ch&#x1ecd;n"/>
               </Properties>
               <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_Them4btn_ThemActionPerformed"/>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_chonbtn_ThemActionPerformed"/>
               </Events>
             </Component>
           </SubComponents>
@@ -151,7 +151,7 @@
                           </Group>
                           <Group type="102" alignment="0" attributes="0">
                               <EmptySpace min="-2" pref="106" max="-2" attributes="0"/>
-                              <Component id="btn_Them5" min="-2" pref="174" max="-2" attributes="0"/>
+                              <Component id="btn_themkhachhang" min="-2" pref="174" max="-2" attributes="0"/>
                           </Group>
                           <Group type="102" alignment="0" attributes="0">
                               <EmptySpace max="-2" attributes="0"/>
@@ -182,7 +182,7 @@
                       <EmptySpace type="separate" max="-2" attributes="0"/>
                       <Component id="jTextField1" min="-2" max="-2" attributes="0"/>
                       <EmptySpace min="-2" pref="149" max="-2" attributes="0"/>
-                      <Component id="btn_Them5" min="-2" max="-2" attributes="0"/>
+                      <Component id="btn_themkhachhang" min="-2" max="-2" attributes="0"/>
                       <EmptySpace pref="32" max="32767" attributes="0"/>
                   </Group>
               </Group>
@@ -203,7 +203,7 @@
             </Component>
             <Component class="javax.swing.JTextField" name="txtSDT">
             </Component>
-            <Component class="javax.swing.JButton" name="btn_Them5">
+            <Component class="javax.swing.JButton" name="btn_themkhachhang">
               <Properties>
                 <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                   <Color blue="ff" green="66" red="0" type="rgb"/>
@@ -217,7 +217,7 @@
                 <Property name="text" type="java.lang.String" value="th&#xea;m"/>
               </Properties>
               <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_Them5btn_ThemActionPerformed"/>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_themkhachhangbtn_ThemActionPerformed"/>
               </Events>
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel5">

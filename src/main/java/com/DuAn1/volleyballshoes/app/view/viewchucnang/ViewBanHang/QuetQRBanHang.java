@@ -27,6 +27,14 @@ import javax.swing.SwingUtilities;
  * @author trinh
  */
 public class QuetQRBanHang extends javax.swing.JFrame implements Runnable, ThreadFactory {
+    
+    // Interface để lắng nghe sự kiện quét QR thành công
+    public interface QRCodeScannedListener {
+        void onQRCodeScanned(String qrText);
+    }
+    
+    private QRCodeScannedListener qrCodeScannedListener;
+    private String lastScannedQR = null;
 
     /**
      * Creates new form QuetQR
@@ -172,14 +180,19 @@ public class QuetQRBanHang extends javax.swing.JFrame implements Runnable, Threa
 
             if (result != null) {
                 final String qrText = result.getText();
+                lastScannedQR = qrText;
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
                         webcam.close();
                         setVisible(false);
-
+                        // Gọi callback nếu có
+                        if (qrCodeScannedListener != null) {
+                            qrCodeScannedListener.onQRCodeScanned(qrText);
+                        }
                     }
                 });
+                break; // Dừng vòng lặp sau khi quét thành công
             }
         } while (true);
     }
@@ -189,5 +202,15 @@ public class QuetQRBanHang extends javax.swing.JFrame implements Runnable, Threa
         Thread t = new Thread(r);
         t.setDaemon(true);
         return t;
+    }
+    
+    // Phương thức để đăng ký lắng nghe sự kiện quét QR
+    public void setQRCodeScannedListener(QRCodeScannedListener listener) {
+        this.qrCodeScannedListener = listener;
+    }
+    
+    // Phương thức lấy kết quả quét cuối cùng
+    public String getLastScannedQR() {
+        return lastScannedQR;
     }
 }
