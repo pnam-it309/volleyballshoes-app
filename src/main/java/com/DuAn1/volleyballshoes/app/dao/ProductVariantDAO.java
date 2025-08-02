@@ -6,4 +6,6 @@ import java.util.List;
 public interface ProductVariantDAO extends CrudDAO<ProductVariant, Integer>{
     List<ProductVariant> findAll();
     List<ProductVariant> findByProductId(int productId);
+    List<ProductVariant> findWithPagination(int page, int pageSize, String filter);
+    int count(String filter);
 }
