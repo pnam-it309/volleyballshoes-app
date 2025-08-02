@@ -72,7 +72,6 @@ public class ViewKhachHang extends javax.swing.JPanel {
         tbl_sửa = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
         txt_ma = new javax.swing.JTextField();
-        txt_ten = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
@@ -84,12 +83,13 @@ public class ViewKhachHang extends javax.swing.JPanel {
         txt_nhạptim = new javax.swing.JTextField();
         tbl_timkiem = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        tbl_bang = new javax.swing.JTable();
+        txt_ten = new javax.swing.JTextField();
         jScrollPane1 = new javax.swing.JScrollPane();
         tbl_bangls = new javax.swing.JTable();
         jLabel10 = new javax.swing.JLabel();
         jLabel11 = new javax.swing.JLabel();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        tbl_bang = new javax.swing.JTable();
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(0, 0, 255));
@@ -119,12 +119,6 @@ public class ViewKhachHang extends javax.swing.JPanel {
         });
 
         jLabel3.setText("Mã Khách Hàng");
-
-        txt_ten.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txt_tenActionPerformed(evt);
-            }
-        });
 
         jLabel4.setText("Tên Khách Hàng");
 
@@ -191,47 +185,47 @@ public class ViewKhachHang extends javax.swing.JPanel {
             }
         });
 
+        txt_ten.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txt_tenActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(26, 26, 26)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(26, 26, 26)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(tbl_them)
-                                .addGap(71, 71, 71)
-                                .addComponent(tbl_sửa)
-                                .addGap(74, 74, 74)
-                                .addComponent(tbl_lammoi)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
-                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(jPanel1Layout.createSequentialGroup()
-                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(jLabel3)
-                                        .addComponent(jLabel4))
-                                    .addGap(72, 72, 72)
-                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                        .addComponent(txt_ma)
-                                        .addComponent(txt_ten, javax.swing.GroupLayout.DEFAULT_SIZE, 336, Short.MAX_VALUE))
-                                    .addGap(139, 139, 139)
-                                    .addComponent(txt_email, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGap(58, 58, 58))
-                                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addGroup(jPanel1Layout.createSequentialGroup()
-                                            .addComponent(jLabel9)
-                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                            .addComponent(txt_sdt, javax.swing.GroupLayout.PREFERRED_SIZE, 328, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addComponent(jLabel7))
-                                    .addGap(40, 40, 40)))))
+                        .addComponent(tbl_them)
+                        .addGap(71, 71, 71)
+                        .addComponent(tbl_sửa)
+                        .addGap(74, 74, 74)
+                        .addComponent(tbl_lammoi))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 833, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(56, 56, 56)
-                        .addComponent(jButton1)))
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel4))
+                        .addGap(72, 72, 72)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(txt_ma, javax.swing.GroupLayout.DEFAULT_SIZE, 336, Short.MAX_VALUE)
+                            .addComponent(txt_ten))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel9)
+                            .addComponent(jLabel7))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(txt_email, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(txt_sdt, javax.swing.GroupLayout.PREFERRED_SIZE, 328, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 833, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(56, 56, 56)
+                .addComponent(jButton1)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
@@ -266,24 +260,6 @@ public class ViewKhachHang extends javax.swing.JPanel {
                         .addGap(27, 27, 27))))
         );
 
-        tbl_bang.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
-            new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
-            }
-        ));
-        tbl_bang.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                tbl_bangMouseClicked(evt);
-            }
-        });
-        jScrollPane2.setViewportView(tbl_bang);
-
         tbl_bangls.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
@@ -301,15 +277,28 @@ public class ViewKhachHang extends javax.swing.JPanel {
 
         jLabel11.setText("Thông tin khách Hàng ");
 
+        tbl_bang.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ));
+        tbl_bang.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tbl_bangMouseClicked(evt);
+            }
+        });
+        jScrollPane3.setViewportView(tbl_bang);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 709, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 396, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(76, 76, 76))
             .addGroup(layout.createSequentialGroup()
                 .addGap(370, 370, 370)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 293, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -324,6 +313,12 @@ public class ViewKhachHang extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(351, 351, 351))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(46, 46, 46)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 607, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 396, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(76, 76, 76))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -338,9 +333,9 @@ public class ViewKhachHang extends javax.swing.JPanel {
                     .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(35, 35, 35)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(105, 105, 105))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 217, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(84, 84, 84))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -464,6 +459,77 @@ public class ViewKhachHang extends javax.swing.JPanel {
         clearFields();
         loadCustomerData();
     }//GEN-LAST:event_tbl_lammoiActionPerformed
+
+    private void txt_tenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txt_tenActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txt_tenActionPerformed
+
+    private void tbl_bangMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tbl_bangMouseClicked
+        // TODO add your handling code here:
+        int selectedRow = tbl_bang.getSelectedRow();
+        if (selectedRow >= 0) {  // Ensure a row is selected
+            try {
+                // Get customer code from the selected row (assuming it's in the first column)
+                String customerCode = tbl_bang.getValueAt(selectedRow, 0).toString();
+                
+                // Fetch the complete customer details
+                Customer customer = customerController.getCustomerByCode(customerCode);
+                
+                if (customer != null) {
+                    // Populate the form fields with customer data
+                    txt_ma.setText(customer.getCustomerCode());
+                    txt_ten.setText(customer.getCustomerUsername());
+                    txt_sdt.setText(customer.getCustomerPhone());
+                    txt_email.setText(customer.getCustomerEmail());
+                    
+                    // Load order history for this customer
+                    loadOrderHistory(customer.getCustomerId());
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tải thông tin khách hàng: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }//GEN-LAST:event_tbl_bangMouseClicked
+    /**
+     * Loads order history for a specific customer
+     * @param customerId The ID of the customer to load order history for
+     */
+    private void loadOrderHistory(Integer customerId) {
+        try {
+            // Clear existing data
+            orderHistoryTableModel.setRowCount(0);
+            
+            // Get orders for this customer (you'll need to implement this in your OrderController)
+            // List<Order> orders = orderController.getOrdersByCustomerId(customerId);
+            
+            // For now, we'll just show a message
+            if (customerId != null) {
+                // This is a placeholder - replace with actual order data
+                // for (Order order : orders) {
+                //     orderHistoryTableModel.addRow(new Object[]{
+                //         order.getOrderCode(),
+                //         order.getOrderDate(),
+                //         String.format("%,.0f VNĐ", order.getTotalAmount()),
+                //         order.getStatus()
+                //     });
+                // }
+                
+                // For now, just show a message
+                if (orderHistoryTableModel.getRowCount() == 0) {
+                    orderHistoryTableModel.addRow(new Object[]{
+                        "Không có đơn hàng nào", "", "", ""
+                    });
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                "Lỗi khi tải lịch sử đơn hàng: " + e.getMessage(),
+                "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
     private void clearFields() {
         txt_ma.setText("");
         txt_ten.setText("");
@@ -471,6 +537,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
         txt_email.setText("");
         txt_nhạptim.setText("");
         tbl_bang.clearSelection();
+        orderHistoryTableModel.setRowCount(0); // Clear order history
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;
@@ -486,7 +553,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTable tbl_bang;
     private javax.swing.JTable tbl_bangls;
     private javax.swing.JButton tbl_lammoi;
