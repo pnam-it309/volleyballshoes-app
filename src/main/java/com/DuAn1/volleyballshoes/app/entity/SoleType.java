@@ -7,6 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SoleType {
-    public int sole_id;
-    public String sole_name;
+    private int soleId;
+    private String soleName;
+    private String soleCode;
 } 

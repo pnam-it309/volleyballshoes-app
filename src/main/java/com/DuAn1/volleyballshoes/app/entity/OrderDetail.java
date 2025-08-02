@@ -8,6 +8,7 @@ package com.DuAn1.volleyballshoes.app.entity;
  *
  * @author nickh
  */
+import java.math.BigDecimal;
 import lombok.*;
 
 @Data
@@ -15,10 +16,9 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class OrderDetail {
-
     private int orderDetailId;
     private int orderId;
     private int variantId;
     private int detailQuantity;
-    private double detailUnitPrice;
+    private BigDecimal detailUnitPrice;
 }

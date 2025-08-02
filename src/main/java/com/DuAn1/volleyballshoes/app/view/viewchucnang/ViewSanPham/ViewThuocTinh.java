@@ -28,9 +28,9 @@ public class ViewThuocTinh extends javax.swing.JPanel {
         rbLoaiGiay = new javax.swing.JRadioButton();
         rbLoaiBia = new javax.swing.JRadioButton();
         rbTheLoai = new javax.swing.JRadioButton();
-        rbKichThuoc = new javax.swing.JRadioButton();
         btnThem = new javax.swing.JButton();
         btnXoa = new javax.swing.JButton();
+        btnsua = new javax.swing.JButton();
 
         tblThuocTinh.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -91,7 +91,7 @@ public class ViewThuocTinh extends javax.swing.JPanel {
         jLabel3.setText("Thông Tin Thuộc Tính");
 
         buttonGroup1.add(rbTacGia);
-        rbTacGia.setText("Tác Giả");
+        rbTacGia.setText("Size");
         rbTacGia.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 rbTacGiaActionPerformed(evt);
@@ -99,7 +99,7 @@ public class ViewThuocTinh extends javax.swing.JPanel {
         });
 
         buttonGroup1.add(rbNXB);
-        rbNXB.setText("Nhà Xuất Bản");
+        rbNXB.setText("Đế giày");
         rbNXB.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 rbNXBActionPerformed(evt);
@@ -107,7 +107,7 @@ public class ViewThuocTinh extends javax.swing.JPanel {
         });
 
         buttonGroup1.add(rbLoaiGiay);
-        rbLoaiGiay.setText("Loại Giấy");
+        rbLoaiGiay.setText("Loại");
         rbLoaiGiay.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 rbLoaiGiayActionPerformed(evt);
@@ -115,7 +115,7 @@ public class ViewThuocTinh extends javax.swing.JPanel {
         });
 
         buttonGroup1.add(rbLoaiBia);
-        rbLoaiBia.setText("Loại Bìa");
+        rbLoaiBia.setText("Thương hiệu");
         rbLoaiBia.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 rbLoaiBiaActionPerformed(evt);
@@ -123,18 +123,10 @@ public class ViewThuocTinh extends javax.swing.JPanel {
         });
 
         buttonGroup1.add(rbTheLoai);
-        rbTheLoai.setText("Thể Loại");
+        rbTheLoai.setText("Màu sắc");
         rbTheLoai.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 rbTheLoaiActionPerformed(evt);
-            }
-        });
-
-        buttonGroup1.add(rbKichThuoc);
-        rbKichThuoc.setText("Kích Thuóc");
-        rbKichThuoc.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                rbKichThuocActionPerformed(evt);
             }
         });
 
@@ -158,6 +150,16 @@ public class ViewThuocTinh extends javax.swing.JPanel {
             }
         });
 
+        btnsua.setBackground(new java.awt.Color(0, 51, 255));
+        btnsua.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnsua.setForeground(new java.awt.Color(255, 255, 255));
+        btnsua.setText("Sửa");
+        btnsua.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnsuaActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -166,6 +168,8 @@ public class ViewThuocTinh extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addGap(139, 139, 139)
                 .addComponent(btnThem)
+                .addGap(136, 136, 136)
+                .addComponent(btnsua)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(btnXoa)
                 .addGap(163, 163, 163))
@@ -183,13 +187,11 @@ public class ViewThuocTinh extends javax.swing.JPanel {
                             .addComponent(rbNXB)
                             .addComponent(rbLoaiBia))
                         .addGap(76, 76, 76)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(rbTheLoai)
-                            .addComponent(rbKichThuoc)))
+                        .addComponent(rbTheLoai))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(285, 285, 285)
                         .addComponent(jLabel3)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(168, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -208,12 +210,12 @@ public class ViewThuocTinh extends javax.swing.JPanel {
                         .addGap(65, 65, 65)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(rbLoaiGiay)
-                            .addComponent(rbLoaiBia)
-                            .addComponent(rbKichThuoc))))
+                            .addComponent(rbLoaiBia))))
                 .addGap(88, 88, 88)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnThem)
-                    .addComponent(btnXoa))
+                    .addComponent(btnXoa)
+                    .addComponent(btnsua))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 54, Short.MAX_VALUE)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 193, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(50, 50, 50))
@@ -251,25 +253,25 @@ public class ViewThuocTinh extends javax.swing.JPanel {
     
     }//GEN-LAST:event_rbLoaiBiaActionPerformed
 
-    private void rbKichThuocActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbKichThuocActionPerformed
-
-    }//GEN-LAST:event_rbKichThuocActionPerformed
-
     private void tblThuocTinhMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblThuocTinhMouseClicked
      
         
     }//GEN-LAST:event_tblThuocTinhMouseClicked
 
+    private void btnsuaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnsuaActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnsuaActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnThem;
     private javax.swing.JButton btnXoa;
+    private javax.swing.JButton btnsua;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JRadioButton rbKichThuoc;
     private javax.swing.JRadioButton rbLoaiBia;
     private javax.swing.JRadioButton rbLoaiGiay;
     private javax.swing.JRadioButton rbNXB;

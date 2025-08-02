@@ -8,11 +8,12 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Product {
-    public int product_id;
-    public int brand_id;
-    public int category_id;
-    public String product_name;
-    public String product_desc;
-    public LocalDateTime product_create_at;
-    public LocalDateTime product_updated_at;
+    private int productId;
+    private int brandId;
+    private int categoryId;
+    private String productName;
+    private String productDescription;
+    private String productCode;
+    private LocalDateTime productCreateAt;
+    private LocalDateTime productUpdatedAt;
 }

@@ -1,13 +1,38 @@
 package com.DuAn1.volleyballshoes.app.entity;
 
+import java.time.LocalDateTime;
 import lombok.*;
 
+/**
+ * Entity class representing a brand of products.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Brand {
-    public int brand_id;
-    public String brand_name;
-    public String brand_origin;
+
+    private Integer id;
+
+    private String brandName;
+
+    private String brandCode;
+
+    private String brandOrigin;
+
+    private String brandDescription;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    // For backward compatibility
+    public int getBrandId() {
+        return id != null ? id : 0;
+    }
+
+    public void setBrandId(int brandId) {
+        this.id = brandId;
+    }
+
 }

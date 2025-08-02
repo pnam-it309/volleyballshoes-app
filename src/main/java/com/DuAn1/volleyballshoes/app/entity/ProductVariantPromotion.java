@@ -4,6 +4,7 @@
  */
 package com.DuAn1.volleyballshoes.app.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,8 +18,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductVariantPromotion {
-    private int variantId;
+    private int productVariantId;
     private int promotionId;
-    private boolean promoIsActive;
-    private double promoDiscountedPrice;
+    private boolean isActive;
+    private BigDecimal discountedPrice;
 }

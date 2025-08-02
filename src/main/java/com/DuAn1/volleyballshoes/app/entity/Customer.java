@@ -1,26 +1,34 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.DuAn1.volleyballshoes.app.entity;
 
-/**
- *
- * @author nickh
- */
+import java.time.LocalDate;
 import lombok.*;
 
+/**
+ * Entity class representing a customer in the system.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Customer {
-
-    private int customerId;
+    
+ 
+    private Integer customerId;
+    private String customerCode;
     private String customerUsername;
-    private String customerPassword;
-    private String customerFullName;
     private String customerEmail;
-    private int customerPoints;
-    private String customerSdt;
+    private String customerPhone;
+    private LocalDate createdAt;
+    private LocalDate updatedAt;
+    
+    // Additional getters and setters for compatibility
+    public String getCustomerSdt() {
+        return customerPhone;
+    }
+    
+    public void setCustomerSdt(String customerSdt) {
+        this.customerPhone = customerSdt;
+    }
+    
+
 }

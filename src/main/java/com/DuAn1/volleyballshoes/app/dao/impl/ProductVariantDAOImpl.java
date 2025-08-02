@@ -2,82 +2,63 @@ package com.DuAn1.volleyballshoes.app.dao.impl;
 
 import com.DuAn1.volleyballshoes.app.dao.ProductVariantDAO;
 import com.DuAn1.volleyballshoes.app.entity.ProductVariant;
-import com.DuAn1.volleyballshoes.app.utils.XJdbc;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 public class ProductVariantDAOImpl implements ProductVariantDAO {
-    private static final XJdbc.RowMapper<ProductVariant> PRODUCT_VARIANT_MAPPER = rs -> ProductVariant.builder()
-        .variant_id(rs.getInt("variant_id"))
-        .product_id(rs.getInt("product_id"))
-        .size_id(rs.getInt("size_id"))
-        .color_id(rs.getInt("color_id"))
-        .sole_id(rs.getInt("sole_id"))
-        .variant_sku(rs.getString("variant_sku"))
-        .variant_orig_price(rs.getDouble("variant_orig_price"))
-        .variant_img_url(rs.getString("variant_img_url"))
-        .build();
+
+    private EntityManager entityManager;
 
     @Override
-    public ProductVariant create(ProductVariant entity) {
-        String sql = "INSERT INTO ProductVariant (product_id, size_id, color_id, sole_id, variant_sku, variant_orig_price, variant_img_url) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        XJdbc.executeUpdate(sql,
-            entity.product_id,
-            entity.size_id,
-            entity.color_id,
-            entity.sole_id,
-            entity.variant_sku,
-            entity.variant_orig_price,
-            entity.variant_img_url
-        );
-        return entity;
-    }
-
-    @Override
-    public void update(ProductVariant entity) {
-        String sql = "UPDATE ProductVariant SET size_id=?, color_id=?, sole_id=?, variant_sku=?, variant_orig_price=?, variant_img_url=? WHERE variant_id=?";
-        XJdbc.executeUpdate(sql,
-            entity.size_id,
-            entity.color_id,
-            entity.sole_id,
-            entity.variant_sku,
-            entity.variant_orig_price,
-            entity.variant_img_url,
-            entity.variant_id
-        );
-    }
-
-    @Override
-    public void deleteById(Integer id) {
-        String sql = "DELETE FROM ProductVariant WHERE variant_id=?";
-        XJdbc.executeUpdate(sql, id);
+    public List<ProductVariant> findAll() {
+        String jpql = "SELECT pv FROM ProductVariant pv LEFT JOIN FETCH pv.product LEFT JOIN FETCH pv.color LEFT JOIN FETCH pv.size LEFT JOIN FETCH pv.soleType";
+        return entityManager.createQuery(jpql, ProductVariant.class).getResultList();
     }
 
     @Override
     public List<ProductVariant> findByProductId(int productId) {
-        String sql = "SELECT * FROM ProductVariant WHERE product_id=?";
-        return XJdbc.query(sql, PRODUCT_VARIANT_MAPPER, productId);
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public ProductVariant create(ProductVariant entity) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public ProductVariant update(ProductVariant entity) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public boolean deleteById(Integer id) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public ProductVariant findById(Integer id) {
-        String sql = "SELECT * FROM ProductVariant WHERE variant_id=?";
-        return XJdbc.queryForObject(sql, PRODUCT_VARIANT_MAPPER, id);
-    }
-
-    @Override
-    public List<ProductVariant> findAll() {
-        String sql = "SELECT * FROM ProductVariant";
-        return XJdbc.query(sql, PRODUCT_VARIANT_MAPPER);
-    }
-
-    // Thêm hàm tìm ProductVariant theo SKU
-    public ProductVariant findBySku(String sku) {
-        String sql = "SELECT * FROM ProductVariant WHERE variant_sku = ?";
         try {
-            return XJdbc.queryForObject(sql, PRODUCT_VARIANT_MAPPER, sku);
-        } catch (Exception ex) {
+            String jpql = "SELECT pv FROM ProductVariant pv " +
+                        "LEFT JOIN FETCH pv.product " +
+                        "LEFT JOIN FETCH pv.color " +
+                        "LEFT JOIN FETCH pv.size " +
+                        "LEFT JOIN FETCH pv.soleType " +
+                        "WHERE pv.id = :id";
+            TypedQuery<ProductVariant> query = entityManager.createQuery(jpql, ProductVariant.class);
+            query.setParameter("id", id);
+            return query.getResultStream().findFirst().orElse(null);
+        } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
-}
 
+}

@@ -179,13 +179,13 @@ public class ViewHoaDon extends javax.swing.JPanel {
 
         tbl.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "STT", "Mã HĐ", "Tên SP", "Giá SP", "Ngày tạo", "Tổng tiền sau giảm", "Mã NV", "Tên KH", "Địa chỉ KH", "Số điện thoại", "Trạng thái HĐ", "Hình thức TT"
+                "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
         tbl.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -198,13 +198,13 @@ public class ViewHoaDon extends javax.swing.JPanel {
         tblHDCT.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
         tblHDCT.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "STT", "Mã hoá đơn chi tiết", "Số lượng mua", "Phiếu giảm giá", "Tên sản phẩm", "Tổng tiền", "Số trang", "Loại bìa", "Loại giấy", "Thể loại", "Nhà xuất bản"
+                "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
         jScrollPane3.setViewportView(tblHDCT);
@@ -212,13 +212,13 @@ public class ViewHoaDon extends javax.swing.JPanel {
         tblLSHD.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         tblLSHD.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "STT", "Mã lịch sử HĐ", "Hành động NV", "Hành động KH", "Tình trạng đơn hàng"
+                "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
         jScrollPane2.setViewportView(tblLSHD);
