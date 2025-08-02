@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class ColorDAOImpl implements ColorDAO {
+
     private static final String TABLE_NAME = "Color";
 
     @Override
@@ -17,11 +18,6 @@ public class ColorDAOImpl implements ColorDAO {
         return entity;
     }
 
-    @Override
-    public boolean update(Color entity) {
-        String sql = "UPDATE " + TABLE_NAME + " SET color_name = ?, color_hex_code = ? WHERE color_id = ?";
-        return XJdbc.executeUpdate(sql, entity.getColorName(), entity.getColorHexCode(), entity.getColorId()) > 0;
-    }
 
     @Override
     public boolean deleteById(Integer id) {
@@ -48,5 +44,12 @@ public class ColorDAOImpl implements ColorDAO {
                 .colorName(rs.getString("color_name"))
                 .colorHexCode(rs.getString("color_hex_code"))
                 .build();
+    }
+
+    @Override
+    public Color update(Color entity) {
+        String sql = "UPDATE " + TABLE_NAME + " SET color_name = ?, color_hex_code = ? WHERE color_id = ?";
+        XJdbc.executeUpdate(sql, entity.getColorName(), entity.getColorHexCode(), entity.getColorId());
+        return findById(entity.getColorId());
     }
 }
