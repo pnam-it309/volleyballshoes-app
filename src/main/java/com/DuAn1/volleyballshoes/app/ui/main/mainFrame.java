@@ -4,16 +4,18 @@
  */
 package com.DuAn1.volleyballshoes.app.ui.main;
 
+import com.DuAn1.volleyballshoes.app.ui.StaffManagement;
+
 /**
  *
  * @author nickh
  */
-public class mainFrame extends javax.swing.JFrame {
+public class MainFrame extends javax.swing.JFrame {
 
     /**
      * Creates new form mainFrame
      */
-    public mainFrame() {
+    public MainFrame() {
         initComponents();
         getContentPane().removeAll();
         getContentPane().setLayout(new java.awt.BorderLayout());
@@ -133,7 +135,9 @@ public class mainFrame extends javax.swing.JFrame {
                 jPanel2.add(pm, gbc);
                 break;
             case "staff":
+                StaffManagement sm = new StaffManagement();
                 jPanel2.add(new javax.swing.JLabel("Nhân viên", javax.swing.SwingConstants.CENTER), gbc);
+                jPanel2.add(sm);
                 break;
             case "promotion":
                 jPanel2.add(new javax.swing.JLabel("Khuyến mãi", javax.swing.SwingConstants.CENTER), gbc);
@@ -169,20 +173,21 @@ public class mainFrame extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(mainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(mainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(mainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(mainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new mainFrame().setVisible(true);
+                new MainFrame().setVisible(true);
             }
         });
     }

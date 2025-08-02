@@ -17,10 +17,10 @@ import lombok.*;
 @Builder
 public class Staff {
 
-    private int staffId;
-    private String staffUsername;
-    private String staffPassword;
-    private String staffFullName;
-    private int staffRole;
-    private String staffSdt;
+    private int staff_id;
+    private String staff_username;
+    private String staff_password;
+    private String staff_full_name;
+    private int staff_role;
+    private String staff_sdt;
 }
