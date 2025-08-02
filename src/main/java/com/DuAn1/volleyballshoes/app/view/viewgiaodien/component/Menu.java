@@ -197,7 +197,9 @@ public class Menu extends javax.swing.JPanel {
             } else {
                 // Mở submenu mới, đóng submenu cũ
                 panel.remove(currentSubMenu);
-                currentMenuButton.setBackground(new Color(33, 105, 249));
+                if (currentMenuButton != null) {
+    currentMenuButton.setBackground(new Color(33, 105, 249));
+}
                 addSubMenu(menu, menuIndex);
                 currentMenuButton = btn;
                 btn.setBackground(new Color(60, 135, 255));

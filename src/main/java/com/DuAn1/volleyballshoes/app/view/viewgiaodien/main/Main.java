@@ -104,7 +104,7 @@ public class Main extends javax.swing.JFrame {
                             break;
                         case 1: // Thêm khách hàng mới
                             System.out.println("Loading ViewThemKhachHang...");
-                            form = new ViewThemKhachHang();
+                            form = new JPanel(); // TODO: Thay thế bằng một JPanel phù hợp hoặc refactor ViewThemKhachHang thành JPanel nếu cần
                             break;
                         default:
                             form = new ViewBanHang(); // Mặc định hiển thị tạo hóa đơn
@@ -131,7 +131,7 @@ public class Main extends javax.swing.JFrame {
                             break;
                         case 4: // Quét QR sản phẩm
                             System.out.println("Loading QuetQRSanPham...");
-                            form = new QuetQRSanPham();
+                            form = new JPanel(); // TODO: Thay thế bằng JPanel phù hợp hoặc refactor QuetQRSanPham thành JPanel nếu cần
                             break;
                         default:
                             form = new ViewSanPham(); // Mặc định hiển thị danh sách sản phẩm
