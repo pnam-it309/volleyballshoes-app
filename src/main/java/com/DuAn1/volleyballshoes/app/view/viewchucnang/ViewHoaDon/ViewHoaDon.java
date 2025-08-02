@@ -15,9 +15,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.swing.JOptionPane;
+import com.DuAn1.volleyballshoes.app.dto.response.OrderItemResponse;
 import javax.swing.table.DefaultTableModel;
 
 public class ViewHoaDon extends javax.swing.JPanel {
+
+    // Chuyển đổi tạm thời từ OrderItemResponse sang OrderDetailResponse để hiển thị bảng chi tiết
+    private List<OrderDetailResponse> convertToOrderDetailResponses(List<OrderItemResponse> items) {
+        List<OrderDetailResponse> result = new ArrayList<>();
+        if (items == null) return result;
+        for (OrderItemResponse item : items) {
+            OrderDetailResponse detail = new OrderDetailResponse();
+            // Map các trường cơ bản nếu có
+            detail.setQuantity(item.getQuantity());
+            detail.setUnitPrice(item.getUnitPrice());
+            // Các trường khác (productName, colorName, sizeName) để trống hoặc null
+            result.add(detail);
+        }
+        return result;
+    }
+
 
     private OrderController orderController = new OrderController();
 
@@ -72,28 +89,35 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }
 
     private void loadDetailsTable(List<OrderDetailResponse> details) {
-        try {
-            DefaultTableModel model = (DefaultTableModel) tblHDCT.getModel();
-            model.setRowCount(0);
+    try {
+        DefaultTableModel model = (DefaultTableModel) tblHDCT.getModel();
+        model.setRowCount(0);
 
-            if (details != null) {
-                for (OrderDetailResponse detail : details) {
-                    try {
-                        double price = detail.getUnitPrice() != 0 ? detail.getUnitPrice()
-                                : (detail.getPrice() != null ? detail.getPrice().doubleValue() : 0);
-                        model.addRow(new Object[]{
-                            detail.getProductId(),
-                            detail.getProductName() != null ? detail.getProductName() : "",
-                            detail.getQuantity(),
-                            formatCurrency(price),
-                            formatCurrency(price * detail.getQuantity())
-                        });
-                    } catch (Exception e) {
-                        System.err.println("Error processing order detail: " + e.getMessage());
-                    }
-                }
-            }
+        if (details != null) {
+    for (OrderDetailResponse detail : details) {
+        try {
+            // Lấy thông tin sản phẩm
+            String productName = detail.getProductName() != null ? detail.getProductName() : "";
+            String colorName = detail.getColorName() != null ? detail.getColorName() : "";
+            String sizeName = detail.getSizeName() != null ? detail.getSizeName() : "";
+            int quantity = detail.getQuantity();
+            java.math.BigDecimal unitPrice = detail.getUnitPrice() != null ? detail.getUnitPrice() : java.math.BigDecimal.ZERO;
+            java.math.BigDecimal totalPrice = detail.getTotalPrice() != null ? detail.getTotalPrice() : unitPrice.multiply(java.math.BigDecimal.valueOf(quantity));
+
+            model.addRow(new Object[]{
+                productName,
+                colorName,
+                sizeName,
+                quantity,
+                formatCurrency(unitPrice.doubleValue()),
+                formatCurrency(totalPrice.doubleValue())
+            });
         } catch (Exception e) {
+            System.err.println("Error processing order detail: " + e.getMessage());
+        }
+    }
+}
+    } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi tải chi tiết hoá đơn: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
@@ -482,11 +506,11 @@ public class ViewHoaDon extends javax.swing.JPanel {
             return;
         }
         
-        // Get all orders
-        List<Order> allOrders = orderService.getAllOrders();
+        // Lấy tất cả đơn hàng
+        List<OrderResponse> allOrders = orderController.getAllOrders();
         
-        // Filter orders by selected payment method
-        List<Order> filteredOrders = allOrders.stream()
+        // Lọc đơn hàng theo hình thức thanh toán đã chọn
+        List<OrderResponse> filteredOrders = allOrders.stream()
             .filter(order -> selectedPaymentMethod.equals(order.getPaymentMethod()))
             .collect(Collectors.toList());
         
@@ -533,7 +557,10 @@ public class ViewHoaDon extends javax.swing.JPanel {
                 return;
             }
 
-            List<OrderDetailResponse> details = orderController.getOrderDetailsByOrderId(orderId);
+            // Lấy chi tiết đơn hàng theo orderId
+            OrderResponse order = orderController.getOrderById(Integer.parseInt(orderId));
+            List<OrderItemResponse> itemResponses = order != null ? order.getItems() : new ArrayList<>();
+            List<OrderDetailResponse> details = convertToOrderDetailResponses(itemResponses);
             loadDetailsTable(details);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi tải chi tiết đơn hàng: " + e.getMessage(),
@@ -579,12 +606,16 @@ public class ViewHoaDon extends javax.swing.JPanel {
             Date endOfDay = cal.getTime();
             
             // Get all orders
-            List<Order> allOrders = orderService.getAllOrders();
+            List<OrderResponse> allOrders = orderController.getAllOrders();
             
             // Filter orders by date range
-            List<Order> filteredOrders = allOrders.stream()
+            List<OrderResponse> filteredOrders = allOrders.stream()
                 .filter(order -> {
-                    Date orderDate = order.getOrderDate();
+                    // Convert LocalDateTime to Date for comparison
+                    Date orderDate = null;
+                    if (order.getCreatedAt() != null) {
+                        orderDate = java.sql.Timestamp.valueOf(order.getCreatedAt());
+                    }
                     return orderDate != null && 
                            !orderDate.before(fromDate) && 
                            orderDate.before(endOfDay);
@@ -600,7 +631,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
             }
             
             // Load the filtered orders into the table
-            loadDataTable(filteredOrders);
+            loadDataTable(filteredOrders); // filteredOrders là List<OrderResponse>
             
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
@@ -624,7 +655,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         }
         
         // Try to find order by QR code or order ID
-        Order foundOrder = orderService.getOrderByQRCodeOrId(qrCode);
+        OrderResponse foundOrder = orderController.getOrderByQRCodeOrId(qrCode);
         
         if (foundOrder == null) {
             JOptionPane.showMessageDialog(this,
@@ -635,12 +666,12 @@ public class ViewHoaDon extends javax.swing.JPanel {
         }
         
         // If found, load the single order into the table
-        List<Order> orders = new ArrayList<>();
+        List<OrderResponse> orders = new ArrayList<>();
         orders.add(foundOrder);
         loadDataTable(orders);
         
         // Select the row in the table
-        selectOrderInTable(foundOrder.getOrderId());
+        selectOrderInTable(String.valueOf(foundOrder.getOrderId()));
         
     } catch (Exception e) {
         JOptionPane.showMessageDialog(this,
@@ -668,7 +699,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
                 return;
             }
 
-            List<OrderResponse> orders = orderController.findByStatus(trangThai);
+            List<OrderResponse> orders = orderController.findByStatus(trangThai); // Đảm bảo orderController có hàm này
             loadDataTable(orders);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi lọc theo trạng thái: " + e.getMessage(),

@@ -23,4 +23,6 @@ public interface PromotionDAO extends CrudDAO<Promotion, Integer> {
     boolean existsById(@Param("id") Long id);
 
     void deleteById();
+    
+    Promotion findByCode(String code);
 }

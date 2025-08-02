@@ -25,7 +25,7 @@ public class OrderController {
     public OrderController() {
         this(null);
     }
-    
+
     public OrderController(JFrame parentFrame) {
         this.parentFrame = parentFrame;
         try {
@@ -44,7 +44,7 @@ public class OrderController {
             NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
             return null;
         }
-        
+
         // Validate and process order items
         if (request.getItems() == null || request.getItems().isEmpty()) {
             NotificationUtil.showError(parentFrame, "Đơn hàng phải có ít nhất một sản phẩm");
@@ -108,7 +108,7 @@ public class OrderController {
             NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
             return null;
         }
-        
+
         Optional<Order> orderOpt = orderDAO.findById(orderId);
         if (orderOpt.isEmpty()) {
             NotificationUtil.showError(parentFrame, "Không tìm thấy đơn hàng với ID: " + orderId);
@@ -153,14 +153,14 @@ public class OrderController {
             NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
             return false;
         }
-        
+
         try {
             Optional<Order> orderOpt = orderDAO.findById(orderId);
             if (orderOpt.isEmpty()) {
                 NotificationUtil.showError(parentFrame, "Không tìm thấy đơn hàng với ID: " + orderId);
                 return false;
             }
-            
+
             Order order = orderOpt.get();
 
             if ("CANCELLED".equals(order.getOrderStatus())) {
@@ -178,7 +178,7 @@ public class OrderController {
             orderDAO.save(order);
             NotificationUtil.showSuccess(parentFrame, "Đã hủy đơn hàng thành công");
             return true;
-            
+
         } catch (Exception e) {
             NotificationUtil.showError(parentFrame, "Lỗi khi hủy đơn hàng: " + e.getMessage());
             return false;
@@ -230,12 +230,12 @@ public class OrderController {
 
         List<OrderItemResponse> itemResponses = details.stream()
                 .map(detail -> OrderItemResponse.builder()
-                        .orderDetailId(detail.getOrderDetailId())
-                        .orderId(detail.getOrderId())
-                        .variantId(detail.getVariantId())
-                        .quantity(detail.getDetailQuantity())
-                        .unitPrice(detail.getDetailUnitPrice())
-                        .build())
+                .orderDetailId(detail.getOrderDetailId())
+                .orderId(detail.getOrderId())
+                .variantId(detail.getVariantId())
+                .quantity(detail.getDetailQuantity())
+                .unitPrice(detail.getDetailUnitPrice())
+                .build())
                 .collect(Collectors.toList());
 
         return OrderResponse.builder()
@@ -249,5 +249,60 @@ public class OrderController {
                 .createdAt(order.getOrderCreatedAt())
                 .items(itemResponses)
                 .build();
+    }
+
+    public List<OrderResponse> findByCreatedDateBetween(Date from, Date to) {
+        if (orderDAO == null) {
+            NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
+            return new ArrayList<>();
+        }
+        try {
+            return orderDAO.findByCreatedDateBetween(from, to).stream()
+                    .map(order -> getOrderResponse(order))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            NotificationUtil.showError(parentFrame, "Lỗi khi tìm kiếm đơn hàng theo ngày: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    public List<OrderResponse> findByTotalAmountBetween(double min, double max) {
+        if (orderDAO == null) {
+            NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
+            return new ArrayList<>();
+        }
+        try {
+            return orderDAO.findByTotalAmountBetween(min, max).stream()
+                    .map(order -> getOrderResponse(order))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            NotificationUtil.showError(parentFrame, "Lỗi khi tìm kiếm đơn hàng theo giá: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    public OrderResponse getOrderByQRCodeOrId(String codeOrId) {
+        if (orderDAO == null) {
+            NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
+            return null;
+        }
+        try {
+            // Thử tìm theo mã đơn hàng (orderCode)
+            Optional<Order> orderOpt = orderDAO.findByCode(codeOrId);
+            if (orderOpt.isPresent()) {
+                return getOrderResponse(orderOpt.get());
+            }
+            // Nếu không có, thử parse sang số và tìm theo ID
+            try {
+                int id = Integer.parseInt(codeOrId);
+                return getOrderById(id);
+            } catch (NumberFormatException ignore) {
+            }
+            NotificationUtil.showError(parentFrame, "Không tìm thấy đơn hàng với mã hoặc ID: " + codeOrId);
+            return null;
+        } catch (Exception e) {
+            NotificationUtil.showError(parentFrame, "Lỗi khi tìm đơn hàng: " + e.getMessage());
+            return null;
+        }
     }
 }

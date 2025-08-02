@@ -47,6 +47,12 @@ public class BrandDAOImpl implements BrandDAO {
     }
     
     @Override
+    public Brand findByCode(String code) {
+        String sql = "SELECT * FROM Brands WHERE brand_code = ?";
+        return XJdbc.queryForObject(sql, this::mapResultSetToBrand, code);
+    }
+    
+    @Override
     public List<Brand> findAll() {
         String sql = "SELECT * FROM Brands ORDER BY id DESC";
         return XJdbc.query(sql, this::mapResultSetToBrand);

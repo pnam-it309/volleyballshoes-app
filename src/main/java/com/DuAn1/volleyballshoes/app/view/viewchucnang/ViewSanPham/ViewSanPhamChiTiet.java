@@ -109,7 +109,6 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
                 variant.getColorId(), // Consider getting color name instead of ID
                 variant.getSoleId(), // Consider getting sole type name instead of ID
                 formatCurrency(variant.getVariantOrigPrice()),
-                variant.getQuantity() != null ? variant.getQuantity() : 0
             });
         }
     }

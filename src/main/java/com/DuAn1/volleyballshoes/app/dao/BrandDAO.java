@@ -24,4 +24,6 @@ public interface BrandDAO extends CrudDAO<Brand, Integer> {
     List<Brand> search(String keyword);
     
     boolean existsByName(String name);
+    
+    Brand findByCode(String code);
 }

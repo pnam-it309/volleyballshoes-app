@@ -54,8 +54,7 @@ public class OrderDAOImpl implements OrderDAO {
         int offset = (page - 1) * pageSize;
         String sql = String.format(
                 "SELECT * FROM %s ORDER BY order_created_at DESC OFFSET %d ROWS FETCH NEXT %d ROWS ONLY",
-                TABLE_NAME, offset, pageSize
-        );
+                TABLE_NAME, offset, pageSize);
 
         return XJdbc.query(sql, this::mapResultSetToOrder);
     }
@@ -69,6 +68,11 @@ public class OrderDAOImpl implements OrderDAO {
 
     @Override
     public Optional<Order> findByCode(String code) {
+        return findByOrderCode(code);
+    }
+
+    // Không dùng @Override vì interface không khai báo hàm này
+    public Optional<Order> findByOrderCode(String code) {
         String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_code = ?";
         List<Order> list = XJdbc.query(sql, this::mapResultSetToOrder, code);
         return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
@@ -99,8 +103,7 @@ public class OrderDAOImpl implements OrderDAO {
                     order.getOrderPaymentMethod(),
                     order.getOrderStatus(),
                     order.getOrderCode(),
-                    order.getOrderCreatedAt()
-            );
+                    order.getOrderCreatedAt());
 
             // Lấy ID vừa tạo
             String idSql = "SELECT IDENT_CURRENT('" + TABLE_NAME + "')";
@@ -124,8 +127,7 @@ public class OrderDAOImpl implements OrderDAO {
                     order.getOrderFinalAmount(),
                     order.getOrderPaymentMethod(),
                     order.getOrderStatus(),
-                    order.getOrderId()
-            );
+                    order.getOrderId());
 
             return order;
         }
@@ -192,8 +194,7 @@ public class OrderDAOImpl implements OrderDAO {
                 order.getOrderStatus(),
                 order.getOrderCode(),
                 order.getOrderCreatedAt(),
-                order.getOrderId()
-        );
+                order.getOrderId());
 
         return order;
     }
@@ -239,22 +240,38 @@ public class OrderDAOImpl implements OrderDAO {
 
     @Override
     public int getCanceledOrders() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from
+                                                                       // nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public int getNewCustomersCount() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from
+                                                                       // nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public Object[][] getRevenueDataByYear(int year) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from
+                                                                       // nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public Object[][] getCanceledOrderDataByYear(int year) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from
+                                                                       // nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public List<Order> findByCreatedDateBetween(Date from, Date to) {
+        String sql = "SELECT * FROM [Order] WHERE order_created_at BETWEEN ? AND ?";
+        return XJdbc.query(sql, this::mapResultSetToOrder, from, to);
+    }
+
+    @Override
+    public List<Order> findByTotalAmountBetween(double min, double max) {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
+
 
 }

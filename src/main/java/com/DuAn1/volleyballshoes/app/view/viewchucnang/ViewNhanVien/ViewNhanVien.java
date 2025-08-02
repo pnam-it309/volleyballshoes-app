@@ -1,8 +1,11 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewNhanVien;
 
+import com.DuAn1.volleyballshoes.app.entity.Staff;
+import com.DuAn1.volleyballshoes.app.dao.StaffDAO;
 import java.io.FileOutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.swing.JFileChooser;
@@ -14,15 +17,53 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class ViewNhanVien extends javax.swing.JPanel {
 
- 
+    private StaffDAO staffDAO = new StaffDAO();
+    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    
     public ViewNhanVien() {
         initComponents();
- 
+        loadStaffData();
+    }
+    
+    private void loadStaffData() {
+        try {
+            // Lấy danh sách nhân viên từ DAO
+            List<Staff> staffList = staffDAO.findAll();
+            
+            // Tạo model cho bảng
+            DefaultTableModel model = (DefaultTableModel) tbl_bang1.getModel();
+            model.setRowCount(0); // Xóa dữ liệu cũ
+            
+            // Thêm dữ liệu vào bảng
+            for (Staff staff : staffList) {
+                Object[] row = new Object[]{
+                    staff.getCode(),
+                    staff.getName(),
+                    staff.getGender(),
+                    staff.getPhone(),
+                    staff.getEmail(),
+                    staff.getRole().equals("QUANLY") ? "Quản lý" : "Nhân viên",
+                    staff.getStatus() == 1 ? "Đang làm việc" : "Đã nghỉ việc"
+                };
+                model.addRow(row);
+            }
+            
+            // Căn chỉnh cột
+            tbl_bang1.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_ALL_COLUMNS);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                "Lỗi khi tải dữ liệu nhân viên: " + e.getMessage(),
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -373,48 +414,59 @@ public class ViewNhanVien extends javax.swing.JPanel {
             DefaultTableModel model = (DefaultTableModel) tbl_bang1.getModel();
             
             // Populate form fields with selected row data
-            txtMaNhanVien.setText(model.getValueAt(selectedRow, 0).toString());
-            txtHoTen.setText(model.getValueAt(selectedRow, 1).toString());
-            txtEmail.setText(model.getValueAt(selectedRow, 2).toString());
-            txtSoDienThoai.setText(model.getValueAt(selectedRow, 3).toString());
+            txt_ma3.setText(model.getValueAt(selectedRow, 0).toString());
+            txt_hoten3.setText(model.getValueAt(selectedRow, 1).toString());
+            txt_email3.setText(model.getValueAt(selectedRow, 2).toString());
+            txt_sdt3.setText(model.getValueAt(selectedRow, 3).toString());
             
-            // Handle gender selection
-            String gioiTinh = model.getValueAt(selectedRow, 4).toString();
-            if (gioiTinh.equals("Nam")) {
-                rdoNam.setSelected(true);
-            } else if (gioiTinh.equals("Nữ")) {
-                rdoNu.setSelected(true);
-            } else {
-                rdoKhac.setSelected(true);
-            }
-            
-            // Handle date of birth
-            try {
-                Date ngaySinh = (Date) model.getValueAt(selectedRow, 5);
-                if (ngaySinh != null) {
-                    DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                    txtNgaySinh.setText(dateFormat.format(ngaySinh));
-                }
-            } catch (Exception e) {
-                txtNgaySinh.setText("");
-            }
-            
-            // Handle address
-            txtDiaChi.setText(model.getValueAt(selectedRow, 6) != null ? 
-                model.getValueAt(selectedRow, 6).toString() : "");
-                
-            // Handle role
+            // Handle role selection
             String vaiTro = model.getValueAt(selectedRow, 7).toString();
-            cboChucVu.setSelectedItem(vaiTro);
+            if (vaiTro.equals("Quản lý")) {
+                rdo_QuanLy1.setSelected(true);
+            } else {
+                rdo_NhanVien1.setSelected(true);
+            }
             
             // Handle status
             String trangThai = model.getValueAt(selectedRow, 8).toString();
-            chkTrangThai.setSelected(trangThai.equals("Đang làm việc"));
+            if (trangThai.equals("Đang làm việc")) {
+                rdo_danglamviec3.setSelected(true);
+            } else {
+                rdo_nghiviec3.setSelected(true);
+            }
             
-            // Enable/disable buttons
-            btnSua.setEnabled(true);
-            btnXoa.setEnabled(true);
-            btnThem.setEnabled(false);
+            // Set password field (if available in the model)
+            if (model.getColumnCount() > 9) {
+                Object matKhauObj = model.getValueAt(selectedRow, 9);
+                if (matKhauObj != null) {
+                    txt_matkhau3.setText(matKhauObj.toString());
+                }
+            }
+            
+                // Xử lý địa chỉ (nếu có)
+            // txtDiaChi.setText(model.getValueAt(selectedRow, 6) != null ? 
+            //     model.getValueAt(selectedRow, 6).toString() : "");
+            
+            // Xử lý vai trò (sử dụng radio button thay vì combobox)
+            String vaiTro = model.getValueAt(selectedRow, 7).toString();
+            if (vaiTro.equalsIgnoreCase("Quản lý")) {
+                rdo_QuanLy1.setSelected(true);
+            } else {
+                rdo_NhanVien1.setSelected(true);
+            }
+            
+            // Xử lý trạng thái (sử dụng radio button thay vì checkbox)
+            String trangThai = model.getValueAt(selectedRow, 8).toString();
+            if (trangThai.equals("Đang làm việc")) {
+                rdo_danglamviec3.setSelected(true);
+            } else {
+                rdo_nghiviec3.setSelected(true);
+            }
+            
+            // Kích hoạt/vô hiệu hóa các nút chức năng
+            btn_Sua1.setEnabled(true);
+            btn_Xoa1.setEnabled(true);
+            btn_Them1.setEnabled(false);
         }
     } catch (Exception e) {
         JOptionPane.showMessageDialog(this,
@@ -625,36 +677,35 @@ public class ViewNhanVien extends javax.swing.JPanel {
 
     private void btn_LamMoibtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_LamMoibtn_ThemActionPerformed
         try {
-            // Reset all input fields
-            txtMaNhanVien.setText("");
-            txtHoTen.setText("");
-            txtEmail.setText("");
-            txtSoDienThoai.setText("");
-            txtNgaySinh.setDate(null);
-            txtDiaChi.setText("");
+            // Đặt lại tất cả các trường nhập liệu
+            txt_ma3.setText("");
+            txt_hoten3.setText("");
+            txt_email3.setText("");
+            txt_sdt3.setText("");
+            date_ngaybatdau3.setDate(null);
             
-            // Reset radio buttons
+            // Đặt lại các nút radio giới tính
             buttonGroup1.clearSelection();
             
-            // Reset combo box
-            cboChucVu.setSelectedIndex(0);
+            // Đặt lại các nút radio vai trò
+            buttonGroup2.clearSelection();
             
-            // Reset check box
-            chkTrangThai.setSelected(true);
+            // Đặt lại các nút radio trạng thái
+            buttonGroup3.clearSelection();
             
-            // Reset search field
+            // Đặt lại trường tìm kiếm
             txt_Tim.setText("");
             
-            // Reset status filter
+            // Đặt lại bộ lọc trạng thái
             cbx_TrangThai.setSelectedIndex(0);
             
-            // Reload all employees
-            loadEmployeeData();
+            // Kích hoạt/vô hiệu hóa các nút
+            btn_Them1.setEnabled(true);
+            btn_Sua1.setEnabled(false);
+            btn_Xoa1.setEnabled(false);
             
-            // Enable/disable buttons
-            btnThem.setEnabled(true);
-            btnSua.setEnabled(false);
-            btnXoa.setEnabled(false);
+            // Làm mới dữ liệu bảng (nếu cần)
+            // loadEmployeeData(); // Bỏ comment nếu có phương thức này
             
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
@@ -692,8 +743,8 @@ public class ViewNhanVien extends javax.swing.JPanel {
             
             if (confirm == JOptionPane.YES_OPTION) {
                 try {
-                    // Call service to delete employee
-                    boolean isDeleted = employeeService.deleteEmployee(employeeCode);
+                    // Gọi DAO/Controller để xóa nhân viên
+                    boolean isDeleted = staffDAO.delete(employeeCode);
                     
                     if (isDeleted) {
                         JOptionPane.showMessageDialog(this,
@@ -701,10 +752,10 @@ public class ViewNhanVien extends javax.swing.JPanel {
                             "Thành công",
                             JOptionPane.INFORMATION_MESSAGE);
                         
-                        // Refresh the table
-                        loadEmployeeData();
+                        // Làm mới dữ liệu bảng
+                        loadStaffData();
                         
-                        // Reset form
+                        // Đặt lại form
                         btn_LamMoibtn_ThemActionPerformed(null);
                     } else {
                         JOptionPane.showMessageDialog(this,
@@ -765,15 +816,7 @@ public class ViewNhanVien extends javax.swing.JPanel {
                 return;
             }
     
-            // Get gender
-            String gender = "";
-            if (rdoNam.isSelected()) {
-                gender = "Nam";
-            } else if (rdoNu.isSelected()) {
-                gender = "Nữ";
-            } else {
-                gender = "Khác";
-            }
+            
     
             // Create employee object
             Employee employee = new Employee();
@@ -827,11 +870,12 @@ public class ViewNhanVien extends javax.swing.JPanel {
 
     private void btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_ThemActionPerformed
         try {
-            // Validate required fields
-            if (txtHoTen.getText().trim().isEmpty() ||
-                txtEmail.getText().trim().isEmpty() ||
-                txtSoDienThoai.getText().trim().isEmpty() ||
-                txtNgaySinh.getDate() == null) {
+            // Kiểm tra các trường bắt buộc
+            if (txt_ma3.getText().trim().isEmpty() || 
+                txt_hoten3.getText().trim().isEmpty() ||
+                txt_email3.getText().trim().isEmpty() ||
+                txt_sdt3.getText().trim().isEmpty() ||
+                date_ngaybatdau3.getDate() == null) {
                 
                 JOptionPane.showMessageDialog(this,
                     "Vui lòng điền đầy đủ thông tin bắt buộc (*)",
@@ -840,76 +884,84 @@ public class ViewNhanVien extends javax.swing.JPanel {
                 return;
             }
     
-            // Validate email format
-            if (!txtEmail.getText().matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+            // Kiểm tra định dạng email
+            if (!txt_email3.getText().matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
                 JOptionPane.showMessageDialog(this,
                     "Email không đúng định dạng!",
                     "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
-                txtEmail.requestFocus();
+                txt_email3.requestFocus();
                 return;
             }
     
-            // Validate phone number format
-            if (!txtSoDienThoai.getText().matches("(0[3|5|7|8|9])+([0-9]{8})\\b")) {
+            // Kiểm tra định dạng số điện thoại
+            if (!txt_sdt3.getText().matches("(0[3|5|7|8|9])+([0-9]{8})\\b")) {
                 JOptionPane.showMessageDialog(this,
                     "Số điện thoại không đúng định dạng!",
                     "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
-                txtSoDienThoai.requestFocus();
+                txt_sdt3.requestFocus();
                 return;
             }
     
-            // Get gender
-            String gender = "";
-            if (rdoNam.isSelected()) {
-                gender = "Nam";
-            } else if (rdoNu.isSelected()) {
-                gender = "Nữ";
-            } else {
-                gender = "Khác";
+            // Kiểm tra mã nhân viên đã tồn tại chưa
+            if (staffDAO.existsByCode(txt_ma3.getText().trim())) {
+                JOptionPane.showMessageDialog(this,
+                    "Mã nhân viên đã tồn tại!",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+                txt_ma3.requestFocus();
+                return;
             }
     
-            // Generate employee code (example: NV + timestamp)
-            String employeeCode = "NV" + System.currentTimeMillis();
+            // Lấy giới tính từ radio button
+            String gender = "Nam"; // Mặc định là Nam vì không có radio button chọn giới tính trong giao diện hiện tại
+            
+            // Lấy vai trò từ radio button
+            String role = rdo_QuanLy1.isSelected() ? "QUANLY" : "NHANVIEN";
+            
+            // Lấy trạng thái từ radio button
+            boolean isActive = rdo_danglamviec3.isSelected();
     
-            // Create employee object
-            Employee employee = new Employee();
-            employee.setEmployeeCode(employeeCode);
-            employee.setFullName(txtHoTen.getText().trim());
-            employee.setEmail(txtEmail.getText().trim());
-            employee.setPhoneNumber(txtSoDienThoai.getText().trim());
-            employee.setGender(gender);
-            employee.setDateOfBirth(new java.sql.Date(txtNgaySinh.getDate().getTime()));
-            employee.setAddress(txtDiaChi.getText().trim());
-            employee.setRole(cboChucVu.getSelectedItem().toString());
-            employee.setActive(chkTrangThai.isSelected());
+            // Tạo đối tượng Staff
+            Staff staff = new Staff();
+            staff.setCode(txt_ma3.getText().trim());
+            staff.setName(txt_hoten3.getText().trim());
+            staff.setEmail(txt_email3.getText().trim());
+            staff.setPhone(txt_sdt3.getText().trim());
+            staff.setGender(gender);
+            staff.setBirthDate(new java.sql.Date(date_ngaybatdau3.getDate().getTime()));
+            staff.setPassword(passwordEncoder.encode("123456")); // Mật khẩu mặc định
+            staff.setRole(role);
+            staff.setStatus(isActive ? 1 : 0);
+            staff.setCreatedAt(new java.sql.Date(System.currentTimeMillis()));
+            staff.setUpdatedAt(new java.sql.Date(System.currentTimeMillis()));
     
-            // Confirm add
+            // Xác nhận thêm
             int confirm = JOptionPane.showConfirmDialog(this,
-                "Bạn có chắc chắn muốn thêm nhân viên mới?",
-                "Xác nhận thêm mới",
+                "Bạn có chắc chắn muốn thêm nhân viên này?",
+                "Xác nhận thêm",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
     
             if (confirm == JOptionPane.YES_OPTION) {
-                // Call service to add employee
-                boolean isAdded = employeeService.addEmployee(employee);
+                // Gọi DAO/Controller để thêm nhân viên
+                Staff savedStaff = staffDAO.create(staff);
                 
-                if (isAdded) {
+                if (savedStaff != null) {
                     JOptionPane.showMessageDialog(this,
-                        "Thêm nhân viên mới thành công!",
+                        "Thêm nhân viên thành công! Mật khẩu mặc định là: 123456",
                         "Thành công",
                         JOptionPane.INFORMATION_MESSAGE);
                     
-                    // Refresh the table
-                    loadEmployeeData();
+                    // Làm mới dữ liệu bảng
+                    loadStaffData();
                     
-                    // Reset form
+                    // Đặt lại form
                     btn_LamMoibtn_ThemActionPerformed(null);
                 } else {
                     JOptionPane.showMessageDialog(this,
-                        "Thêm nhân viên thất bại!",
+                        "Không thể thêm nhân viên. Vui lòng thử lại!",
                         "Lỗi",
                         JOptionPane.ERROR_MESSAGE);
                 }
@@ -948,40 +1000,51 @@ public class ViewNhanVien extends javax.swing.JPanel {
             }
             
             // Populate form fields with employee data
-            txtMaNhanVien.setText(employee.getEmployeeCode());
-            txtHoTen.setText(employee.getFullName());
-            txtEmail.setText(employee.getEmail());
-            txtSoDienThoai.setText(employee.getPhoneNumber());
+            txt_ma3.setText(employee.getEmployeeCode() != null ? employee.getEmployeeCode() : "");
+            txt_hoten3.setText(employee.getFullName() != null ? employee.getFullName() : "");
+            txt_email3.setText(employee.getEmail() != null ? employee.getEmail() : "");
+            txt_sdt3.setText(employee.getPhoneNumber() != null ? employee.getPhoneNumber() : "");
             
-            // Set gender radio button
-            if ("Nam".equals(employee.getGender())) {
-                rdoNam.setSelected(true);
-            } else if ("Nữ".equals(employee.getGender())) {
-                rdoNu.setSelected(true);
-            } else {
-                rdoKhac.setSelected(true);
-            }
+ 
             
-            // Set date of birth
+            // Set date of birth - using the correct date field from the form
             if (employee.getDateOfBirth() != null) {
-                txtNgaySinh.setDate(new Date(employee.getDateOfBirth().getTime()));
+                try {
+                    // Convert java.sql.Date to java.util.Date if needed
+                    java.util.Date utilDate = new java.util.Date(employee.getDateOfBirth().getTime());
+                    date_ngaybatdau3.setDate(utilDate);
+                } catch (Exception ex) {
+                    System.err.println("Error setting date: " + ex.getMessage());
+                }
             }
             
-            txtDiaChi.setText(employee.getAddress());
+            // Set address if the field exists
+            // txtDiaChi.setText(employee.getAddress() != null ? employee.getAddress() : "");
             
-            // Set role in combo box
-            cboChucVu.setSelectedItem(employee.getRole());
+            // Set role in radio buttons
+            String role = employee.getRole();
+            if (role != null) {
+                if (role.equalsIgnoreCase("Quản lý")) {
+                    rdo_QuanLy1.setSelected(true);
+                } else {
+                    rdo_NhanVien1.setSelected(true);
+                }
+            }
             
-            // Set status
-            chkTrangThai.setSelected(employee.isActive());
+            // Set status in radio buttons
+            if (employee.isActive()) {
+                rdo_danglamviec3.setSelected(true);
+            } else {
+                rdo_nghiviec3.setSelected(true);
+            }
             
             // Enable/disable buttons
-            btnThem.setEnabled(false);
-            btnSua.setEnabled(true);
-            btnXoa.setEnabled(true);
+            btn_Them1.setEnabled(false);
+            btn_Sua1.setEnabled(true);
+            btn_Xoa1.setEnabled(true);
             
             // Focus on the next field
-            txtHoTen.requestFocus();
+            txt_hoten3.requestFocus();
             
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
