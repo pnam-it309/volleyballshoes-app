@@ -239,22 +239,89 @@ public class OrderDAOImpl implements OrderDAO {
 
     @Override
     public int getCanceledOrders() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE order_status = 'Đã hủy'";
+        try (ResultSet rs = XJdbc.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     @Override
     public int getNewCustomersCount() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        // Lấy ngày đầu tháng hiện tại
+        LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        
+        String sql = "SELECT COUNT(*) FROM Customer WHERE created_at >= ?";
+        try (ResultSet rs = XJdbc.executeQuery(sql, startOfMonth)) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     @Override
     public Object[][] getRevenueDataByYear(int year) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        Object[][] data = new Object[12][2];
+        String sql = "SELECT MONTH(order_created_at) as month, SUM(order_final_amount) as revenue "
+                   + "FROM " + TABLE_NAME 
+                   + " WHERE YEAR(order_created_at) = ? AND order_status = 'Hoàn thành' "
+                   + "GROUP BY MONTH(order_created_at)";
+        
+        try (ResultSet rs = XJdbc.executeQuery(sql, year)) {
+            // Khởi tạo mảng với các tháng và doanh thu ban đầu là 0
+            for (int i = 0; i < 12; i++) {
+                data[i][0] = String.format("Tháng %d", i + 1);
+                data[i][1] = 0.0;
+            }
+            
+            // Cập nhật dữ liệu từ kết quả truy vấn
+            while (rs.next()) {
+                int month = rs.getInt("month") - 1; // Chỉ số mảng bắt đầu từ 0
+                double revenue = rs.getDouble("revenue");
+                if (!rs.wasNull()) {
+                    data[month][1] = revenue;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return data;
     }
 
     @Override
     public Object[][] getCanceledOrderDataByYear(int year) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        Object[][] data = new Object[12][2];
+        String sql = "SELECT MONTH(order_created_at) as month, COUNT(*) as count "
+                   + "FROM " + TABLE_NAME 
+                   + " WHERE YEAR(order_created_at) = ? AND order_status = 'Đã hủy' "
+                   + "GROUP BY MONTH(order_created_at)";
+        
+        try (ResultSet rs = XJdbc.executeQuery(sql, year)) {
+            // Khởi tạo mảng với các tháng và số lượng đơn hủy ban đầu là 0
+            for (int i = 0; i < 12; i++) {
+                data[i][0] = String.format("Tháng %d", i + 1);
+                data[i][1] = 0;
+            }
+            
+            // Cập nhật dữ liệu từ kết quả truy vấn
+            while (rs.next()) {
+                int month = rs.getInt("month") - 1; // Chỉ số mảng bắt đầu từ 0
+                int count = rs.getInt("count");
+                data[month][1] = count;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return data;
     }
 
 }

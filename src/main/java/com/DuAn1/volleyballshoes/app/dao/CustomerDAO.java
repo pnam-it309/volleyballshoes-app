@@ -56,5 +56,11 @@ public interface CustomerDAO extends CrudDAO<Customer, Integer> {
      * Count the total number of customers in the system.
      * @return The total count of customers
      */
-    long countAll();
+    long count();
+    
+    /**
+     * Đếm số lượng khách hàng mới trong tháng hiện tại.
+     * @return Số lượng khách hàng mới
+     */
+    int getNewCustomersCount();
 }

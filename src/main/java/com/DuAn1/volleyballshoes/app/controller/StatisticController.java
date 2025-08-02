@@ -34,10 +34,10 @@ public class StatisticController {
     }
 
     public Object[][] getRevenueDataByYear(int year) {
-        return orderDAO.getMonthlyRevenueData(year);
+        return orderDAO.getRevenueDataByYear(year);
     }
 
     public Object[][] getCanceledOrderDataByYear(int year) {
-        return orderDAO.getCanceledOrderData(year);
+        return orderDAO.getCanceledOrderDataByYear(year);
     }
 }

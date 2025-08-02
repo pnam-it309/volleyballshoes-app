@@ -207,7 +207,7 @@ public class CustomerController {
      * @return The total number of customers
      */
     public long getTotalCustomers() {
-        return customerDAO.countAll();
+        return customerDAO.count();
     }
 
     public int getTotalPages(int pageSize) {

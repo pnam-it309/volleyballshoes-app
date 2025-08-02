@@ -124,11 +124,22 @@ public class CustomerDAOImpl implements CustomerDAO {
         return XJdbc.query(sql, this::mapResultSetToCustomer, offset, limit);
     }
 
+
     @Override
-    public long countAll() {
-        String sql = "SELECT COUNT(*) FROM Customers";
-        List<Long> counts = XJdbc.query(sql, rs -> rs.getLong(1));
-        return counts.isEmpty() ? 0 : counts.get(0);
+    public int getNewCustomersCount() {
+        // Lấy ngày đầu tháng hiện tại
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.set(java.util.Calendar.DAY_OF_MONTH, 1);
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        cal.set(java.util.Calendar.MINUTE, 0);
+        cal.set(java.util.Calendar.SECOND, 0);
+        cal.set(java.util.Calendar.MILLISECOND, 0);
+
+        java.util.Date firstDayOfMonth = cal.getTime();
+
+        String sql = "SELECT COUNT(*) FROM Customers WHERE created_at >= ?";
+        Long count = XJdbc.getValue(sql, firstDayOfMonth);
+        return count != null ? count.intValue() : 0;
     }
 
     /**
@@ -190,5 +201,12 @@ public class CustomerDAOImpl implements CustomerDAO {
     public boolean deleteById(Integer id) {
         String sql = "DELETE FROM Customers WHERE customer_id = ?";
         return XJdbc.executeUpdate(sql, id) > 0;
+    }
+
+    @Override
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM Customers";
+        Long count = XJdbc.getValue(sql);
+        return count != null ? count : 0;
     }
 }
