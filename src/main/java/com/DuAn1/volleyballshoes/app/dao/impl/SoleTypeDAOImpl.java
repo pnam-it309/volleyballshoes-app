@@ -5,7 +5,7 @@ import com.DuAn1.volleyballshoes.app.utils.XJdbc;
 import java.util.*;
 import java.sql.*;
 
-public class SoleTypeDAOImpl {
+public class SoleTypeDAOImpl implements SoleTypeDAO {
     private static final String TABLE_NAME = "SoleType";
 
     public int create(SoleType entity) {

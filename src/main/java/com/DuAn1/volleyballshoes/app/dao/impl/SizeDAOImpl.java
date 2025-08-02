@@ -5,7 +5,7 @@ import com.DuAn1.volleyballshoes.app.utils.XJdbc;
 import java.util.*;
 import java.sql.*;
 
-public class SizeDAOImpl {
+public class SizeDAOImpl implements SizeDAO {
     private static final String TABLE_NAME = "Size";
 
     public int create(Size entity) {

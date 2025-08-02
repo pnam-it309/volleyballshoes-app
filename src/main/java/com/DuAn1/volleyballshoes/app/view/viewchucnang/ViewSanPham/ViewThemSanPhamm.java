@@ -1,7 +1,15 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham;
 
-import com.DuAn1.volleyballshoes.app.dao.*;
-import com.DuAn1.volleyballshoes.app.dao.impl.*;
+import com.DuAn1.volleyballshoes.app.dao.BrandDAO;
+import com.DuAn1.volleyballshoes.app.dao.CategoryDAO;
+import com.DuAn1.volleyballshoes.app.dao.ColorDAO;
+import com.DuAn1.volleyballshoes.app.dao.SizeDAO;
+import com.DuAn1.volleyballshoes.app.dao.SoleTypeDAO;
+import com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl;
+import com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl;
+import com.DuAn1.volleyballshoes.app.dao.impl.ColorDAOImpl;
+import com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl;
+import com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl;
 import com.DuAn1.volleyballshoes.app.entity.*;
 import java.util.List;
 import javax.swing.DefaultComboBoxModel;
@@ -17,7 +25,7 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
     private final ColorDAO colorDAO;
     
     public ViewThemSanPhamm() {
-        // Initialize DAOs
+// Initialize DAOs
         this.brandDAO = new BrandDAOImpl();
         this.categoryDAO = new CategoryDAOImpl();
         this.soleTypeDAO = new SoleTypeDAOImpl();
@@ -69,7 +77,6 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
     // Method kept for backward compatibility
     private void loadBrandsToComboBox() {
         loadDataToComboBox(brandDAO.findAll(), jComboBox1, "brandName");
-    }
     }
 
     
