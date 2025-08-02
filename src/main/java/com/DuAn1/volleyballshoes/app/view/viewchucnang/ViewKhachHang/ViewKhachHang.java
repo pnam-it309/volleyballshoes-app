@@ -9,6 +9,12 @@ import javax.swing.table.DefaultTableModel;
 
 public class ViewKhachHang extends javax.swing.JPanel {
 
+    public ViewKhachHang() {
+        initComponents();
+        initTable();
+        loadCustomerData();
+    }
+
     private final CustomerController customerController = new CustomerController();
     private DefaultTableModel customerTableModel;
     private DefaultTableModel orderHistoryTableModel;

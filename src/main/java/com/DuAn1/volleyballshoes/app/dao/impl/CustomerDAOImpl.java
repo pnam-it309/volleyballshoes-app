@@ -15,7 +15,7 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public Customer create(Customer customer) {
-        String sql = "INSERT INTO Customers (customer_code, customer_username, customer_password, "
+        String sql = "INSERT INTO Customer (customer_code, customer_username, customer_password, "
                 + "customer_full_name, customer_email, customer_phone, customer_gender, "
                 + "customer_birth_date, customer_address, customer_points, created_at) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -30,7 +30,7 @@ public class CustomerDAOImpl implements CustomerDAO {
         );
 
 //        // Lấy ID vừa tạo
-//        sql = "SELECT IDENT_CURRENT('Customers') as id";
+//        sql = "SELECT IDENT_CURRENT('Customer') as id";
 //        Integer id = XJdbc.queryForObject(sql, Integer.class);
 //        customer.setCustomerId(id);
 //        
@@ -39,7 +39,7 @@ public class CustomerDAOImpl implements CustomerDAO {
 
 //    @Override
 //    public Customer update(Customer customer) {
-//        String sql = "UPDATE Customers SET customer_code = ?, customer_username = ?, "
+//        String sql = "UPDATE Customer SET customer_code = ?, customer_username = ?, "
 //                  + "customer_password = ?, customer_full_name = ?, customer_email = ?, "
 //                  + "customer_phone = ?, customer_gender = ?, customer_birth_date = ?, "
 //                  + "customer_address = ?, customer_points = ?, updated_at = ? "
@@ -61,42 +61,42 @@ public class CustomerDAOImpl implements CustomerDAO {
 //    }
 //    @Override
 //    public boolean deleteById(Integer id) {
-//        String sql = "DELETE FROM Customers WHERE customer_id = ?";
+//        String sql = "DELETE FROM Customer WHERE customer_id = ?";
 //        return XJdbc.executeUpdate(sql, id) > 0;
 //    }
     @Override
     public List<Customer> findAll() {
-        String sql = "SELECT * FROM Customers ORDER BY customer_id DESC";
+        String sql = "SELECT * FROM Customer ORDER BY customer_id DESC";
         return XJdbc.query(sql, this::mapResultSetToCustomer);
     }
 
     @Override
     public Customer findById(Integer id) {
-        String sql = "SELECT * FROM Customers WHERE customer_id = ?";
+        String sql = "SELECT * FROM Customer WHERE customer_id = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer, id);
     }
 
     @Override
     public Customer findByCode(String customerCode) {
-        String sql = "SELECT * FROM Customers WHERE customer_code = ?";
+        String sql = "SELECT * FROM Customer WHERE customer_code = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer, customerCode);
     }
 
     @Override
     public Customer findByPhone(String phone) {
-        String sql = "SELECT * FROM Customers WHERE customer_phone = ?";
+        String sql = "SELECT * FROM Customer WHERE customer_phone = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer, phone);
     }
 
     @Override
     public Customer findByEmail(String email) {
-        String sql = "SELECT * FROM Customers WHERE customer_email = ?";
+        String sql = "SELECT * FROM Customer WHERE customer_email = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer, email);
     }
 
     @Override
     public List<Customer> searchByName(String name) {
-        String sql = "SELECT * FROM Customers WHERE customer_full_name LIKE ? ORDER BY customer_full_name";
+        String sql = "SELECT * FROM Customer WHERE customer_full_name LIKE ? ORDER BY customer_full_name";
         return XJdbc.query(sql, this::mapResultSetToCustomer, "%" + name + "%");
     }
 
@@ -107,7 +107,7 @@ public class CustomerDAOImpl implements CustomerDAO {
         }
 
         String searchPattern = "%" + keyword.trim() + "%";
-        String sql = "SELECT * FROM Customers WHERE "
+        String sql = "SELECT * FROM Customer WHERE "
                 + "customer_code LIKE ? OR "
                 + "customer_full_name LIKE ? OR "
                 + "customer_phone LIKE ? OR "
@@ -120,7 +120,7 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public List<Customer> findWithPagination(int offset, int limit) {
-        String sql = "SELECT * FROM Customers ORDER BY customer_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        String sql = "SELECT * FROM Customer ORDER BY customer_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
         return XJdbc.query(sql, this::mapResultSetToCustomer, offset, limit);
     }
 
@@ -137,7 +137,7 @@ public class CustomerDAOImpl implements CustomerDAO {
 
         java.util.Date firstDayOfMonth = cal.getTime();
 
-        String sql = "SELECT COUNT(*) FROM Customers WHERE created_at >= ?";
+        String sql = "SELECT COUNT(*) FROM Customer WHERE created_at >= ?";
         Long count = XJdbc.getValue(sql, firstDayOfMonth);
         return count != null ? count.intValue() : 0;
     }
@@ -180,7 +180,7 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public Customer update(Customer customer) {
-        String sql = "UPDATE Customers SET customer_code = ?, customer_username = ?, "
+        String sql = "UPDATE Customer SET customer_code = ?, customer_username = ?, "
                 + "customer_password = ?, customer_full_name = ?, customer_email = ?, "
                 + "customer_phone = ?, customer_gender = ?, customer_birth_date = ?, "
                 + "customer_address = ?, customer_points = ?, updated_at = GETDATE() "
@@ -199,13 +199,13 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public boolean deleteById(Integer id) {
-        String sql = "DELETE FROM Customers WHERE customer_id = ?";
+        String sql = "DELETE FROM Customer WHERE customer_id = ?";
         return XJdbc.executeUpdate(sql, id) > 0;
     }
 
     @Override
     public long count() {
-        String sql = "SELECT COUNT(*) FROM Customers";
+        String sql = "SELECT COUNT(*) FROM Customer";
         Long count = XJdbc.getValue(sql);
         return count != null ? count : 0;
     }
