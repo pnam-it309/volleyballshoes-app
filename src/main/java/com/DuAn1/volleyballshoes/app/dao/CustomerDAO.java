@@ -63,4 +63,7 @@ public interface CustomerDAO extends CrudDAO<Customer, Integer> {
      * @return Số lượng khách hàng mới
      */
     int getNewCustomersCount();
+    
+    boolean existsByEmail(String email);
+    boolean existsByUsername(String username);
 }

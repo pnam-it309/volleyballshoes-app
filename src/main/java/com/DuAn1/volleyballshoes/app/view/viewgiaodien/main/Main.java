@@ -1,203 +1,156 @@
 package com.DuAn1.volleyballshoes.app.view.viewgiaodien.main;
 
-import com.DuAn1.volleyballshoes.app.view.viewgiaodien.component.Menu;
-import com.DuAn1.volleyballshoes.app.view.viewgiaodien.component.Profile;
-import com.DuAn1.volleyballshoes.app.view.viewgiaodien.event.EventMenuSelected;
-import com.DuAn1.volleyballshoes.app.view.viewgiaodien.form.MainForm;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewTrangChu.ViewTrangChu;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.*;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.*;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewHoaDon.ViewHoaDon;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewKhachHang.ViewKhachHang;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewNhanVien.ViewNhanVien;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewThongKe.ViewThongKe;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewDotGiamGia.ViewDotGiamGia;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewPhieuGiamGia.ViewPhieuGiamGia;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPham;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPhamChiTiet;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewThuocTinh;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewThongKe.ViewThongKe;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewTrangChu.ViewTrangChu;
+import com.DuAn1.volleyballshoes.app.view.viewdangnhap.main.MainDangNhap;
+import com.DuAn1.volleyballshoes.app.view.viewgiaodien.component.Menu;
+import com.DuAn1.volleyballshoes.app.view.viewgiaodien.event.EventMenuSelected;
+import com.DuAn1.volleyballshoes.app.view.viewgiaodien.event.EventShowPopupMenu;
+import com.DuAn1.volleyballshoes.app.view.viewgiaodien.form.MainForm;
+import com.DuAn1.volleyballshoes.app.view.viewgiaodien.swing.MenuItem;
+import com.DuAn1.volleyballshoes.app.view.viewgiaodien.swing.PopupMenu;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.JLayeredPane;
-import javax.swing.JPanel;
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
+import javax.swing.Timer;
+
+
 
 public class Main extends javax.swing.JFrame {
 
     private Menu menu;
-    private Profile profile;
-    private MainForm mainForm;
+    private MainForm main;
+    private Timer timer;
+    private boolean isMenuShowing = true;
+    private int menuWidth = 230;
+    private int currentWidth = 230;
 
     public Main() {
         initComponents();
-        initMainInterface();
+        init();
     }
 
-    private void initMainInterface() {
-        // Xóa layout cũ và tạo layout mới
-        getContentPane().removeAll();
+    private void init() {
+        // Sử dụng BorderLayout thay cho MigLayout
+        bg.setLayout(new BorderLayout());
         
-        // Tạo sidebar panel
-        JPanel sidebarPanel = new JPanel();
-        sidebarPanel.setLayout(new BorderLayout());
-        sidebarPanel.setPreferredSize(new java.awt.Dimension(250, 0));
-        sidebarPanel.setMinimumSize(new java.awt.Dimension(250, 0));
-        sidebarPanel.setBackground(new java.awt.Color(33, 105, 249));
-
-        // Tạo profile component
-        profile = new Profile();
-        sidebarPanel.add(profile, BorderLayout.NORTH);
-
-        // Tạo menu component
         menu = new Menu();
-        sidebarPanel.add(menu, BorderLayout.CENTER);
-
-        // Tạo main form
-        mainForm = new MainForm();
-
-        // Thêm event cho menu
+        main = new MainForm();
+        menu.setPreferredSize(new Dimension(menuWidth, menu.getPreferredSize().height));
         menu.addEvent(new EventMenuSelected() {
             @Override
             public void menuSelected(int menuIndex, int subMenuIndex) {
-                System.out.println("Menu selected: " + menuIndex);
-                showForm(menuIndex, subMenuIndex);
+                MainDangNhap DN = new MainDangNhap();
+                if (menuIndex == 0) {
+                    main.showForm(new ViewTrangChu());
+                }
+                if (menuIndex == 1) {
+                    main.showForm(new ViewBanHang());
+                }
+                if (menuIndex == 2) {
+                    if (subMenuIndex == 0) {
+                        main.showForm(new ViewSanPham());
+                    } else if (subMenuIndex == 1) {
+                        main.showForm(new ViewSanPhamChiTiet());
+                    } else if (subMenuIndex == 2) {
+                        main.showForm(new ViewThuocTinh());
+                    }
+                }
+                if (menuIndex == 3) {
+                    main.showForm(new ViewHoaDon());
+                }
+                if (menuIndex == 4) {
+//                    if (MainDangNhap.chucVu == 1) {
+//                        Notifications.getInstance().show(Notifications.Type.WARNING, Notifications.Location.TOP_CENTER, "Bạn không có quyền truy cập");
+//                    } else {
+                        main.showForm(new ViewThongKe());
+//                    }
+                }
+                if (menuIndex == 5) {
+//                    if (MainDangNhap.chucVu == 1) {
+//                        Notifications.getInstance().show(Notifications.Type.WARNING, Notifications.Location.TOP_CENTER, "Bạn không có quyền truy cập");
+//                    } else {
+                        main.showForm(new ViewNhanVien());
+                    //}
+                }
+                if (menuIndex == 6) {
+                    main.showForm(new ViewKhachHang());
+                }
+                if (menuIndex == 7) {
+//                    if (MainDangNhap.chucVu == 1) {
+//                        Notifications.getInstance().show(Notifications.Type.WARNING, Notifications.Location.TOP_CENTER, "Bạn không có quyền truy cập");
+//                    } else {
+                        main.showForm(new ViewPhieuGiamGia());
+                    //}
+                }
+                if (menuIndex == 13) {
+                    setVisible(false);
+                    DN.setVisible(true);
+                    dispose();
+                }
+
+            }
+
+        });
+
+        menu.addEventShowPopup(new EventShowPopupMenu() {
+            @Override
+            public void showPopup(Component com) {
+                MenuItem item = (MenuItem) com;
+                PopupMenu popup = new PopupMenu(Main.this, item.getIndex(), item.getEventSelected(), item.getMenu().getSubMenu());
+                int x = Main.this.getX() + 66;
+                int y = Main.this.getY() + com.getY() + 150;
+                popup.setLocation(x, y);
+                popup.setVisible(true);
+            }
+        });
+        menu.initMenuItem();
+        
+        // Thêm menu và main form vào panel
+        bg.add(menu, BorderLayout.WEST);
+        bg.add(main, BorderLayout.CENTER);
+        
+        // Tạo hiệu ứng mở/đóng menu bằng Timer
+        timer = new Timer(15, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int step = 10;  // Tốc độ di chuyển
+                if (!isMenuShowing) {
+                    currentWidth = Math.max(60, currentWidth - step);
+                    if (currentWidth <= 60) {
+                        currentWidth = 60;
+                        timer.stop();
+                        menu.setShowMenu(false);
+                        menu.setEnableMenu(true);
+                    }
+                } else {
+                    currentWidth = Math.min(menuWidth, currentWidth + step);
+                    if (currentWidth >= menuWidth) {
+                        currentWidth = menuWidth;
+                        timer.stop();
+                        menu.setShowMenu(true);
+                        menu.setEnableMenu(true);
+                    }
+                }
+                // Cập nhật kích thước menu
+                menu.setPreferredSize(new Dimension(currentWidth, menu.getPreferredSize().height));
+                menu.revalidate();
+                bg.revalidate();
             }
         });
 
-        // Khởi tạo menu items
-        menu.initMenuItem();
-        
-        // Thiết lập layout cho frame
-        setLayout(new BorderLayout());
-        add(sidebarPanel, BorderLayout.WEST);
-        add(mainForm, BorderLayout.CENTER);
-        
-        // Hiển thị trang chủ mặc định
-        showForm(0,0);
-        
-        // Đảm bảo sidebar hiển thị
-        revalidate();
-        repaint();
-    }
-
-    private void showForm(int menuIndex, int subMenuIndex) {
-        // Đảm bảo subMenuIndex là hợp lệ
-        if (subMenuIndex < 0) {
-            subMenuIndex = 0;
-        }
-        Component form = null;
-        
-        System.out.println("Đang load form cho menu index: " + menuIndex + ", subMenuIndex: " + subMenuIndex);
-        
-        try {
-            switch (menuIndex) {
-                case 0: // Trang Chủ
-                    System.out.println("Loading ViewTrangChu...");
-                    form = new ViewTrangChu();
-                    break;
-                case 1: // Bán Hàng
-                    // Xử lý các màn hình con của Bán Hàng
-                    switch (subMenuIndex) {
-                        case 0: // Tạo hóa đơn bán hàng
-                            System.out.println("Loading ViewBanHang...");
-                            form = new ViewBanHang();
-                            break;
-                        case 1: // Thêm khách hàng mới
-                            System.out.println("Loading ViewThemKhachHang...");
-                            form = new JPanel(); // TODO: Thay thế bằng một JPanel phù hợp hoặc refactor ViewThemKhachHang thành JPanel nếu cần
-                            break;
-                        default:
-                            form = new ViewBanHang(); // Mặc định hiển thị tạo hóa đơn
-                    }
-                    break;
-                case 2: // Sản Phẩm
-                    // Xử lý các màn hình con của Sản phẩm
-                    switch (subMenuIndex) {
-                        case 0: // Danh sách sản phẩm
-                            System.out.println("Loading ViewSanPham (Danh sách sản phẩm)...");
-                            form = new ViewSanPham();
-                            break;
-                        case 1: // Thêm sản phẩm mới
-                            System.out.println("Loading ViewThemSanPhamm...");
-                            form = new ViewThemSanPhamm();
-                            break;
-                        case 2: // Chi tiết sản phẩm
-                            System.out.println("Loading ViewSanPhamChiTiet...");
-                            form = new ViewSanPhamChiTiet();
-                            break;
-                        case 3: // Quản lý thuộc tính
-                            System.out.println("Loading ViewThuocTinh...");
-                            form = new ViewThuocTinh();
-                            break;
-                        case 4: // Quét QR sản phẩm
-                            System.out.println("Loading QuetQRSanPham...");
-                            form = new JPanel(); // TODO: Thay thế bằng JPanel phù hợp hoặc refactor QuetQRSanPham thành JPanel nếu cần
-                            break;
-                        default:
-                            form = new ViewSanPham(); // Mặc định hiển thị danh sách sản phẩm
-                    }
-                    break;
-                case 3: // Hóa Đơn
-                    System.out.println("Loading ViewHoaDon...");
-                    form = new ViewHoaDon();
-                    break;
-                case 4: // Khách Hàng
-                    System.out.println("Loading ViewKhachHang...");
-                    form = new ViewKhachHang();
-                    break;
-                case 5: // Nhân Viên
-                    System.out.println("Loading ViewNhanVien...");
-                    form = new ViewNhanVien();
-                    break;
-                case 6: // Thống Kê
-                    System.out.println("Loading ViewThongKe...");
-                    form = new ViewThongKe();
-                    break;
-                case 7: // Khuyến Mãi
-                    // Xử lý các màn hình con của Khuyến Mãi
-                    switch (subMenuIndex) {
-                        case 0: // Đợt giảm giá
-                            System.out.println("Loading ViewDotGiamGia...");
-                            form = new ViewDotGiamGia();
-                            break;
-                        case 1: // Phiếu giảm giá
-                            System.out.println("Loading ViewPhieuGiamGia...");
-                            form = new ViewPhieuGiamGia();
-                            break;
-                        default:
-                            form = new ViewDotGiamGia(); // Mặc định hiển thị đợt giảm giá
-                    }
-                    break;
-                default:
-                    System.out.println("Loading default ViewTrangChu...");
-                    form = new ViewTrangChu(); // Mặc định hiển thị trang chủ
-                    break;
-            }
-            
-            if (form != null) {
-                System.out.println("Form loaded successfully, showing in mainForm...");
-                mainForm.showForm(form);
-                mainForm.revalidate();
-                mainForm.repaint();
-            }
-        } catch (Exception e) {
-            System.err.println("Lỗi khi load view: " + e.getMessage());
-            e.printStackTrace();
-            // Tạo một panel đơn giản để hiển thị thay thế
-            JPanel errorPanel = new JPanel();
-            errorPanel.add(new javax.swing.JLabel("Không thể load view này. Vui lòng thử lại."));
-            mainForm.showForm(errorPanel);
-        }
-    }
-
-    // Helper method để load icon an toàn
-    private ImageIcon loadIconSafely(String path) {
-        try {
-            return new ImageIcon(getClass().getResource(path));
-        } catch (Exception e) {
-            System.err.println("Không thể load icon: " + path);
-            return null;
-        }
+        main.showForm(new ViewTrangChu());
     }
 
     @SuppressWarnings("unchecked")
@@ -205,34 +158,43 @@ public class Main extends javax.swing.JFrame {
     private void initComponents() {
 
         bg = new javax.swing.JLayeredPane();
+        jPanel1 = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Volleyball Shoes Management System");
-        setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
 
         bg.setBackground(new java.awt.Color(245, 245, 245));
         bg.setOpaque(true);
+
+        jPanel1.setLayout(new java.awt.BorderLayout());
+
+        bg.setLayer(jPanel1, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
         javax.swing.GroupLayout bgLayout = new javax.swing.GroupLayout(bg);
         bg.setLayout(bgLayout);
         bgLayout.setHorizontalGroup(
             bgLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 1400, Short.MAX_VALUE)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, bgLayout.createSequentialGroup()
+                .addGap(0, 1095, Short.MAX_VALUE)
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         bgLayout.setVerticalGroup(
             bgLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 825, Short.MAX_VALUE)
+            .addGroup(bgLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 819, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(bg)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGap(0, 296, Short.MAX_VALUE)
+                .addComponent(bg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(bg)
+            .addComponent(bg, javax.swing.GroupLayout.Alignment.TRAILING)
         );
 
         pack();
@@ -275,5 +237,6 @@ public class Main extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLayeredPane bg;
+    private javax.swing.JPanel jPanel1;
     // End of variables declaration//GEN-END:variables
 }

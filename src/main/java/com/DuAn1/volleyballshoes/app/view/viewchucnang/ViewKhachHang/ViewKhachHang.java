@@ -3,6 +3,7 @@ package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewKhachHang;
 import com.DuAn1.volleyballshoes.app.controller.CustomerController;
 import com.DuAn1.volleyballshoes.app.dto.request.CustomerCreateRequest;
 import com.DuAn1.volleyballshoes.app.entity.Customer;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewThemKhachHang;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
@@ -45,13 +46,13 @@ public class ViewKhachHang extends javax.swing.JPanel {
         try {
             customerTableModel.setRowCount(0); // Xóa dữ liệu cũ
             List<Customer> customers = customerController.getAllCustomers();
-    
+
             for (Customer customer : customers) {
                 customerTableModel.addRow(new Object[]{
-                    customer.getCustomerCode(),    // Mã KH
+                    customer.getCustomerCode(), // Mã KH
                     customer.getCustomerUsername(), // Tên KH
-                    customer.getCustomerPhone(),   // SĐT
-                    customer.getCustomerEmail()    // Email
+                    customer.getCustomerPhone(), // SĐT
+                    customer.getCustomerEmail() // Email
                 });
             }
         } catch (Exception e) {
@@ -471,39 +472,39 @@ public class ViewKhachHang extends javax.swing.JPanel {
             try {
                 // Get customer code from the selected row (assuming it's in the first column)
                 String customerCode = tbl_bang.getValueAt(selectedRow, 0).toString();
-                
+
                 // Fetch the complete customer details
                 Customer customer = customerController.getCustomerByCode(customerCode);
-                
+
                 if (customer != null) {
                     // Populate the form fields with customer data
                     txt_ma.setText(customer.getCustomerCode());
                     txt_ten.setText(customer.getCustomerUsername());
                     txt_sdt.setText(customer.getCustomerPhone());
                     txt_email.setText(customer.getCustomerEmail());
-                    
+
                     // Load order history for this customer
                     loadOrderHistory(customer.getCustomerId());
                 }
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tải thông tin khách hàng: " + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        "Lỗi khi tải thông tin khách hàng: " + e.getMessage(),
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
     }//GEN-LAST:event_tbl_bangMouseClicked
     /**
      * Loads order history for a specific customer
+     *
      * @param customerId The ID of the customer to load order history for
      */
     private void loadOrderHistory(Integer customerId) {
         try {
             // Clear existing data
             orderHistoryTableModel.setRowCount(0);
-            
+
             // Get orders for this customer (you'll need to implement this in your OrderController)
             // List<Order> orders = orderController.getOrdersByCustomerId(customerId);
-            
             // For now, we'll just show a message
             if (customerId != null) {
                 // This is a placeholder - replace with actual order data
@@ -515,7 +516,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
                 //         order.getStatus()
                 //     });
                 // }
-                
+
                 // For now, just show a message
                 if (orderHistoryTableModel.getRowCount() == 0) {
                     orderHistoryTableModel.addRow(new Object[]{
@@ -525,11 +526,11 @@ public class ViewKhachHang extends javax.swing.JPanel {
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                "Lỗi khi tải lịch sử đơn hàng: " + e.getMessage(),
-                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    "Lỗi khi tải lịch sử đơn hàng: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
+
     private void clearFields() {
         txt_ma.setText("");
         txt_ten.setText("");
@@ -538,6 +539,39 @@ public class ViewKhachHang extends javax.swing.JPanel {
         txt_nhạptim.setText("");
         tbl_bang.clearSelection();
         orderHistoryTableModel.setRowCount(0); // Clear order history
+    }
+
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(ViewKhachHang.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(ViewKhachHang.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(ViewKhachHang.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(ViewKhachHang.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new ViewKhachHang().setVisible(true);
+            }
+        });
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;

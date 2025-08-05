@@ -1,8 +1,9 @@
-            package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewNhanVien;
+package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewNhanVien;
 
 import com.DuAn1.volleyballshoes.app.entity.Staff;
 import com.DuAn1.volleyballshoes.app.dao.StaffDAO;
 import com.DuAn1.volleyballshoes.app.dao.impl.StaffDAOImpl;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewKhachHang.ViewKhachHang;
 import java.io.FileOutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -42,12 +43,12 @@ public class ViewNhanVien extends javax.swing.JPanel {
             model.setRowCount(0); // Xóa dữ liệu cũ
 
             for (Staff staff : staffList) {
-                Object[] row = new Object[] {
-                        staff.getStaffCode(), // Mã nhân viên
-                        staff.getStaffFullName(), // Tên nhân viên // Giới tính (nếu có trường này, hãy bổ sung)
-                        staff.getStaffSdt(), // Số điện thoại
-                        staff.getStaffEmail(), // Email
-                        staff.getStaffRole() == 1 ? "Quản lý" : "Nhân viên", // 1: Quản lý, 0: Nhân viên (giả định)
+                Object[] row = new Object[]{
+                    staff.getStaffCode(), // Mã nhân viên
+                    staff.getStaffFullName(), // Tên nhân viên // Giới tính (nếu có trường này, hãy bổ sung)
+                    staff.getStaffSdt(), // Số điện thoại
+                    staff.getStaffEmail(), // Email
+                    staff.getStaffRole() == 1 ? "Quản lý" : "Nhân viên", // 1: Quản lý, 0: Nhân viên (giả định)
                 };
                 model.addRow(row);
             }
@@ -528,12 +529,12 @@ public class ViewNhanVien extends javax.swing.JPanel {
             // Lọc nhân viên theo từ khóa (không phân biệt hoa thường)
             List<Staff> filteredStaff = staffList.stream()
                     .filter(staff -> (staff.getStaffCode() != null
-                            && staff.getStaffCode().toLowerCase().contains(searchTerm.toLowerCase()))
-                            || (staff.getStaffFullName() != null
-                                    && staff.getStaffFullName().toLowerCase().contains(searchTerm.toLowerCase()))
-                            || (staff.getStaffEmail() != null
-                                    && staff.getStaffEmail().toLowerCase().contains(searchTerm.toLowerCase()))
-                            || (staff.getStaffSdt() != null && staff.getStaffSdt().contains(searchTerm))
+                    && staff.getStaffCode().toLowerCase().contains(searchTerm.toLowerCase()))
+                    || (staff.getStaffFullName() != null
+                    && staff.getStaffFullName().toLowerCase().contains(searchTerm.toLowerCase()))
+                    || (staff.getStaffEmail() != null
+                    && staff.getStaffEmail().toLowerCase().contains(searchTerm.toLowerCase()))
+                    || (staff.getStaffSdt() != null && staff.getStaffSdt().contains(searchTerm))
                     // Nếu có thêm trường khác muốn tìm kiếm thì bổ sung ở đây
                     )
                     .collect(Collectors.toList());
@@ -548,13 +549,13 @@ public class ViewNhanVien extends javax.swing.JPanel {
 
             // Add filtered employees to the table
             for (Staff emp : filteredStaff) {
-                model.addRow(new Object[] {
-                        emp.getStaffCode(), // Mã nhân viên
-                        emp.getStaffFullName(), // Tên nhân viên
-                        emp.getStaffSdt(), // Số điện thoại
-                        emp.getStaffEmail(), // Email
-                        emp.getStaffRole() == 1 ? "Quản lý" : "Nhân viên", // Vai trò
-                        // emp.getStatus() == 1 ? "Đang làm việc" : "Đã nghỉ việc" // Trạng thái
+                model.addRow(new Object[]{
+                    emp.getStaffCode(), // Mã nhân viên
+                    emp.getStaffFullName(), // Tên nhân viên
+                    emp.getStaffSdt(), // Số điện thoại
+                    emp.getStaffEmail(), // Email
+                    emp.getStaffRole() == 1 ? "Quản lý" : "Nhân viên", // Vai trò
+                // emp.getStatus() == 1 ? "Đang làm việc" : "Đã nghỉ việc" // Trạng thái
                 });
             }
 
@@ -609,13 +610,13 @@ public class ViewNhanVien extends javax.swing.JPanel {
 
             // Hiển thị danh sách nhân viên đã lọc lên bảng
             for (Staff emp : staffList) {
-                model.addRow(new Object[] {
-                        emp.getStaffCode(), // Mã nhân viên
-                        emp.getStaffFullName(), // Tên nhân viên
-                        emp.getStaffSdt(), // Số điện thoại
-                        emp.getStaffEmail(), // Email
-                        emp.getStaffRole() == 1 ? "Quản lý" : "Nhân viên", // Vai trò
-                        // emp.getStatus() == 1 ? "Đang làm việc" : "Đã nghỉ việc" // Trạng thái
+                model.addRow(new Object[]{
+                    emp.getStaffCode(), // Mã nhân viên
+                    emp.getStaffFullName(), // Tên nhân viên
+                    emp.getStaffSdt(), // Số điện thoại
+                    emp.getStaffEmail(), // Email
+                    emp.getStaffRole() == 1 ? "Quản lý" : "Nhân viên", // Vai trò
+                // emp.getStatus() == 1 ? "Đang làm việc" : "Đã nghỉ việc" // Trạng thái
                 });
             }
 
@@ -650,8 +651,8 @@ public class ViewNhanVien extends javax.swing.JPanel {
 
                 // Create header row
                 String[] headers = {
-                        "Mã NV", "Họ tên", "Email", "Số điện thoại",
-                        "Giới tính", "Ngày sinh", "Địa chỉ", "Vai trò", "Trạng thái"
+                    "Mã NV", "Họ tên", "Email", "Số điện thoại",
+                    "Giới tính", "Ngày sinh", "Địa chỉ", "Vai trò", "Trạng thái"
                 };
 
                 // Create header style
@@ -778,9 +779,9 @@ public class ViewNhanVien extends javax.swing.JPanel {
                 if (confirm == JOptionPane.YES_OPTION) {
                     // Tìm staff theo mã nhân viên
                     Staff staff = staffDAO.findAll().stream()
-                        .filter(s -> employeeCode.equals(s.getStaffCode()))
-                        .findFirst()
-                        .orElse(null);
+                            .filter(s -> employeeCode.equals(s.getStaffCode()))
+                            .findFirst()
+                            .orElse(null);
                     if (staff == null) {
                         JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên để xóa!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                         return;
@@ -935,7 +936,7 @@ public class ViewNhanVien extends javax.swing.JPanel {
 
             // Kiểm tra mã nhân viên đã tồn tại chưa
             boolean codeExists = staffDAO.findAll().stream()
-                .anyMatch(s -> txt_ma3.getText().trim().equalsIgnoreCase(s.getStaffCode()));
+                    .anyMatch(s -> txt_ma3.getText().trim().equalsIgnoreCase(s.getStaffCode()));
             if (codeExists) {
                 JOptionPane.showMessageDialog(this,
                         "Mã nhân viên đã tồn tại!",
@@ -1015,9 +1016,9 @@ public class ViewNhanVien extends javax.swing.JPanel {
 
             // Tìm kiếm nhân viên theo mã
             Staff staff = staffDAO.findAll().stream()
-                .filter(s -> employeeCode.equalsIgnoreCase(s.getStaffCode()))
-                .findFirst()
-                .orElse(null);
+                    .filter(s -> employeeCode.equalsIgnoreCase(s.getStaffCode()))
+                    .findFirst()
+                    .orElse(null);
 
             if (staff == null) {
                 JOptionPane.showMessageDialog(this,
@@ -1056,6 +1057,38 @@ public class ViewNhanVien extends javax.swing.JPanel {
         }
     }// GEN-LAST:event_txt_ma2ActionPerformed
 
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(ViewNhanVien.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(ViewNhanVien.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(ViewNhanVien.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(ViewNhanVien.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new ViewNhanVien().setVisible(true);
+            }
+        });
+    }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn_LamMoi;
     private javax.swing.JButton btn_Loc;

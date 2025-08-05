@@ -13,7 +13,6 @@ public class Product {
     private int categoryId;
     private String productName;
     private String productDescription;
-    private String productCode;
     private LocalDateTime productCreateAt;
     private LocalDateTime productUpdatedAt;
 }

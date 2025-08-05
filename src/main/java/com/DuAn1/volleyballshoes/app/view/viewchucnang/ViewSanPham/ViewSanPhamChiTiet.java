@@ -40,13 +40,15 @@ import javax.swing.table.DefaultTableModel;
 import java.math.BigDecimal;
 import com.google.zxing.NotFoundException;
 import com.google.zxing.Result;
+import javax.swing.JDialog;
 
 public class ViewSanPhamChiTiet extends javax.swing.JPanel {
+
     // Pagination variables
     private int currentPage = 1;
     private int pageSize = 10;
     private int totalPages = 1;
-    
+
     // DAO
     private final ProductVariantDAO productVariantDAO = new ProductVariantDAOImpl();
 
@@ -108,8 +110,7 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
                 variant.getSizeId(), // Consider getting size name instead of ID
                 variant.getColorId(), // Consider getting color name instead of ID
                 variant.getSoleId(), // Consider getting sole type name instead of ID
-                formatCurrency(variant.getVariantOrigPrice()),
-            });
+                formatCurrency(variant.getVariantOrigPrice()),});
         }
     }
 
@@ -129,7 +130,7 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
     private void updatePaginationLabel() {
         trang.setText(String.format("Trang %d/%d", currentPage, totalPages));
     }
-    
+
     private void updatePaginationButtons() {
         btnNhoNhat.setEnabled(currentPage > 1);
         btnNho.setEnabled(currentPage > 1);
@@ -545,7 +546,7 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
 
     private void btnNhoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNhoActionPerformed
 
-      if (currentPage > 1) {
+        if (currentPage > 1) {
             currentPage--;
             loadProductVariants();
         }
@@ -559,14 +560,14 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
     }//GEN-LAST:event_btnLonActionPerformed
 
     private void btnNhoNhatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNhoNhatActionPerformed
-    if (currentPage != 1) {
+        if (currentPage != 1) {
             currentPage = 1;
             loadProductVariants();
         }
     }//GEN-LAST:event_btnNhoNhatActionPerformed
 
     private void btnLonNhatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLonNhatActionPerformed
-    if (currentPage != totalPages) {
+        if (currentPage != totalPages) {
             currentPage = totalPages;
             loadProductVariants();
         }
@@ -576,36 +577,47 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
         // Tạo và hiển thị cửa sổ quét QR code
         QuetQRSanPham qrScanner = new QuetQRSanPham();
         qrScanner.setVisible(true);
-        
+
         // Căn giữa màn hình
         qrScanner.setLocationRelativeTo(null);
     }//GEN-LAST:event_btnQuetQRActionPerformed
 
     private void btnThem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThem1ActionPerformed
-        // Mở dialog thêm nhanh sản phẩm
-        ThemNhanhSanPham themNhanhDialog = new ThemNhanhSanPham();
-        themNhanhDialog.setVisible(true);
+        // Tạo JDialog mới
+        JDialog dialog = new JDialog();
+        dialog.setTitle("Thêm sản phẩm mới");
+        
+        // Thêm panel vào dialog
+        ViewThemSanPhamm themSanPhamPanel = new ViewThemSanPhamm();
+        dialog.add(themSanPhamPanel);
+        
+        // Đặt kích thước dialog
+        dialog.pack();
         
         // Căn giữa màn hình
-        themNhanhDialog.setLocationRelativeTo(null);
+        dialog.setLocationRelativeTo(null);
+        
+        // Hiển thị dialog
+        dialog.setModal(true);
+        dialog.setVisible(true);
     }//GEN-LAST:event_btnThem1ActionPerformed
 
     private void btnXuatFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXuatFileActionPerformed
         // Tạo hộp thoại chọn nơi lưu file
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Lưu dữ liệu ra file");
-        
+
         // Đặt tên file mặc định
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         fileChooser.setSelectedFile(new File("danh_sach_san_pham_" + timestamp + ".csv"));
-        
+
         // Chỉ cho phép lưu file .csv
         FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files (*.csv)", "csv");
         fileChooser.setFileFilter(filter);
-        
+
         // Hiển thị hộp thoại lưu file
         int userSelection = fileChooser.showSaveDialog(this);
-        
+
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File fileToSave = fileChooser.getSelectedFile();
             // Đảm bảo file có đuôi .csv
@@ -613,11 +625,11 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
             if (!filePath.toLowerCase().endsWith(".csv")) {
                 fileToSave = new File(filePath + ".csv");
             }
-            
+
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileToSave))) {
                 // Lấy model của bảng
                 DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
-                
+
                 // Ghi tiêu đề cột
                 for (int i = 0; i < model.getColumnCount(); i++) {
                     writer.write(model.getColumnName(i));
@@ -626,7 +638,7 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
                     }
                 }
                 writer.newLine();
-                
+
                 // Ghi dữ liệu từng dòng
                 for (int i = 0; i < model.getRowCount(); i++) {
                     for (int j = 0; j < model.getColumnCount(); j++) {
@@ -647,17 +659,17 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
                     }
                     writer.newLine();
                 }
-                
-                JOptionPane.showMessageDialog(this, 
-                    "Xuất dữ liệu thành công!\nĐường dẫn: " + fileToSave.getAbsolutePath(), 
-                    "Thành công", 
-                    JOptionPane.INFORMATION_MESSAGE);
-                
+
+                JOptionPane.showMessageDialog(this,
+                        "Xuất dữ liệu thành công!\nĐường dẫn: " + fileToSave.getAbsolutePath(),
+                        "Thành công",
+                        JOptionPane.INFORMATION_MESSAGE);
+
             } catch (IOException e) {
-                JOptionPane.showMessageDialog(this, 
-                    "Lỗi khi xuất dữ liệu: " + e.getMessage(), 
-                    "Lỗi", 
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi xuất dữ liệu: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         }
@@ -668,70 +680,71 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
         cbbLTL.setSelectedIndex(0);
         cbbKieu.setSelectedIndex(0);
         txtLGT.setText("");
-        
+
         // Reset pagination to first page
         currentPage = 1;
-        
+
         // Reload product variants
         loadProductVariants();
-        
+
         // Clear any selection in the table
         tblSanPhamCon.clearSelection();
-        
-        JOptionPane.showMessageDialog(this, 
-            "Đã làm mới dữ liệu thành công!",
-            "Thành công",
-            JOptionPane.INFORMATION_MESSAGE);
+
+        JOptionPane.showMessageDialog(this,
+                "Đã làm mới dữ liệu thành công!",
+                "Thành công",
+                JOptionPane.INFORMATION_MESSAGE);
     }//GEN-LAST:event_btnLamMoiActionPerformed
 
     private void btnTaiQRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTaiQRActionPerformed
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Chọn ảnh QR code");
-        
+
         // Chỉ cho phép chọn file ảnh
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
-            "Image files", "jpg", "jpeg", "png", "gif", "bmp");
+                "Image files", "jpg", "jpeg", "png", "gif", "bmp");
         fileChooser.setFileFilter(filter);
-        
+
         int returnValue = fileChooser.showOpenDialog(this);
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             try {
                 // Đọc ảnh QR code
                 BufferedImage image = ImageIO.read(selectedFile);
-                
+
                 // Tạo đối tượng BinaryBitmap từ ảnh
                 LuminanceSource source = new BufferedImageLuminanceSource(image);
                 BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-                
+
                 // Giải mã QR code
                 Result result = new MultiFormatReader().decode(bitmap);
                 String qrText = result.getText();
-                
+
                 // Xử lý dữ liệu QR code
                 processQRCodeData(qrText);
-                
+
             } catch (IOException e) {
-                JOptionPane.showMessageDialog(this, 
-                    "Lỗi khi đọc file ảnh: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi đọc file ảnh: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
             } catch (NotFoundException e) {
-                JOptionPane.showMessageDialog(this, 
-                    "Không tìm thấy mã QR trong ảnh",
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Không tìm thấy mã QR trong ảnh",
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, 
-                    "Lỗi khi đọc mã QR: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi đọc mã QR: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
             }
         }
     }//GEN-LAST:event_btnTaiQRActionPerformed
-    
+
     /**
      * Xử lý dữ liệu QR code đã đọc được
+     *
      * @param qrData Dữ liệu từ QR code
      */
     private void processQRCodeData(String qrData) {
@@ -740,29 +753,29 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
             // Định dạng dự kiến: "SKU: SKU123\nKích thước: 40\nMàu sắc: Đen\n..."
             Map<String, String> qrMap = new HashMap<>();
             String[] lines = qrData.split("\\n");
-            
+
             for (String line : lines) {
                 String[] parts = line.split(": ", 2);
                 if (parts.length == 2) {
                     qrMap.put(parts[0].trim(), parts[1].trim());
                 }
             }
-            
+
             // Lấy SKU từ dữ liệu QR code
             String sku = qrMap.get("SKU");
             if (sku != null && !sku.isEmpty()) {
                 // Tìm sản phẩm trong bảng hiện tại
                 boolean found = selectProductInTable(sku);
-                
+
                 if (!found) {
                     // Nếu không tìm thấy trong bảng hiện tại, thử tải lại dữ liệu với bộ lọc
                     currentPage = 1;
                     List<ProductVariant> variants = productVariantDAO.findWithPagination(
-                        currentPage, 
-                        pageSize, 
-                        "variant_sku LIKE '%" + sku + "%'"
+                            currentPage,
+                            pageSize,
+                            "variant_sku LIKE '%" + sku + "%'"
                     );
-                    
+
                     if (!variants.isEmpty()) {
                         // Cập nhật bảng với kết quả tìm kiếm
                         updateTableModel(variants);
@@ -770,28 +783,29 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
                         selectProductInTable(sku);
                     } else {
                         JOptionPane.showMessageDialog(this,
-                            "Không tìm thấy sản phẩm với SKU: " + sku,
-                            "Thông báo",
-                            JOptionPane.INFORMATION_MESSAGE);
+                                "Không tìm thấy sản phẩm với SKU: " + sku,
+                                "Thông báo",
+                                JOptionPane.INFORMATION_MESSAGE);
                     }
                 }
             } else {
                 JOptionPane.showMessageDialog(this,
-                    "Không tìm thấy thông tin SKU trong mã QR",
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+                        "Không tìm thấy thông tin SKU trong mã QR",
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                "Lỗi khi xử lý dữ liệu QR code: " + e.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
+                    "Lỗi khi xử lý dữ liệu QR code: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Hiển thị thông tin sản phẩm lên form
+     *
      * @param variant Thông tin sản phẩm
      */
     private void showProductVariantInfo(ProductVariant variant) {
@@ -801,9 +815,10 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
         // txtTenSP.setText(variant.getProductName());
         // ...
     }
-    
+
     /**
      * Tìm và chọn sản phẩm trong bảng dựa trên SKU
+     *
      * @param sku Mã SKU cần tìm
      * @return true nếu tìm thấy và chọn được sản phẩm, false nếu không tìm thấy
      */
@@ -824,42 +839,42 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
 
     private void cbbLTLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbbLTLActionPerformed
         currentPage = 1;
-        
+
         // Lấy loại thuộc tính được chọn
         String selectedType = cbbLTL.getSelectedItem().toString();
         String filter = "";
-        
+
         // Tạo bộ lọc dựa trên loại được chọn
         if (!"Tất cả".equals(selectedType)) {
             filter = "attribute_type = '" + selectedType + "'";
         }
-        
+
         try {
             // Lấy dữ liệu phân trang với bộ lọc
             List<ProductVariant> variants = productVariantDAO.findWithPagination(
-                currentPage, 
-                pageSize, 
-                filter
+                    currentPage,
+                    pageSize,
+                    filter
             );
-            
+
             // Cập nhật tổng số trang
             int totalItems = productVariantDAO.count(filter);
             totalPages = (int) Math.ceil((double) totalItems / pageSize);
-            
+
             // Cập nhật bảng với dữ liệu mới
             updateTableModel(variants);
-            
+
             // Cập nhật trạng thái nút phân trang
             updatePaginationButtons();
-            
+
             // Cập nhật nhãn phân trang
             updatePaginationLabel();
-            
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                "Lỗi khi tải dữ liệu: " + e.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
+                    "Lỗi khi tải dữ liệu: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
 
@@ -868,59 +883,59 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
     private void cbAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbAllActionPerformed
         boolean isSelected = cbAll.isSelected();
         DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
-        
+
         // Lặp qua tất cả các dòng trong bảng
         for (int i = 0; i < model.getRowCount(); i++) {
             // Cập nhật cột checkbox (giả sử cột checkbox là cột đầu tiên)
             model.setValueAt(isSelected, i, 0);
-            
+
             // Nếu bạn muốn cập nhật trạng thái selected của dòng
             // tblSanPhamCon.changeSelection(i, 0, false, false);
         }
-        
+
         // Cập nhật giao diện
         tblSanPhamCon.repaint();
     }//GEN-LAST:event_cbAllActionPerformed
 
     private void txtLGTActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtLGTActionPerformed
         currentPage = 1;
-        
+
         // Lấy từ khóa tìm kiếm
         String keyword = txtLGT.getText().trim();
         String filter = "";
-        
+
         // Tạo bộ lọc tìm kiếm nếu có từ khóa
         if (!keyword.isEmpty()) {
-            filter = String.format("variant_sku LIKE '%%%s%%' OR variant_name LIKE '%%%s%%'", 
-                                 keyword, keyword);
+            filter = String.format("variant_sku LIKE '%%%s%%' OR variant_name LIKE '%%%s%%'",
+                    keyword, keyword);
         }
-        
+
         try {
             // Lấy dữ liệu phân trang với bộ lọc tìm kiếm
             List<ProductVariant> variants = productVariantDAO.findWithPagination(
-                currentPage, 
-                pageSize, 
-                filter
+                    currentPage,
+                    pageSize,
+                    filter
             );
-            
+
             // Cập nhật tổng số trang
             int totalItems = productVariantDAO.count(filter);
             totalPages = (int) Math.ceil((double) totalItems / pageSize);
-            
+
             // Cập nhật bảng với kết quả tìm kiếm
             updateTableModel(variants);
-            
+
             // Cập nhật trạng thái nút phân trang
             updatePaginationButtons();
-            
+
             // Cập nhật nhãn phân trang
             updatePaginationLabel();
-            
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                "Lỗi khi tìm kiếm: " + e.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
+                    "Lỗi khi tìm kiếm: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }//GEN-LAST:event_txtLGTActionPerformed
@@ -933,38 +948,38 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
                 javax.swing.JTextField searchField = (javax.swing.JTextField) evt.getSource();
                 keyword = searchField.getText().trim();
             }
-            
+
             String filter = "";
-            
+
             // Tạo bộ lọc tìm kiếm nếu có từ khóa
             if (!keyword.isEmpty()) {
-                filter = String.format("variant_sku LIKE '%%%s%%' OR variant_name LIKE '%%%s%%'", 
-                                     keyword, keyword);
+                filter = String.format("variant_sku LIKE '%%%s%%' OR variant_name LIKE '%%%s%%'",
+                        keyword, keyword);
             }
-            
+
             // Reset về trang đầu tiên khi tìm kiếm
             currentPage = 1;
-            
+
             // Lấy dữ liệu phân trang với bộ lọc tìm kiếm
             List<ProductVariant> variants = productVariantDAO.findWithPagination(
-                currentPage, 
-                pageSize, 
-                filter
+                    currentPage,
+                    pageSize,
+                    filter
             );
-            
+
             // Cập nhật tổng số trang
             int totalItems = productVariantDAO.count(filter);
             totalPages = (int) Math.ceil((double) totalItems / pageSize);
-            
+
             // Cập nhật bảng với kết quả tìm kiếm
             updateTableModel(variants);
-            
+
             // Cập nhật trạng thái nút phân trang
             updatePaginationButtons();
-            
+
             // Cập nhật nhãn phân trang
             updatePaginationLabel();
-            
+
         } catch (Exception e) {
             // Không hiển thị thông báo lỗi để tránh làm phiền người dùng khi đang gõ
             e.printStackTrace();
@@ -976,38 +991,38 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
         javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
         fileChooser.setDialogTitle("Chọn nơi lưu file mẫu");
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
-        
+
         int userSelection = fileChooser.showSaveDialog(this);
-        
+
         if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
             try {
                 // Tạo đường dẫn đầy đủ đến file mẫu
                 File folder = fileChooser.getSelectedFile();
                 String templatePath = folder.getAbsolutePath() + File.separator + "Mau_Import_SanPham.xlsx";
-                
+
                 // Tạo workbook mới
                 try (org.apache.poi.xssf.usermodel.XSSFWorkbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
                     // Tạo sheet
                     org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Mau_Import");
-                    
+
                     // Tạo style cho header
                     org.apache.poi.ss.usermodel.CellStyle headerStyle = workbook.createCellStyle();
                     org.apache.poi.ss.usermodel.Font font = workbook.createFont();
                     font.setBold(true);
                     headerStyle.setFont(font);
-                    
+
                     // Tạo header row
                     org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
-                    String[] headers = {"Mã SKU", "Tên biến thể", "ID Sản phẩm", "ID Màu sắc", 
-                                     "ID Kích thước", "ID Loại đế", "Giá gốc", "Giá khuyến mãi", 
-                                     "Số lượng tồn", "Trạng thái (1: Hoạt động, 0: Ngừng bán)"};
-                    
+                    String[] headers = {"Mã SKU", "Tên biến thể", "ID Sản phẩm", "ID Màu sắc",
+                        "ID Kích thước", "ID Loại đế", "Giá gốc", "Giá khuyến mãi",
+                        "Số lượng tồn", "Trạng thái (1: Hoạt động, 0: Ngừng bán)"};
+
                     for (int i = 0; i < headers.length; i++) {
                         org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
                         cell.setCellValue(headers[i]);
                         cell.setCellStyle(headerStyle);
                     }
-                    
+
                     // Tạo dòng hướng dẫn
                     org.apache.poi.ss.usermodel.Row instructionRow1 = sheet.createRow(1);
                     instructionRow1.createCell(0).setCellValue("VD: SP001");
@@ -1020,29 +1035,29 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
                     instructionRow1.createCell(7).setCellValue("450000");
                     instructionRow1.createCell(8).setCellValue("50");
                     instructionRow1.createCell(9).setCellValue("1");
-                    
+
                     // Tự động điều chỉnh độ rộng cột
                     for (int i = 0; i < headers.length; i++) {
                         sheet.autoSizeColumn(i);
                     }
-                    
+
                     // Lưu file
                     try (java.io.FileOutputStream outputStream = new java.io.FileOutputStream(templatePath)) {
                         workbook.write(outputStream);
                     }
-                    
+
                     // Thông báo thành công
-                    JOptionPane.showMessageDialog(this, 
-                        "Đã tạo file mẫu thành công tại: " + templatePath, 
-                        "Thành công", 
-                        JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this,
+                            "Đã tạo file mẫu thành công tại: " + templatePath,
+                            "Thành công",
+                            JOptionPane.INFORMATION_MESSAGE);
                 }
-                
+
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, 
-                    "Lỗi khi tạo file mẫu: " + e.getMessage(), 
-                    "Lỗi", 
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi tạo file mẫu: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         }
@@ -1052,56 +1067,57 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
         // Tạo hộp thoại chọn file
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Chọn file Excel cần import");
-        
+
         // Chỉ cho phép chọn file Excel
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
-            "Excel Files", "xls", "xlsx");
+                "Excel Files", "xls", "xlsx");
         fileChooser.setFileFilter(filter);
-        
+
         int returnValue = fileChooser.showOpenDialog(this);
-        
+
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
-            
+
             // Xác nhận trước khi import
             int confirm = JOptionPane.showConfirmDialog(
-                this,
-                "Bạn có chắc chắn muốn import dữ liệu từ file: " + selectedFile.getName() + "?",
-                "Xác nhận Import",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
+                    this,
+                    "Bạn có chắc chắn muốn import dữ liệu từ file: " + selectedFile.getName() + "?",
+                    "Xác nhận Import",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE
             );
-            
+
             if (confirm == JOptionPane.YES_OPTION) {
-                try (FileInputStream fis = new FileInputStream(selectedFile);
-                     XSSFWorkbook workbook = new XSSFWorkbook(fis)) {
-                    
+                try (FileInputStream fis = new FileInputStream(selectedFile); XSSFWorkbook workbook = new XSSFWorkbook(fis)) {
+
                     // Lấy sheet đầu tiên
                     Sheet sheet = workbook.getSheetAt(0);
-                    
+
                     // Đếm số dòng dữ liệu (bỏ qua dòng tiêu đề)
                     int rowCount = sheet.getPhysicalNumberOfRows() - 1;
-                    
+
                     if (rowCount <= 0) {
-                        JOptionPane.showMessageDialog(this, 
-                            "File Excel không có dữ liệu để import!", 
-                            "Cảnh báo", 
-                            JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.showMessageDialog(this,
+                                "File Excel không có dữ liệu để import!",
+                                "Cảnh báo",
+                                JOptionPane.WARNING_MESSAGE);
                         return;
                     }
-                    
+
                     int successCount = 0;
                     int failCount = 0;
                     StringBuilder errorMessages = new StringBuilder();
-                    
+
                     // Bắt đầu import từ dòng thứ 2 (index 1) vì dòng 1 là tiêu đề
                     for (int i = 1; i <= rowCount; i++) {
                         Row row = sheet.getRow(i);
-                        
+
                         try {
                             // Bỏ qua dòng trống
-                            if (row == null) continue;
-                            
+                            if (row == null) {
+                                continue;
+                            }
+
                             // Đọc dữ liệu từ các ô
                             String sku = getCellValueAsString(row.getCell(0));
                             String variantName = getCellValueAsString(row.getCell(1));
@@ -1110,10 +1126,10 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
                             int sizeId = (int) Double.parseDouble(getCellValueAsString(row.getCell(4)));
                             int soleId = (int) Double.parseDouble(getCellValueAsString(row.getCell(5)));
                             double originalPrice = Double.parseDouble(getCellValueAsString(row.getCell(6)));
-                            
+
                             // Tạo đối tượng ProductVariant
                             ProductVariant variant = new ProductVariant();
-                            
+
                             // Thiết lập các thuộc tính từ dữ liệu Excel
                             variant.setVariantSku(sku);
                             variant.setProductId(productId);
@@ -1121,60 +1137,60 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
                             variant.setSizeId(sizeId);
                             variant.setSoleId(soleId);
                             variant.setVariantOrigPrice(BigDecimal.valueOf(originalPrice));
-                            
+
                             // Lưu vào CSDL
                             // Lưu ý: Hiện tại DAO chưa hỗ trợ tìm kiếm theo SKU, nên tạm thời luôn tạo mới
                             // Có thể cần bổ sung phương thức findBySku vào ProductVariantDAO nếu cần
                             productVariantDAO.create(variant);
-                            
+
                             successCount++;
-                            
+
                         } catch (Exception e) {
                             failCount++;
                             errorMessages.append("Lỗi dòng ").append(i + 1).append(": ").append(e.getMessage()).append("\n");
                             e.printStackTrace();
                         }
                     }
-                    
+
                     // Hiển thị kết quả import
                     StringBuilder resultMessage = new StringBuilder();
                     resultMessage.append("Kết quả import:\n");
                     resultMessage.append("- Thành công: ").append(successCount).append(" dòng\n");
                     resultMessage.append("- Thất bại: ").append(failCount).append(" dòng\n");
-                    
+
                     if (failCount > 0) {
                         resultMessage.append("\nChi tiết lỗi:\n").append(errorMessages.toString());
                     }
-                    
+
                     JOptionPane.showMessageDialog(
-                        this, 
-                        resultMessage.toString(), 
-                        "Kết quả Import", 
-                        failCount > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE
+                            this,
+                            resultMessage.toString(),
+                            "Kết quả Import",
+                            failCount > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE
                     );
-                    
+
                     // Làm mới dữ liệu sau khi import
                     loadProductVariants();
-                    
+
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(
-                        this, 
-                        "Lỗi khi đọc file Excel: " + e.getMessage(), 
-                        "Lỗi", 
-                        JOptionPane.ERROR_MESSAGE
+                            this,
+                            "Lỗi khi đọc file Excel: " + e.getMessage(),
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE
                     );
                     e.printStackTrace();
                 }
             }
         }
     }//GEN-LAST:event_btn_import_file_excelActionPerformed
-    
+
     // Hàm hỗ trợ đọc giá trị ô Excel
     private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
         if (cell == null) {
             return "";
         }
-        
+
         switch (cell.getCellType()) {
             case STRING:
                 return cell.getStringCellValue().trim();
@@ -1199,6 +1215,38 @@ public class ViewSanPhamChiTiet extends javax.swing.JPanel {
         }
     }
 
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(ViewSanPhamChiTiet.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(ViewSanPhamChiTiet.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(ViewSanPhamChiTiet.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(ViewSanPhamChiTiet.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new ViewSanPhamChiTiet().setVisible(true);
+            }
+        });
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLamMoi;

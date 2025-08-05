@@ -12,61 +12,57 @@ public class BrandDAOImpl implements BrandDAO {
     
     @Override
     public Brand create(Brand brand) {
-        String sql = "INSERT INTO Brands (brand_name, brand_description, created_at) "
+        String sql = "INSERT INTO Brand (brand_name, brand_code, brand_origin) "
                   + "OUTPUT INSERTED.* "
                   + "VALUES (?, ?, ?)";
         
-        brand.setCreatedAt(LocalDateTime.now());
-        
         return XJdbc.queryForObject(sql, this::mapResultSetToBrand,
             brand.getBrandName(),
-            brand.getBrandDescription(),
-            brand.getCreatedAt()
+            brand.getBrandCode(),
+            brand.getBrandOrigin()
         );
     }
     
     @Override
     public Brand update(Brand brand) {
-        String sql = "UPDATE Brands SET brand_name = ?, brand_description = ?, "
-                  + "updated_at = ? OUTPUT INSERTED.* WHERE id = ?";
-        
-        brand.setUpdatedAt(LocalDateTime.now());
+        String sql = "UPDATE Brand SET brand_name = ?, brand_code = ?, brand_origin = ? "
+                  + "OUTPUT INSERTED.* WHERE brand_id = ?";
         
         return XJdbc.queryForObject(sql, this::mapResultSetToBrand,
             brand.getBrandName(),
-            brand.getBrandDescription(),
-            brand.getUpdatedAt(),
-            brand.getId()
+            brand.getBrandCode(),
+            brand.getBrandOrigin(),
+            brand.getBrandId()
         );
     }
     
     @Override
     public boolean deleteById(Integer id) {
-        String sql = "DELETE FROM Brands WHERE id = ?";
+        String sql = "DELETE FROM Brand WHERE brand_id = ?";
         return XJdbc.executeUpdate(sql, id) > 0;
     }
     
     @Override
     public Brand findByCode(String code) {
-        String sql = "SELECT * FROM Brands WHERE brand_code = ?";
+        String sql = "SELECT * FROM Brand WHERE brand_code = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToBrand, code);
     }
     
     @Override
     public List<Brand> findAll() {
-        String sql = "SELECT * FROM Brands ORDER BY id DESC";
+        String sql = "SELECT * FROM Brand ORDER BY brand_id DESC";
         return XJdbc.query(sql, this::mapResultSetToBrand);
     }
     
     @Override
     public Brand findById(Integer id) {
-        String sql = "SELECT * FROM Brands WHERE id = ?";
+        String sql = "SELECT * FROM Brand WHERE brand_id = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToBrand, id);
     }
     
     @Override
     public Brand findByName(String name) {
-        String sql = "SELECT * FROM Brands WHERE brand_name = ?";
+        String sql = "SELECT * FROM Brand WHERE brand_name = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToBrand, name);
     }
     
@@ -77,13 +73,13 @@ public class BrandDAOImpl implements BrandDAO {
         }
         
         String searchPattern = "%" + keyword.trim() + "%";
-        String sql = "SELECT * FROM Brands WHERE brand_name LIKE ? OR brand_description LIKE ?";
+        String sql = "SELECT * FROM Brand WHERE brand_name LIKE ? OR brand_origin LIKE ?";
         return XJdbc.query(sql, this::mapResultSetToBrand, searchPattern, searchPattern);
     }
     
     @Override
     public boolean existsByName(String name) {
-        String sql = "SELECT COUNT(*) FROM Brands WHERE brand_name = ?";
+        String sql = "SELECT COUNT(*) FROM Brand WHERE brand_name = ?";
         List<Long> counts = XJdbc.query(sql, rs -> rs.getLong(1), name);
         return !counts.isEmpty() && counts.get(0) > 0;
     }
@@ -97,7 +93,10 @@ public class BrandDAOImpl implements BrandDAO {
         }
         
         Brand brand = new Brand();
-        brand.setId(rs.getInt("id"));
+        brand.setBrandId(rs.getInt("brand_id"));
+        brand.setBrandName(rs.getString("brand_name"));
+        brand.setBrandCode(rs.getString("brand_code"));
+        brand.setBrandOrigin(rs.getString("brand_origin"));
         brand.setBrandName(rs.getString("brand_name"));
         brand.setBrandDescription(rs.getString("brand_description"));
         

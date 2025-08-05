@@ -1,16 +1,21 @@
 package com.DuAn1.volleyballshoes.app.view.viewgiaodien.component;
 
-
+import com.DuAn1.volleyballshoes.app.view.viewdangnhap.main.MainDangNhap;
+import java.awt.event.ActionListener;
 
 public class Header extends javax.swing.JPanel {
 
+    MainDangNhap dangNhap = new MainDangNhap();
 
     public Header() {
         initComponents();
-
+//        lbTen.setText(dangNhap.ten);
+//        jLabel2.setText(dangNhap.chucVu==1?"Nhân viên":"Quản lý");
     }
 
-
+    public void addMenuEvent(ActionListener event) {
+//        button1.addActionListener(event);
+    }
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents

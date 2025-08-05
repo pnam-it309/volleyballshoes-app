@@ -44,14 +44,14 @@ public class PromotionDAOImpl implements PromotionDAO {
 
     @Override
     public Promotion findByCode(String code) {
-        String sql = "SELECT * FROM Promotions WHERE promo_code = ?";
+        String sql = "SELECT * FROM Promotion WHERE promo_code = ?";
         List<Promotion> list = XJdbc.query(sql, this::mapResultSetToPromotion, code);
         return list.isEmpty() ? null : list.get(0);
     }
     
     @Override
     public List<Promotion> findActivePromotions() {
-        String sql = "SELECT * FROM Promotions WHERE promo_start_date <= GETDATE() AND promo_end_date >= GETDATE()";
+        String sql = "SELECT * FROM Promotion WHERE promo_start_date <= GETDATE() AND promo_end_date >= GETDATE()";
         return XJdbc.query(sql, this::mapResultSetToPromotion);
     }
 
@@ -75,7 +75,7 @@ public class PromotionDAOImpl implements PromotionDAO {
 
     @Override
     public Promotion update(Promotion promotion) {
-        String sql = "UPDATE Promotions SET "
+        String sql = "UPDATE Promotion SET "
                 + "promo_name = ?, "
                 + "promo_description = ?, "
                 + "promo_discount_value = ?, "
@@ -98,21 +98,20 @@ public class PromotionDAOImpl implements PromotionDAO {
     }
 
     @Override
-    public boolean existsById(Long id) {
-        String sql = "SELECT COUNT(*) FROM Promotions WHERE promotion_id = ?";
+    public boolean existsById(Integer id) {
+        String sql = "SELECT COUNT(*) FROM Promotion WHERE promotion_id = ?";
         Integer count = XJdbc.getValue(sql, id);
         return count != null && count > 0;
     }
 
     @Override
     public void deleteById() {
-        // Phương thức này không rõ ràng, không biết xóa theo ID nào
         throw new UnsupportedOperationException("Please use deleteById(Integer id) instead.");
     }
 
     @Override
     public Promotion create(Promotion entity) {
-        String sql = "INSERT INTO Promotions (promo_name, promo_description, promo_discount_value, "
+        String sql = "INSERT INTO Promotion (promo_name, promo_description, promo_discount_value, "
                 + "promo_start_date, promo_end_date, promo_code) "
                 + "VALUES (?, ?, ?, ?, ?, ?)";
         
@@ -125,27 +124,31 @@ public class PromotionDAOImpl implements PromotionDAO {
                 entity.getPromoCode()
         );
         
-        // Lấy ID vừa tạo
-        String getIdSql = "SELECT TOP 1 * FROM Promotions ORDER BY promotion_id DESC";
-        return XJdbc.queryForObject(getIdSql, this::mapResultSetToPromotion);
+        // Get the newly created promotion by code
+        return findByCode(entity.getPromoCode());
     }
 
     @Override
     public boolean deleteById(Integer id) {
-        String sql = "DELETE FROM Promotions WHERE promotion_id = ?";
+        String sql = "DELETE FROM Promotion WHERE promotion_id = ?";
         int rowsAffected = XJdbc.executeUpdate(sql, id);
         return rowsAffected > 0;
     }
 
     @Override
     public List<Promotion> findAll() {
-        String sql = "SELECT * FROM Promotions";
+        String sql = "SELECT * FROM Promotion";
         return XJdbc.query(sql, this::mapResultSetToPromotion);
     }
 
     @Override
     public Promotion findById(Integer id) {
-        String sql = "SELECT * FROM Promotions WHERE promotion_id = ?";
+        String sql = "SELECT * FROM Promotion WHERE promotion_id = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToPromotion, id);
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }

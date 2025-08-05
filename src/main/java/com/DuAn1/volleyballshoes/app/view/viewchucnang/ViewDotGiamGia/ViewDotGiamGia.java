@@ -5,10 +5,11 @@ import com.formdev.flatlaf.FlatLightLaf;
 public class ViewDotGiamGia extends javax.swing.JPanel {
 
     public ViewDotGiamGia() {
-                FlatLightLaf.setup();
+        FlatLightLaf.setup();
         initComponents();
         setOpaque(false);
     }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {

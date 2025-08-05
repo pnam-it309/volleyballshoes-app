@@ -2,13 +2,27 @@ package com.DuAn1.volleyballshoes.app.view.viewgiaodien.component;
 
 import com.DuAn1.volleyballshoes.app.view.viewgiaodien.event.*;
 import com.DuAn1.volleyballshoes.app.view.viewgiaodien.model.ModelMenu;
+import com.DuAn1.volleyballshoes.app.view.viewgiaodien.swing.*;
 import com.DuAn1.volleyballshoes.app.view.viewgiaodien.swing.scrollbar.ScrollBarCustom;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JPanel;
 
 public class Menu extends javax.swing.JPanel {
+
+    private static final int COLLAPSED_WIDTH = 60;
+    private static final int EXPANDED_WIDTH = 230;
 
     public boolean isShowMenu() {
         return showMenu;
@@ -34,308 +48,175 @@ public class Menu extends javax.swing.JPanel {
     private EventShowPopupMenu eventShowPopup;
     private boolean enableMenu = true;
     private boolean showMenu = true;
+    private boolean isAnimating = false;
 
     public Menu() {
         initComponents();
-        setOpaque(true);
-        sp.getViewport().setOpaque(true);
+        setOpaque(false);
+        sp.getViewport().setOpaque(false);
         sp.setVerticalScrollBar(new ScrollBarCustom());
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        // Set initial size
+        setPreferredSize(new Dimension(EXPANDED_WIDTH, getPreferredSize().height));
+
+        // Add component listener to handle resizing of menu items
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                updateMenuItemsWidth();
+            }
+        });
     }
 
-    private JPanel currentSubMenu = null;
-    private JButton currentMenuButton = null;
-    
-    public void initMenuItem() {
-        // Thêm các menu items từ viewchucnang với icon
-        ModelMenu homeMenu = new ModelMenu("Trang Chủ");
-        addMenu(homeMenu, 0, "1.png");
-        
-        // Menu Bán Hàng với submenu
-        ModelMenu salesMenu = new ModelMenu("Bán Hàng");
-        salesMenu.setSubMenu(new String[]{
-            "Tạo hóa đơn bán hàng",
-            "Thêm khách hàng mới"
-        });
-        addMenu(salesMenu, 1, "2.png");
-        
-        // Menu Sản phẩm với submenu
-        ModelMenu productMenu = new ModelMenu("Sản Phẩm");
-        productMenu.setSubMenu(new String[]{
-            "Danh sách sản phẩm",
-            "Thêm sản phẩm mới",
-            "Chi tiết sản phẩm",
-            "Quản lý thuộc tính",
-            "Quét QR sản phẩm"
-        });
-        addMenu(productMenu, 2, "3.png");
-        
-        // Menu Hóa đơn
-        ModelMenu invoiceMenu = new ModelMenu("Hóa Đơn");
-        addMenu(invoiceMenu, 3, "4.png");
-        
-        // Menu Khách hàng
-        ModelMenu customerMenu = new ModelMenu("Khách Hàng");
-        addMenu(customerMenu, 4, "5.png");
-        
-        // Menu Nhân viên
-        ModelMenu staffMenu = new ModelMenu("Nhân Viên");
-        addMenu(staffMenu, 5, "6.png");
-        
-        // Menu Thống kê
-        ModelMenu statsMenu = new ModelMenu("Thống Kê");
-        addMenu(statsMenu, 6, "7.png");
-        
-        // Menu Khuyến mãi với submenu
-        ModelMenu promotionMenu = new ModelMenu("Khuyến Mãi");
-        promotionMenu.setSubMenu(new String[]{
-            "Đợt giảm giá",
-            "Phiếu giảm giá"
-        });
-        addMenu(promotionMenu, 7, "8.png");
-    }
-
-    private void addMenu(ModelMenu menu, int index, String iconPath) {
-        // Tạo menu item với icon
-        JButton btn = new JButton();
-        
-        // Load icon
+    private ImageIcon createSafeImageIcon(String path) {
         try {
-            // Sử dụng đường dẫn đúng từ resources
-            String fullIconPath = "/com/DuAn1/volleyballshoes/app/icons/" + iconPath;
-            java.net.URL iconUrl = getClass().getResource(fullIconPath);
-            
-            if (iconUrl != null) {
-                System.out.println("Load icon thành công: " + fullIconPath);
-                ImageIcon icon = new ImageIcon(iconUrl);
-                Image img = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-                btn.setIcon(new ImageIcon(img));
+            java.net.URL imgURL = getClass().getResource(path);
+            if (imgURL != null) {
+                return new ImageIcon(imgURL);
             } else {
-                System.err.println("Không tìm thấy icon: " + fullIconPath);
-                // Tạo icon với text thay vì hình vuông trắng
-                btn.setIcon(createTextIcon(menu.getMenuName().substring(0, 1)));
+                System.err.println("Couldn't find file: " + path);
+                // Trả về một ImageIcon trống nếu không tìm thấy ảnh
+                return new ImageIcon();
             }
         } catch (Exception e) {
-            System.err.println("Lỗi load icon: " + iconPath + " - " + e.getMessage());
-            btn.setIcon(createTextIcon(menu.getMenuName().substring(0, 1)));
+            e.printStackTrace();
+            return new ImageIcon();
         }
-        
-        btn.setText(menu.getMenuName());
-        btn.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        btn.setForeground(new java.awt.Color(255, 255, 255));
-        btn.setBackground(new java.awt.Color(33, 105, 249));
-        btn.setBorder(new EmptyBorder(12, 25, 12, 25));
-        btn.setPreferredSize(new java.awt.Dimension(230, 50));
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setOpaque(true);
-        btn.setContentAreaFilled(true);
-        btn.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        btn.setIconTextGap(15);
-        
-        // Thêm mũi tên nếu có submenu
-        if (menu.getSubMenu() != null && menu.getSubMenu().length > 0) {
-            btn.setIcon(createIconWithArrow(btn.getIcon()));
-        }
-        
-        // Hover effect
-        btn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btn.setBackground(new Color(45, 125, 255));
-            }
-            
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                if (currentMenuButton != btn) {
-                    btn.setBackground(new Color(33, 105, 249));
-                }
-            }
-        });
-        
-        // Thêm action listener với index tương ứng
-        final int menuIndex = index;
-        btn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                if (menu.getSubMenu() != null && menu.getSubMenu().length > 0) {
-                    // Nếu có submenu, hiển thị/ẩn submenu
-                    toggleSubMenu(btn, menu, menuIndex);
-                } else {
-                    // Nếu không có submenu, gọi sự kiện bình thường
-                    if (currentSubMenu != null) {
-                        panel.remove(currentSubMenu);
-                        currentSubMenu = null;
-                        currentMenuButton = null;
-                        panel.revalidate();
-                        panel.repaint();
-                    }
-                    if (event != null) {
-                        event.menuSelected(menuIndex, 0);
-                    }
-                }
-            }
-        });
-        
-        panel.add(btn);
-        panel.add(Box.createVerticalStrut(5)); // Thêm khoảng cách giữa các button
-        
-        // Nếu là menu Sản phẩm, thêm submenu
-        if (menu.getMenuName().equals("Sản Phẩm")) {
-            addSubMenu(menu, menuIndex);
-        }
-        
-        panel.revalidate();
-        panel.repaint();
     }
     
-    private void toggleSubMenu(JButton btn, ModelMenu menu, int menuIndex) {
-        if (currentSubMenu != null) {
-            // Nếu đang mở submenu khác, đóng nó lại
-            if (currentMenuButton == btn) {
-                // Đóng submenu hiện tại
-                panel.remove(currentSubMenu);
-                currentSubMenu = null;
-                currentMenuButton = null;
-                btn.setBackground(new Color(33, 105, 249));
-            } else {
-                // Mở submenu mới, đóng submenu cũ
-                panel.remove(currentSubMenu);
-                if (currentMenuButton != null) {
-    currentMenuButton.setBackground(new Color(33, 105, 249));
-}
-                addSubMenu(menu, menuIndex);
-                currentMenuButton = btn;
-                btn.setBackground(new Color(60, 135, 255));
+    private void updateMenuItemsWidth() {
+        int width = getWidth();
+        for (Component comp : panel.getComponents()) {
+            if (comp instanceof MenuItem) {
+                comp.setPreferredSize(new Dimension(width - 20, comp.getPreferredSize().height));
+                comp.setSize(comp.getPreferredSize());
             }
-        } else {
-            // Mở submenu mới
-            addSubMenu(menu, menuIndex);
-            currentMenuButton = btn;
-            btn.setBackground(new Color(60, 135, 255));
         }
         panel.revalidate();
-        panel.repaint();
-    }
-    
-    private void addSubMenu(ModelMenu menu, int menuIndex) {
-        if (menu.getSubMenu() == null || menu.getSubMenu().length == 0) {
-            return;
-        }
-        
-        // Tạo panel chứa submenu
-        JPanel subMenuPanel = new JPanel();
-        subMenuPanel.setLayout(new BoxLayout(subMenuPanel, BoxLayout.Y_AXIS));
-        subMenuPanel.setBackground(new Color(25, 95, 239));
-        subMenuPanel.setBorder(BorderFactory.createEmptyBorder(0, 30, 10, 0));
-        
-        // Thêm các item vào submenu
-        for (int i = 0; i < menu.getSubMenu().length; i++) {
-            String subMenuItem = menu.getSubMenu()[i];
-            JButton subMenuBtn = new JButton(subMenuItem);
-            
-            // Cấu hình button submenu
-            subMenuBtn.setFont(new java.awt.Font("Segoe UI", 0, 13));
-            subMenuBtn.setForeground(new java.awt.Color(220, 220, 220));
-            subMenuBtn.setBackground(new Color(25, 95, 239));
-            subMenuBtn.setBorder(new EmptyBorder(8, 15, 8, 15));
-            subMenuBtn.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-            subMenuBtn.setFocusPainted(false);
-            subMenuBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            subMenuBtn.setOpaque(true);
-            subMenuBtn.setContentAreaFilled(true);
-            
-            // Hover effect cho submenu
-            subMenuBtn.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseEntered(java.awt.event.MouseEvent evt) {
-                    subMenuBtn.setBackground(new Color(45, 115, 255));
-                }
-                
-                public void mouseExited(java.awt.event.MouseEvent evt) {
-                    subMenuBtn.setBackground(new Color(25, 95, 239));
-                }
-            });
-            
-            // Sự kiện khi click vào submenu
-            final int subMenuIndex = i;
-            subMenuBtn.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    if (event != null) {
-                        event.menuSelected(menuIndex, subMenuIndex + 1);
-                    }
-                }
-            });
-            
-            subMenuPanel.add(subMenuBtn);
-        }
-        
-        // Thêm submenu vào panel chính
-        panel.add(subMenuPanel, panel.getComponentCount() - 1);
-        currentSubMenu = subMenuPanel;
-    }
-    
-    private Icon createIconWithArrow(Icon originalIcon) {
-        // Tạo icon mới với mũi tên bên phải
-        BufferedImage img = new BufferedImage(30, 20, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = img.createGraphics();
-        
-        // Vẽ icon gốc
-        if (originalIcon != null) {
-            originalIcon.paintIcon(null, g2, 0, 0);
-        }
-        
-        // Vẽ mũi tên
-        g2.setColor(Color.WHITE);
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        int[] xPoints = {15, 20, 25};
-        int[] yPoints = {10, 15, 10};
-        g2.fillPolygon(xPoints, yPoints, 3);
-        
-        g2.dispose();
-        return new ImageIcon(img);
     }
 
-    private ImageIcon createTextIcon(String text) {
-        // Tạo icon với text
-        BufferedImage img = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = img.createGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setColor(Color.WHITE);
-        g2.setFont(new Font("Arial", Font.BOLD, 12));
+    public void initMenuItem() {
+        // Sử dụng đường dẫn tương đối từ thư mục hiện tại
+        String basePath = "../icon/";
         
-        // Căn giữa text
-        FontMetrics fm = g2.getFontMetrics();
-        int x = (20 - fm.stringWidth(text)) / 2;
-        int y = (20 - fm.getHeight()) / 2 + fm.getAscent();
-        
-        g2.drawString(text, x, y);
-        g2.dispose();
-        return new ImageIcon(img);
+        // Thêm các menu với xử lý ngoại lệ khi không tìm thấy ảnh
+        try {
+            // Thêm menu Trang Chủ
+            addMenu(new ModelMenu(createSafeImageIcon(basePath + "1.png"), "Trang Chủ"));
+            
+            // Thêm menu Bán Hàng
+            addMenu(new ModelMenu(createSafeImageIcon(basePath + "2.png"), "Bán Hàng"));
+            
+            // Thêm menu Sản Phẩm với các submenu
+            ModelMenu menuSanPham = new ModelMenu(createSafeImageIcon(basePath + "3.png"), "Sản Phẩm");
+            // Thêm submenu bằng cách gán trực tiếp mảng
+            menuSanPham.setSubMenu(new String[]{"Sản Phẩm", "Chi Tiết Sản Phẩm", "Thuộc Tính"});
+            addMenu(menuSanPham);
+            
+            // Các menu khác
+            addMenu(new ModelMenu(createSafeImageIcon(basePath + "4.png"), "Hóa Đơn"));
+            addMenu(new ModelMenu(createSafeImageIcon(basePath + "5.png"), "Thống Kê"));
+            addMenu(new ModelMenu(createSafeImageIcon(basePath + "6.png"), "Nhân Viên"));
+            addMenu(new ModelMenu(createSafeImageIcon(basePath + "7.png"), "Khách Hàng"));
+            addMenu(new ModelMenu(createSafeImageIcon(basePath + "9.png"), "Phiếu Giảm Giá"));
+            
+            // Các menu trống
+            for (int i = 0; i < 5; i++) {
+                addMenu(new ModelMenu(null, ""));
+            }
+            
+            // Thêm menu Thoát
+            addMenu(new ModelMenu(createSafeImageIcon(basePath + "10.png"), "Thoát"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private ImageIcon createDefaultIcon() {
-        // Tạo icon mặc định màu trắng
-        BufferedImage img = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = img.createGraphics();
-        g2.setColor(Color.WHITE);
-        g2.fillRect(0, 0, 20, 20);
-        g2.dispose();
-        return new ImageIcon(img);
+    private void addMenu(ModelMenu menu) {
+        MenuItem item = new MenuItem(menu, getEventMenu(), event, panel.getComponentCount());
+        item.setPreferredSize(new Dimension(EXPANDED_WIDTH - 20, 40));
+        panel.add(item);
+        updateMenuItemsWidth();
     }
 
     private EventMenu getEventMenu() {
         return new EventMenu() {
             @Override
             public boolean menuPressed(Component com, boolean open) {
+                System.out.println("\n--- menuPressed called ---");
+                System.out.println("enableMenu: " + enableMenu);
+                System.out.println("isShowMenu: " + isShowMenu());
+                
                 if (enableMenu) {
                     if (isShowMenu()) {
-                        if (open) {
+                        // Toggle submenu visibility
+                        if (com instanceof MenuItem) {
+                            MenuItem clickedItem = (MenuItem) com;
+                            System.out.println("Clicked menu item: " + clickedItem.getMenu().getMenuName());
+                            System.out.println("Current open state: " + clickedItem.isOpen());
+                            System.out.println("Requested open state: " + open);
+                            
+                            // Close all other open menus first
+                            System.out.println("Closing other open menus...");
+                            int closedCount = 0;
+                            for (Component component : panel.getComponents()) {
+                                if (component instanceof MenuItem) {
+                                    MenuItem item = (MenuItem) component;
+                                    if (item != clickedItem && item.isOpen()) {
+                                        System.out.println("  - Closing menu: " + item.getMenu().getMenuName());
+                                        item.setOpen(false);
+                                        item.updateSubMenuVisibility();
+                                        closedCount++;
+                                    }
+                                }
+                            }
+                            System.out.println("Closed " + closedCount + " other menus");
+                            
+                            // Only update if the state is actually changing
+                            if (clickedItem.isOpen() != open) {
+                                System.out.println("Toggling menu state from " + clickedItem.isOpen() + " to " + open);
+                                clickedItem.setOpen(open);
+                                clickedItem.updateSubMenuVisibility();
+                                
+                                // Scroll to show the clicked item if needed
+                                Rectangle rect = com.getBounds();
+                                rect.setLocation(0, rect.y);
+                                scrollRectToVisible(rect);
+                                
+                                System.out.println("Menu update complete");
+                            } else {
+                                System.out.println("Menu state already " + open + ", no change needed");
+                            }
                         } else {
+                            System.out.println("Component is not a MenuItem");
                         }
                         return true;
                     } else {
-                        eventShowPopup.showPopup(com);
+                        System.out.println("Menu is collapsed, showing popup");
+                        // Show popup if menu is collapsed
+                        if (eventShowPopup != null) {
+                            eventShowPopup.showPopup(com);
+                        }
                     }
+                } else {
+                    System.out.println("Menu is disabled");
                 }
                 return false;
             }
         };
+    }
+
+    public void hideallMenu() {
+        for (Component com : panel.getComponents()) {
+            if (com instanceof MenuItem) {
+                MenuItem item = (MenuItem) com;
+                if (item.isOpen()) {
+                    item.setOpen(false);
+                }
+            }
+        }
+        panel.revalidate();
     }
 
     @SuppressWarnings("unchecked")
@@ -344,21 +225,62 @@ public class Menu extends javax.swing.JPanel {
 
         sp = new javax.swing.JScrollPane();
         panel = new javax.swing.JPanel();
+        jPanel1 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
 
         sp.setBorder(null);
         sp.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
-        panel.setOpaque(true);
-        panel.setLayout(new javax.swing.BoxLayout(panel, javax.swing.BoxLayout.Y_AXIS));
-        panel.setBackground(new Color(33, 105, 249));
+        panel.setOpaque(false);
+
+        javax.swing.GroupLayout panelLayout = new javax.swing.GroupLayout(panel);
+        panel.setLayout(panelLayout);
+        panelLayout.setHorizontalGroup(
+            panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        panelLayout.setVerticalGroup(
+            panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
 
         sp.setViewportView(panel);
-        sp.setOpaque(true);
-        sp.getViewport().setOpaque(true);
-        sp.setBackground(new Color(33, 105, 249));
 
-        setLayout(new BorderLayout());
-        add(sp, BorderLayout.CENTER);
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        jLabel1.setForeground(new java.awt.Color(51, 255, 255));
+        jLabel1.setText("VShoesApp");
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(49, 49, 49)
+                .addComponent(jLabel1)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(57, 57, 57)
+                .addComponent(jLabel1)
+                .addContainerGap(67, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        this.setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(sp, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(sp, javax.swing.GroupLayout.DEFAULT_SIZE, 507, Short.MAX_VALUE))
+        );
     }// </editor-fold>//GEN-END:initComponents
 
     @Override
@@ -372,6 +294,8 @@ public class Menu extends javax.swing.JPanel {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel panel;
     private javax.swing.JScrollPane sp;
     // End of variables declaration//GEN-END:variables

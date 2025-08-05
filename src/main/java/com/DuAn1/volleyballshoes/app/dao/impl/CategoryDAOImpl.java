@@ -12,55 +12,49 @@ public class CategoryDAOImpl implements CategoryDAO {
     
     @Override
     public Category create(Category category) {
-        String sql = "INSERT INTO Categories (category_name, category_description, created_at) "
+        String sql = "INSERT INTO Category (category_name, category_code) "
                   + "OUTPUT INSERTED.* "
-                  + "VALUES (?, ?, ?)";
-        
-        category.setCreatedAt(LocalDateTime.now());
+                  + "VALUES (?, ?)";
         
         return XJdbc.queryForObject(sql, this::mapResultSetToCategory,
             category.getCategoryName(),
-            category.getCategoryDescription(),
-            category.getCreatedAt()
+            category.getCategoryCode()
         );
     }
     
     @Override
     public Category update(Category category) {
-        String sql = "UPDATE Categories SET category_name = ?, category_description = ?, "
-                  + "updated_at = ? OUTPUT INSERTED.* WHERE id = ?";
-        
-        category.setUpdatedAt(LocalDateTime.now());
+        String sql = "UPDATE Category SET category_name = ?, category_code = ? "
+                  + "OUTPUT INSERTED.* WHERE category_id = ?";
         
         return XJdbc.queryForObject(sql, this::mapResultSetToCategory,
             category.getCategoryName(),
-            category.getCategoryDescription(),
-            category.getUpdatedAt(),
-            category.getId()
+            category.getCategoryCode(),
+            category.getCategoryId()
         );
     }
     
     @Override
     public boolean deleteById(Integer id) {
-        String sql = "DELETE FROM Categories WHERE id = ?";
+        String sql = "DELETE FROM Category WHERE category_id = ?";
         return XJdbc.executeUpdate(sql, id) > 0;
     }
     
     @Override
     public List<Category> findAll() {
-        String sql = "SELECT * FROM Categories ORDER BY id DESC";
+        String sql = "SELECT * FROM Category ORDER BY category_id DESC";
         return XJdbc.query(sql, this::mapResultSetToCategory);
     }
     
     @Override
     public Category findById(Integer id) {
-        String sql = "SELECT * FROM Categories WHERE id = ?";
+        String sql = "SELECT * FROM Category WHERE category_id = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToCategory, id);
     }
     
     @Override
     public Category findByName(String name) {
-        String sql = "SELECT * FROM Categories WHERE category_name = ?";
+        String sql = "SELECT * FROM Category WHERE category_name = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToCategory, name);
     }
     
@@ -71,13 +65,13 @@ public class CategoryDAOImpl implements CategoryDAO {
         }
         
         String searchPattern = "%" + keyword.trim() + "%";
-        String sql = "SELECT * FROM Categories WHERE category_name LIKE ? OR category_description LIKE ?";
+        String sql = "SELECT * FROM Category WHERE category_name LIKE ? OR category_code LIKE ?";
         return XJdbc.query(sql, this::mapResultSetToCategory, searchPattern, searchPattern);
     }
     
     @Override
     public boolean existsByName(String name) {
-        String sql = "SELECT COUNT(*) FROM Categories WHERE category_name = ?";
+        String sql = "SELECT COUNT(*) FROM Category WHERE category_name = ?";
         List<Long> counts = XJdbc.query(sql, rs -> rs.getLong(1), name);
         return !counts.isEmpty() && counts.get(0) > 0;
     }
@@ -91,28 +85,9 @@ public class CategoryDAOImpl implements CategoryDAO {
         }
         
         Category category = new Category();
-        category.setId(rs.getInt("id"));
+        category.setCategoryId(rs.getInt("category_id"));
         category.setCategoryName(rs.getString("category_name"));
-        category.setCategoryDescription(rs.getString("category_description"));
-        
-        // Xử lý giá trị NULL cho các trường datetime
-        Object createdAt = rs.getObject("created_at");
-        if (createdAt != null) {
-            if (createdAt instanceof java.sql.Timestamp) {
-                category.setCreatedAt(((java.sql.Timestamp) createdAt).toLocalDateTime());
-            } else if (createdAt instanceof LocalDateTime) {
-                category.setCreatedAt((LocalDateTime) createdAt);
-            }
-        }
-        
-        Object updatedAt = rs.getObject("updated_at");
-        if (updatedAt != null) {
-            if (updatedAt instanceof java.sql.Timestamp) {
-                category.setUpdatedAt(((java.sql.Timestamp) updatedAt).toLocalDateTime());
-            } else if (updatedAt instanceof LocalDateTime) {
-                category.setUpdatedAt((LocalDateTime) updatedAt);
-            }
-        }
+
         
         return category;
     }

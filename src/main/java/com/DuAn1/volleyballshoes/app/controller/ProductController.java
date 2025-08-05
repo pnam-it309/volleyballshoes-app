@@ -34,7 +34,6 @@ public class ProductController {
         }
         
         Product product = Product.builder()
-            .productCode(request.getProductCode())
             .productName(request.getProductName())
             .productDescription(request.getProductDescription())
             .brandId(request.getBrandId())
@@ -63,7 +62,6 @@ public class ProductController {
         
         Product product = Product.builder()
             .productId(request.getProductId())
-            .productCode(request.getProductCode())
             .productName(request.getProductName())
             .productDescription(request.getProductDescription())
             .brandId(request.getBrandId())

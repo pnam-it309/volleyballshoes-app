@@ -27,7 +27,6 @@ public class ProductResponse {
     public static ProductResponse fromEntity(Product product) {
         return ProductResponse.builder()
             .productId(product.getProductId())
-            .productCode(product.getProductCode())
             .productName(product.getProductName())
             .productDescription(product.getProductDescription())
             .brandId(product.getBrandId())

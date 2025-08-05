@@ -5,35 +5,31 @@ import com.DuAn1.volleyballshoes.app.entity.Staff;
 import com.DuAn1.volleyballshoes.app.utils.XJdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class StaffDAOImpl implements StaffDAO {
 
     private Staff mapResultSetToStaff(ResultSet rs) throws SQLException {
-        try {
-            Staff staff = new Staff();
-            staff.setStaffId(rs.getInt("staff_id"));
-            staff.setStaffUsername(rs.getString("staff_username"));
-            staff.setStaffPassword(rs.getString("staff_password"));
-            staff.setStaffFullName(rs.getString("staff_full_name"));
-            staff.setStaffEmail(rs.getString("staff_email"));
-            staff.setStaffRole(rs.getInt("staff_role"));
-            staff.setStaffSdt(rs.getString("staff_sdt"));
-            staff.setStaffCode(rs.getString("staff_code"));
-            // Nếu có thêm các trường khác, bổ sung ở đây
-            return staff;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        if (rs == null || !rs.next()) {
+            return null;
         }
+        
+        Staff staff = new Staff();
+        staff.setStaffId(rs.getInt("staff_id"));
+        staff.setStaffUsername(rs.getString("staff_username"));
+        staff.setStaffPassword(rs.getString("staff_password"));
+        staff.setStaffFullName(rs.getString("staff_full_name"));
+        staff.setStaffEmail(rs.getString("staff_email"));
+        staff.setStaffRole(rs.getInt("staff_role"));
+        staff.setStaffSdt(rs.getString("staff_sdt"));
+        staff.setStaffCode(rs.getString("staff_code"));
+        return staff;
     }
 
     @Override
-    public Optional<Staff> findByEmail(String email) {
+    public Staff findByEmail(String email) {
         String sql = "SELECT * FROM Staff WHERE staff_email = ?";
-        Staff staff = XJdbc.queryForObject(sql, this::mapResultSetToStaff, email);
-        return Optional.ofNullable(staff);
+        return XJdbc.queryForObject(sql, this::mapResultSetToStaff, email);
     }
 
     @Override
@@ -42,88 +38,92 @@ public class StaffDAOImpl implements StaffDAO {
         Integer count = XJdbc.getValue(sql, email);
         return count != null && count > 0;
     }
-
+    
     @Override
-    public List<Staff> search() {
-        // Triển khai tìm kiếm nếu cần
-        return new ArrayList<>();
+    public boolean existsByUsername(String username) {
+        String sql = "SELECT COUNT(*) FROM Staff WHERE staff_username = ?";
+        Integer count = XJdbc.getValue(sql, username);
+        return count != null && count > 0;
     }
 
     @Override
-    public List<Staff> findByRole() {
-        // Triển khai tìm kiếm theo vai trò nếu cần
-        return new ArrayList<>();
+    public List<Staff> search(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return findAll();
+        }
+        
+        String searchPattern = "%" + keyword.trim() + "%";
+        String sql = "SELECT * FROM Staff WHERE "
+                  + "staff_username LIKE ? OR "
+                  + "staff_full_name LIKE ? OR "
+                  + "staff_email LIKE ? OR "
+                  + "staff_sdt LIKE ? OR "
+                  + "staff_code LIKE ? "
+                  + "ORDER BY staff_id DESC";
+        
+        return XJdbc.query(sql, this::mapResultSetToStaff, 
+            searchPattern, searchPattern, searchPattern, 
+            searchPattern, searchPattern);
     }
-
+    
     @Override
-    public List<Staff> findByActive() {
-        // Triển khai tìm kiếm theo trạng thái hoạt động nếu cần
-        return new ArrayList<>();
-    }
-
-    @Override
-    public List<Staff> findByRoleAndActive() {
-        // Triển khai tìm kiếm theo cả vai trò và trạng thái hoạt động nếu cần
-        return new ArrayList<>();
+    public List<Staff> findByRole(int role) {
+        String sql = "SELECT * FROM Staff WHERE staff_role = ? ORDER BY staff_full_name";
+        return XJdbc.query(sql, this::mapResultSetToStaff, role);
     }
 
     @Override
     public Staff create(Staff entity) {
         String sql = "INSERT INTO Staff (staff_username, staff_password, staff_full_name, "
-                + "staff_email, staff_role, staff_sdt, staff_code) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        XJdbc.executeUpdate(sql,
-                entity.getStaffUsername(),
-                entity.getStaffPassword(),
-                entity.getStaffFullName(),
-                entity.getStaffEmail(),
-                entity.getStaffRole(),
-                entity.getStaffSdt(),
-                entity.getStaffCode()
+                  + "staff_email, staff_role, staff_sdt, staff_code) "
+                  + "OUTPUT INSERTED.* "
+                  + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        
+        return XJdbc.queryForObject(sql, this::mapResultSetToStaff,
+            entity.getStaffUsername(),
+            entity.getStaffPassword(),
+            entity.getStaffFullName(),
+            entity.getStaffEmail(),
+            entity.getStaffRole(),
+            entity.getStaffSdt(),
+            entity.getStaffCode()
         );
-
-        // Lấy ID vừa tạo
-        String getIdSql = "SELECT TOP 1 * FROM Staff ORDER BY staff_id DESC";
-        return XJdbc.queryForObject(getIdSql, this::mapResultSetToStaff);
     }
 
     @Override
     public Staff update(Staff entity) {
         String sql = "UPDATE Staff SET "
-                + "staff_username = ?, "
-                + "staff_password = ?, "
-                + "staff_full_name = ?, "
-                + "staff_email = ?, "
-                + "staff_role = ?, "
-                + "staff_sdt = ?, "
-                + "staff_code = ? "
-                + "WHERE staff_id = ?";
-
-        XJdbc.executeUpdate(sql,
-                entity.getStaffUsername(),
-                entity.getStaffPassword(),
-                entity.getStaffFullName(),
-                entity.getStaffEmail(),
-                entity.getStaffRole(),
-                entity.getStaffSdt(),
-                entity.getStaffCode(),
-                entity.getStaffId()
+                  + "staff_username = ?, "
+                  + "staff_password = ?, "
+                  + "staff_full_name = ?, "
+                  + "staff_email = ?, "
+                  + "staff_role = ?, "
+                  + "staff_sdt = ?, "
+                  + "staff_code = ? "
+                  + "OUTPUT INSERTED.* "
+                  + "WHERE staff_id = ?";
+        
+        return XJdbc.queryForObject(sql, this::mapResultSetToStaff,
+            entity.getStaffUsername(),
+            entity.getStaffPassword(),
+            entity.getStaffFullName(),
+            entity.getStaffEmail(),
+            entity.getStaffRole(),
+            entity.getStaffSdt(),
+            entity.getStaffCode(),
+            entity.getStaffId()
         );
-
-        return entity;
     }
 
     @Override
     public boolean deleteById(Integer id) {
         String sql = "DELETE FROM Staff WHERE staff_id = ?";
-        int rowsAffected = XJdbc.executeUpdate(sql, id);
-        return rowsAffected > 0;
+        return XJdbc.executeUpdate(sql, id) > 0;
     }
 
     @Override
     public List<Staff> findAll() {
-        String sql = "SELECT * FROM Staff";
+        String sql = "SELECT * FROM Staff ORDER BY staff_id DESC";
         return XJdbc.query(sql, this::mapResultSetToStaff);
     }
 
@@ -132,6 +132,29 @@ public class StaffDAOImpl implements StaffDAO {
         String sql = "SELECT * FROM Staff WHERE staff_id = ?";
         return XJdbc.queryForObject(sql, this::mapResultSetToStaff, id);
     }
-
-  
+    
+    @Override
+    public Staff findByUsername(String username) {
+        String sql = "SELECT * FROM Staff WHERE staff_username = ?";
+        return XJdbc.queryForObject(sql, this::mapResultSetToStaff, username);
+    }
+    
+    @Override
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM Staff";
+        Long count = XJdbc.getValue(sql);
+        return count != null ? count : 0;
+    }
+    
+    @Override
+    public List<Staff> findWithPagination(int page, int pageSize, String filter) {
+        int offset = (page - 1) * pageSize;
+        String sql = "SELECT * FROM Staff "
+                   + "WHERE staff_username LIKE ? OR staff_full_name LIKE ? OR staff_email LIKE ? "
+                   + "ORDER BY staff_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        
+        String searchPattern = "%" + (filter != null ? filter : "") + "%";
+        return XJdbc.query(sql, this::mapResultSetToStaff, 
+            searchPattern, searchPattern, searchPattern, offset, pageSize);
+    }
 }

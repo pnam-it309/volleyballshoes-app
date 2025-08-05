@@ -6,7 +6,6 @@ import com.DuAn1.volleyballshoes.app.utils.XJdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Implementation of CustomerDAO interface for managing customer data.
@@ -15,26 +14,21 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public Customer create(Customer customer) {
-        String sql = "INSERT INTO Customer (customer_code, customer_username, customer_password, "
-                + "customer_full_name, customer_email, customer_phone, customer_gender, "
-                + "customer_birth_date, customer_address, customer_points, created_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-//        customer.setCreatedAt(LocalDate.now());
-        XJdbc.executeUpdate(sql,
-                customer.getCustomerCode(),
-                customer.getCustomerUsername(),
-                customer.getCustomerEmail(),
-                customer.getCustomerPhone(),
-                customer.getCreatedAt()
+        String sql = "INSERT INTO Customer (customer_username, customer_password, "
+                  + "customer_full_name, customer_email, customer_phone, customer_sdt, customer_code, customer_points) "
+                  + "OUTPUT INSERTED.* "
+                  + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        return XJdbc.queryForObject(sql, this::mapResultSetToCustomer,
+            customer.getCustomerUsername(),
+            customer.getCustomerPassword(),
+            customer.getCustomerFullName(),
+            customer.getCustomerEmail(),
+            customer.getCustomerPhone(),
+            customer.getCustomerSdt(),
+            customer.getCustomerCode(),
+            customer.getCustomerPoints() != null ? customer.getCustomerPoints() : 0
         );
-
-//        // Lấy ID vừa tạo
-//        sql = "SELECT IDENT_CURRENT('Customer') as id";
-//        Integer id = XJdbc.queryForObject(sql, Integer.class);
-//        customer.setCustomerId(id);
-//        
-        return customer;
     }
 
 //    @Override
@@ -109,13 +103,16 @@ public class CustomerDAOImpl implements CustomerDAO {
         String searchPattern = "%" + keyword.trim() + "%";
         String sql = "SELECT * FROM Customer WHERE "
                 + "customer_code LIKE ? OR "
+                + "customer_username LIKE ? OR "
                 + "customer_full_name LIKE ? OR "
+                + "customer_email LIKE ? OR "
                 + "customer_phone LIKE ? OR "
-                + "customer_email LIKE ? "
+                + "customer_sdt LIKE ? "
                 + "ORDER BY customer_id DESC";
 
         return XJdbc.query(sql, this::mapResultSetToCustomer,
-                searchPattern, searchPattern, searchPattern, searchPattern);
+                searchPattern, searchPattern, searchPattern, 
+                searchPattern, searchPattern, searchPattern);
     }
 
     @Override
@@ -152,55 +149,56 @@ public class CustomerDAOImpl implements CustomerDAO {
 
         Customer customer = new Customer();
         customer.setCustomerId(rs.getInt("customer_id"));
-        customer.setCustomerCode(rs.getString("customer_code"));
         customer.setCustomerUsername(rs.getString("customer_username"));
+        customer.setCustomerPassword(rs.getString("customer_password"));
+        customer.setCustomerFullName(rs.getString("customer_full_name"));
         customer.setCustomerEmail(rs.getString("customer_email"));
-        customer.setCustomerSdt(rs.getString("customer_phone"));
-
-//        // Xử lý ngày tạo/cập nhật
-//        Object createdAt = rs.getObject("created_at");
-//        if (createdAt != null) {
-//            if (createdAt instanceof java.sql.Date) {
-//                customer.setCreatedAt(((java.sql.Date) createdAt).toLocalDate());
-//            } else if (createdAt instanceof java.sql.Timestamp) {
-//                customer.setCreatedAt(((java.sql.Timestamp) createdAt).toLocalDateTime().toLocalDate());
-//            }
-//        }
-//        
-//        Object updatedAt = rs.getObject("updated_at");
-//        if (updatedAt != null) {
-//            if (updatedAt instanceof java.sql.Date) {
-//                customer.setUpdatedAt(((java.sql.Date) updatedAt).toLocalDate());
-//            } else if (updatedAt instanceof java.sql.Timestamp) {
-//                customer.setUpdatedAt(((java.sql.Timestamp) updatedAt).toLocalDateTime().toLocalDate());
-//            }
-//        }
+        customer.setCustomerPhone(rs.getString("customer_phone"));
+        customer.setCustomerSdt(rs.getString("customer_sdt"));
+        customer.setCustomerCode(rs.getString("customer_code"));
+        customer.setCustomerPoints(rs.getInt("customer_points"));
+        
         return customer;
     }
 
     @Override
     public Customer update(Customer customer) {
-        String sql = "UPDATE Customer SET customer_code = ?, customer_username = ?, "
-                + "customer_password = ?, customer_full_name = ?, customer_email = ?, "
-                + "customer_phone = ?, customer_gender = ?, customer_birth_date = ?, "
-                + "customer_address = ?, customer_points = ?, updated_at = GETDATE() "
-                + "WHERE customer_id = ?";
-
-        XJdbc.executeUpdate(sql,
-                customer.getCustomerCode(),
-                customer.getCustomerUsername(),
-                customer.getCustomerEmail(),
-                customer.getCustomerPhone(),
-                customer.getCustomerId()
+        String sql = "UPDATE Customer SET customer_username = ?, customer_password = ?, "
+                  + "customer_full_name = ?, customer_email = ?, customer_phone = ?, "
+                  + "customer_sdt = ?, customer_code = ?, customer_points = ? "
+                  + "OUTPUT INSERTED.* WHERE customer_id = ?";
+        
+        return XJdbc.queryForObject(sql, this::mapResultSetToCustomer,
+            customer.getCustomerUsername(),
+            customer.getCustomerPassword(),
+            customer.getCustomerFullName(),
+            customer.getCustomerEmail(),
+            customer.getCustomerPhone(),
+            customer.getCustomerSdt(),
+            customer.getCustomerCode(),
+            customer.getCustomerPoints() != null ? customer.getCustomerPoints() : 0,
+            customer.getCustomerId()
         );
-
-        return customer;
     }
 
     @Override
     public boolean deleteById(Integer id) {
         String sql = "DELETE FROM Customer WHERE customer_id = ?";
         return XJdbc.executeUpdate(sql, id) > 0;
+    }
+    
+    @Override
+    public boolean existsByUsername(String username) {
+        String sql = "SELECT COUNT(*) FROM Customer WHERE customer_username = ?";
+        Integer count = XJdbc.getValue(sql, username);
+        return count != null && count > 0;
+    }
+    
+    @Override
+    public boolean existsByEmail(String email) {
+        String sql = "SELECT COUNT(*) FROM Customer WHERE customer_email = ?";
+        Integer count = XJdbc.getValue(sql, email);
+        return count != null && count > 0;
     }
 
     @Override
