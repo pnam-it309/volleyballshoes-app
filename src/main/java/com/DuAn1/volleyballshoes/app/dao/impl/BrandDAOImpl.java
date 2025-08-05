@@ -50,7 +50,7 @@ public class BrandDAOImpl implements BrandDAO {
     
     @Override
     public List<Brand> findAll() {
-        String sql = "SELECT * FROM Brand ORDER BY brand_id DESC";
+        String sql = "SELECT * FROM Brand ";
         return XJdbc.query(sql, this::mapResultSetToBrand);
     }
     
@@ -98,7 +98,6 @@ public class BrandDAOImpl implements BrandDAO {
         brand.setBrandCode(rs.getString("brand_code"));
         brand.setBrandOrigin(rs.getString("brand_origin"));
         brand.setBrandName(rs.getString("brand_name"));
-        brand.setBrandDescription(rs.getString("brand_description"));
         
         // Xử lý giá trị NULL cho các trường datetime
         Object createdAt = rs.getObject("created_at");

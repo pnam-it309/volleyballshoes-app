@@ -15,9 +15,9 @@ public class CustomerDAOImpl implements CustomerDAO {
     @Override
     public Customer create(Customer customer) {
         String sql = "INSERT INTO Customer (customer_username, customer_password, "
-                  + "customer_full_name, customer_email, customer_phone, customer_sdt, customer_code, customer_points) "
+                  + "customer_full_name, customer_email, customer_phone, customer_sdt, customer_code) "
                   + "OUTPUT INSERTED.* "
-                  + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                  + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer,
             customer.getCustomerUsername(),
