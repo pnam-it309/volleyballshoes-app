@@ -5,4 +5,6 @@ import java.util.List;
 
 public interface SoleTypeDAO extends CrudDAO<SoleType, Integer> {
     List<SoleType> findAll();
+    SoleType findByCode(String code);
+    void deleteByCode(String code);
 }

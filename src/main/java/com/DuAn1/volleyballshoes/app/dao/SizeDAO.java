@@ -5,4 +5,6 @@ import java.util.List;
 
 public interface SizeDAO extends CrudDAO<Size, Integer> {
     List<Size> findAll();
+    Size findByCode(String code);
+    void deleteByCode(String code);
 }

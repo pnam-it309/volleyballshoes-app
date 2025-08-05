@@ -1,9 +1,21 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham;
 
+import com.DuAn1.volleyballshoes.app.dao.*;
+import com.DuAn1.volleyballshoes.app.dao.impl.*;
+import com.DuAn1.volleyballshoes.app.entity.*;
 import java.util.List;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
 public class ViewThuocTinh extends javax.swing.JPanel {
+
+    ColorDAO colorDAO = new ColorDAOImpl();
+    SoleTypeDAO soleTypeDAO = new SoleTypeDAOImpl();
+    SizeDAO sizeDAO = new SizeDAOImpl();
+    BrandDAO brandDAO = new BrandDAOImpl();
+    CategoryDAO categoryDAO = new CategoryDAOImpl();
+    private String type = "color";
+
 
     public ViewThuocTinh() {
         initComponents();
@@ -12,36 +24,36 @@ public class ViewThuocTinh extends javax.swing.JPanel {
 
     private void loadTable() {
         try {
-            if (rb_color.isSelected()) {
+            if (rb_category.isSelected()) {
                 // Load danh sách danh mục
                 com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl dao
                         = new com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl();
                 List<com.DuAn1.volleyballshoes.app.entity.Category> list = dao.findAll();
                 loadTableData(list, "category");
-            } else if (rb_size.isSelected()) {
+            } else if (rb_brand.isSelected()) {
                 // Load danh sách thương hiệu
                 com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl dao
                         = new com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl();
                 List<com.DuAn1.volleyballshoes.app.entity.Brand> list = dao.findAll();
                 loadTableData(list, "brand");
-            } else if (rb_brand.isSelected()) {
+            } else if (rb_sole.isSelected()) {
                 // Load danh sách loại đế
                 com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl dao
                         = new com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl();
                 List<com.DuAn1.volleyballshoes.app.entity.SoleType> list = dao.findAll();
                 loadTableData(list, "soleType");
-            } else if (rb_category.isSelected()) {
+            } else if (rb_size.isSelected()) {
                 // Load danh sách kích thước
                 com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl dao
                         = new com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl();
                 List<com.DuAn1.volleyballshoes.app.entity.Size> list = dao.findAll();
                 loadTableData(list, "size");
-            } else if (rb_sole.isSelected()) {
-                // Load danh sách khuyến mãi
-                com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl dao
-                        = new com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl();
-                List<com.DuAn1.volleyballshoes.app.entity.Promotion> list = dao.findAll();
-                loadTableData(list, "promotion");
+            } else if (rb_color.isSelected()) {
+                // Load danh sách màu sắc
+                com.DuAn1.volleyballshoes.app.dao.impl.ColorDAOImpl dao
+                        = new com.DuAn1.volleyballshoes.app.dao.impl.ColorDAOImpl();
+                List<Color> list = dao.findAll();
+                loadTableData(list, "color");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -67,10 +79,10 @@ public class ViewThuocTinh extends javax.swing.JPanel {
                     row[1] = brand.getBrandCode();
                     row[2] = brand.getBrandName();
                     break;
-                case "promotion":
-                    com.DuAn1.volleyballshoes.app.entity.Promotion promo = (com.DuAn1.volleyballshoes.app.entity.Promotion) item;
-                    row[1] = promo.getPromoCode();
-                    row[2] = promo.getPromoName();
+                case "color":
+                    com.DuAn1.volleyballshoes.app.entity.Color color = (com.DuAn1.volleyballshoes.app.entity.Color) item;
+                    row[1] = color.getColorHexCode();
+                    row[2] = color.getColorName();
                     break;
                 case "category":
                     com.DuAn1.volleyballshoes.app.entity.Category cat = (com.DuAn1.volleyballshoes.app.entity.Category) item;
@@ -92,6 +104,7 @@ public class ViewThuocTinh extends javax.swing.JPanel {
             model.addRow(row);
         }
     }
+
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -124,46 +137,29 @@ public class ViewThuocTinh extends javax.swing.JPanel {
             }
         });
     }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         buttonGroup1 = new javax.swing.ButtonGroup();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        tblThuocTinh = new javax.swing.JTable();
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         txtMa = new javax.swing.JTextField();
         txtTen = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
-        btnThem = new javax.swing.JButton();
-        btnXoa = new javax.swing.JButton();
-        btnsua = new javax.swing.JButton();
         rb_color = new javax.swing.JRadioButton();
         rb_size = new javax.swing.JRadioButton();
         rb_brand = new javax.swing.JRadioButton();
         rb_category = new javax.swing.JRadioButton();
         rb_sole = new javax.swing.JRadioButton();
-
-        tblThuocTinh.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null},
-                {null, null, null},
-                {null, null, null},
-                {null, null, null}
-            },
-            new String [] {
-                "STT", "Mã Thuộc Tính", "Tên Thuộc Tính"
-            }
-        ));
-        tblThuocTinh.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                tblThuocTinhMouseClicked(evt);
-            }
-        });
-        jScrollPane1.setViewportView(tblThuocTinh);
+        btnThem1 = new javax.swing.JButton();
+        btnsua1 = new javax.swing.JButton();
+        btnXoa1 = new javax.swing.JButton();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        tblThuocTinh = new javax.swing.JTable();
 
         jPanel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(102, 102, 102)));
 
@@ -205,36 +201,6 @@ public class ViewThuocTinh extends javax.swing.JPanel {
         jLabel3.setForeground(new java.awt.Color(0, 0, 255));
         jLabel3.setText("Thông Tin Thuộc Tính");
 
-        btnThem.setBackground(new java.awt.Color(0, 51, 255));
-        btnThem.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnThem.setForeground(new java.awt.Color(255, 255, 255));
-        btnThem.setText("Thêm");
-        btnThem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnThemActionPerformed(evt);
-            }
-        });
-
-        btnXoa.setBackground(new java.awt.Color(0, 51, 255));
-        btnXoa.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnXoa.setForeground(new java.awt.Color(255, 255, 255));
-        btnXoa.setText("Xóa");
-        btnXoa.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnXoaActionPerformed(evt);
-            }
-        });
-
-        btnsua.setBackground(new java.awt.Color(0, 51, 255));
-        btnsua.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnsua.setForeground(new java.awt.Color(255, 255, 255));
-        btnsua.setText("Sửa");
-        btnsua.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnsuaActionPerformed(evt);
-            }
-        });
-
         rb_color.setText("Màu");
         rb_color.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -270,19 +236,66 @@ public class ViewThuocTinh extends javax.swing.JPanel {
             }
         });
 
+        btnThem1.setBackground(new java.awt.Color(0, 51, 255));
+        btnThem1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnThem1.setForeground(new java.awt.Color(255, 255, 255));
+        btnThem1.setText("Thêm");
+        btnThem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnThem1ActionPerformed(evt);
+            }
+        });
+
+        btnsua1.setBackground(new java.awt.Color(0, 51, 255));
+        btnsua1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnsua1.setForeground(new java.awt.Color(255, 255, 255));
+        btnsua1.setText("Sửa");
+        btnsua1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnsua1ActionPerformed(evt);
+            }
+        });
+
+        btnXoa1.setBackground(new java.awt.Color(0, 51, 255));
+        btnXoa1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnXoa1.setForeground(new java.awt.Color(255, 255, 255));
+        btnXoa1.setText("Xóa");
+        btnXoa1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnXoa1ActionPerformed(evt);
+            }
+        });
+
+        tblThuocTinh.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null},
+                {null, null, null},
+                {null, null, null},
+                {null, null, null}
+            },
+            new String [] {
+                "STT", "Mã thuộc tính", "Tên thuộc tính"
+            }
+        ));
+        tblThuocTinh.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tblThuocTinhMouseClicked(evt);
+            }
+        });
+        jScrollPane2.setViewportView(tblThuocTinh);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 842, Short.MAX_VALUE)
             .addGroup(layout.createSequentialGroup()
-                .addGap(139, 139, 139)
-                .addComponent(btnThem)
-                .addGap(136, 136, 136)
-                .addComponent(btnsua)
+                .addGap(120, 120, 120)
+                .addComponent(btnThem1)
+                .addGap(158, 158, 158)
+                .addComponent(btnsua1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btnXoa)
-                .addGap(163, 163, 163))
+                .addComponent(btnXoa1)
+                .addGap(154, 154, 154))
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
@@ -294,15 +307,18 @@ public class ViewThuocTinh extends javax.swing.JPanel {
                             .addComponent(rb_category))
                         .addGap(56, 56, 56)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(rb_sole)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(rb_size)
                                 .addGap(42, 42, 42)
-                                .addComponent(rb_brand))
-                            .addComponent(rb_sole)))
+                                .addComponent(rb_brand))))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(285, 285, 285)
-                        .addComponent(jLabel3)))
-                .addContainerGap(162, Short.MAX_VALUE))
+                        .addComponent(jLabel3))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(18, 18, 18)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 793, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(31, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -325,227 +341,209 @@ public class ViewThuocTinh extends javax.swing.JPanel {
                             .addComponent(rb_sole))))
                 .addGap(88, 88, 88)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnThem)
-                    .addComponent(btnXoa)
-                    .addComponent(btnsua))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 54, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 193, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(50, 50, 50))
+                    .addComponent(btnThem1)
+                    .addComponent(btnsua1)
+                    .addComponent(btnXoa1))
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 290, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(15, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void rb_colorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_colorActionPerformed
-        // TODO add your handling code here:
+        type = "color";
     }//GEN-LAST:event_rb_colorActionPerformed
 
     private void rb_sizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_sizeActionPerformed
-        // TODO add your handling code here:
+        type = "size";
     }//GEN-LAST:event_rb_sizeActionPerformed
 
     private void rb_brandActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_brandActionPerformed
-        // TODO add your handling code here:
+        type = "brand";
     }//GEN-LAST:event_rb_brandActionPerformed
 
     private void rb_categoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_categoryActionPerformed
-        // TODO add your handling code here:
+        type = "category";
     }//GEN-LAST:event_rb_categoryActionPerformed
 
     private void rb_soleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_soleActionPerformed
-        // TODO add your handling code here:
+        type = "soleType";
+
     }//GEN-LAST:event_rb_soleActionPerformed
 
-    private void btnThemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnThemActionPerformed
-        String ma = txtMa.getText().trim();
-        String ten = txtTen.getText().trim();
-        if (ma.isEmpty() || ten.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!");
+    private void btnThem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThem1ActionPerformed
+        String code = txtMa.getText().trim();
+        String name = txtTen.getText().trim();
+        if (code.isEmpty() || name.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ mã và tên!");
             return;
         }
-        try {
-            if (rb_color.isSelected()) {
-                com.DuAn1.volleyballshoes.app.entity.Category entity = new com.DuAn1.volleyballshoes.app.entity.Category();
-                entity.setCategoryCode(ma);
-                entity.setCategoryName(ten);
-                new com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl().create(entity);
-            } else if (rb_size.isSelected()) {
-                com.DuAn1.volleyballshoes.app.entity.Brand entity = new com.DuAn1.volleyballshoes.app.entity.Brand();
-                entity.setBrandCode(ma);
-                entity.setBrandName(ten);
-                new com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl().create(entity);
-            } else if (rb_brand.isSelected()) {
-                com.DuAn1.volleyballshoes.app.entity.SoleType entity = new com.DuAn1.volleyballshoes.app.entity.SoleType();
-                entity.setSoleCode(ma);
-                entity.setSoleName(ten);
-                new com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl().create(entity);
-            } else if (rb_category.isSelected()) {
-                com.DuAn1.volleyballshoes.app.entity.Size entity = new com.DuAn1.volleyballshoes.app.entity.Size();
-                entity.setSizeCode(ma);
-                entity.setSizeValue(ten);
-                new com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl().create(entity);
-            } else if (rb_sole.isSelected()) {
-                com.DuAn1.volleyballshoes.app.entity.Promotion entity = new com.DuAn1.volleyballshoes.app.entity.Promotion();
-                entity.setPromoCode(ma);
-                entity.setPromoName(ten);
-                new com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl().create(entity);
-            }
-            javax.swing.JOptionPane.showMessageDialog(this, "Thêm thành công!");
-            loadTable();
-        } catch (Exception ex) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Lỗi thêm dữ liệu: " + ex.getMessage());
+        switch (type) {
+            case "color":
+                Color color = new Color();
+                color.setColorHexCode(code);
+                color.setColorName(name);
+                colorDAO.create(color);
+                JOptionPane.showMessageDialog(this, "Thêm màu sắc thành công!");
+                loadTable();
+                break;
+            case "size":
+                Size size = new Size();
+                size.setSizeCode(code);
+                size.setSizeValue(name);
+                sizeDAO.create(size);
+                JOptionPane.showMessageDialog(this, "Thêm kích cỡ thành công!");
+                loadTable();
+                break;
+            case "brand":
+                Brand brand = new Brand();
+                brand.setBrandCode(code);
+                brand.setBrandName(name);
+                brandDAO.create(brand);
+                JOptionPane.showMessageDialog(this, "Thêm thương hiệu thành công!");
+                loadTable();
+                break;
+            case "category":
+                Category category = new Category();
+                category.setCategoryCode(code);
+                category.setCategoryName(name);
+                categoryDAO.create(category);
+                JOptionPane.showMessageDialog(this, "Thêm danh mục thành công!");
+                loadTable();
+                break;
+            case "soleType":
+                SoleType soleType = new SoleType();
+                soleType.setSoleCode(code);
+                soleType.setSoleName(name);
+                soleTypeDAO.create(soleType);
+                JOptionPane.showMessageDialog(this, "Thêm loại đế thành công!");
+                loadTable();
+                break;
         }
-    }// GEN-LAST:event_btnThemActionPerformed
+    }//GEN-LAST:event_btnThem1ActionPerformed
 
-    private void btnXoaActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnXoaActionPerformed
+    private void btnsua1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnsua1ActionPerformed
         int row = tblThuocTinh.getSelectedRow();
         if (row == -1) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần xóa!");
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng để sửa!");
             return;
         }
-        String ma = tblThuocTinh.getValueAt(row, 1).toString();
-        try {
-            if (rb_color.isSelected()) {
-                com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl();
-                com.DuAn1.volleyballshoes.app.entity.Category cat = dao.findByName(ma);
-                dao.deleteById(cat.getCategoryId());
-            } else if (rb_size.isSelected()) {
-                com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl();
-                com.DuAn1.volleyballshoes.app.entity.Brand b = dao.findByCode(ma);
-                dao.deleteById(b.getBrandId());
-            } else if (rb_brand.isSelected()) {
-                com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl();
-                com.DuAn1.volleyballshoes.app.entity.SoleType st = dao.findByCode(ma);
-                dao.deleteById(st.getSoleId());
-            } else if (rb_category.isSelected()) {
-                com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl();
-                com.DuAn1.volleyballshoes.app.entity.Size sz = dao.findByCode(ma);
-                dao.deleteById(sz.getSizeId());
-            } else if (rb_sole.isSelected()) {
-                com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl();
-                com.DuAn1.volleyballshoes.app.entity.Promotion pr = dao.findByCode(ma);
-                dao.deleteById(pr.getPromotionId());
-            }
-            javax.swing.JOptionPane.showMessageDialog(this, "Xóa thành công!");
-            loadTable();
-        } catch (Exception ex) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Lỗi xóa dữ liệu: " + ex.getMessage());
+        String code = txtMa.getText().trim();
+        String name = txtTen.getText().trim();
+        switch (type) {
+            case "color":
+                Color color = colorDAO.findByCode(code);
+                if (color == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy!");
+                    return;
+                }
+                color.setColorName(name);
+                colorDAO.update(color);
+                JOptionPane.showMessageDialog(this, "Sửa màu sắc thành công!");
+                loadTable();
+                break;
+            case "size":
+                Size size = sizeDAO.findByCode(code);
+                if (size == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy!");
+                    return;
+                }
+                size.setSizeValue(name);
+                sizeDAO.update(size);
+                JOptionPane.showMessageDialog(this, "Sửa kích cỡ thành công!");
+                loadTable();
+                break;
+            case "brand":
+                Brand brand = brandDAO.findByCode(code);
+                if (brand == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy!");
+                    return;
+                }
+                brand.setBrandName(name);
+                brandDAO.update(brand);
+                JOptionPane.showMessageDialog(this, "Sửa thương hiệu thành công!");
+                loadTable();
+                break;
+            case "category":
+                Category category = categoryDAO.findByCode(code);
+                if (category == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy!");
+                    return;
+                }
+                category.setCategoryName(name);
+                categoryDAO.update(category);
+                JOptionPane.showMessageDialog(this, "Sửa danh mục thành công!");
+                loadTable();
+                break;
+            case "soleType":
+                SoleType soleType = soleTypeDAO.findByCode(code);
+                if (soleType == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy!");
+                    return;
+                }
+                soleType.setSoleName(name);
+                soleTypeDAO.update(soleType);
+                JOptionPane.showMessageDialog(this, "Sửa loại đế thành công!");
+                loadTable();
+                break;
         }
-    }// GEN-LAST:event_btnXoaActionPerformed
+    }//GEN-LAST:event_btnsua1ActionPerformed
 
-    private void rbTacGiaActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_rbTacGiaActionPerformed
-        try {
-            com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl();
-            List<com.DuAn1.volleyballshoes.app.entity.Brand> list = dao.findAll();
-            loadTableData(list, "brand");
-        } catch (Exception e) {
-            e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu thương hiệu: " + e.getMessage());
+    private void btnXoa1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXoa1ActionPerformed
+        int row = tblThuocTinh.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng để xoá!");
+            return;
         }
-    }// GEN-LAST:event_rbTacGiaActionPerformed
-
-    private void rbNXBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_rbNXBActionPerformed
-        try {
-            com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl();
-            List<com.DuAn1.volleyballshoes.app.entity.Promotion> list = dao.findAll();
-            loadTableData(list, "promotion");
-        } catch (Exception e) {
-            e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu khuyến mãi: " + e.getMessage());
+        String code = txtMa.getText().trim();
+        switch (type) {
+            case "color":
+                colorDAO.deleteByCode(code);
+                JOptionPane.showMessageDialog(this, "Xoá màu sắc thành công!");
+                loadTable();
+                break;
+            case "size":
+                sizeDAO.deleteByCode(code);
+                JOptionPane.showMessageDialog(this, "Xoá kích cỡ thành công!");
+                loadTable();
+                break;
+            case "brand":
+                brandDAO.deleteByCode(code);
+                JOptionPane.showMessageDialog(this, "Xoá thương hiệu thành công!");
+                loadTable();
+                break;
+            case "category":
+                categoryDAO.deleteByCode(code);
+                JOptionPane.showMessageDialog(this, "Xoá danh mục thành công!");
+                loadTable();
+                break;
+            case "soleType":
+                soleTypeDAO.deleteByCode(code);
+                JOptionPane.showMessageDialog(this, "Xoá loại đế thành công!");
+                loadTable();
+                break;
         }
-    }// GEN-LAST:event_rbNXBActionPerformed
+    }//GEN-LAST:event_btnXoa1ActionPerformed
 
-    private void rbTheLoaiActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_rbTheLoaiActionPerformed
-        try {
-            com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl();
-            List<com.DuAn1.volleyballshoes.app.entity.Category> list = dao.findAll();
-            loadTableData(list, "category");
-        } catch (Exception e) {
-            e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu danh mục: " + e.getMessage());
-        }
-    }// GEN-LAST:event_rbTheLoaiActionPerformed
-
-    private void rbLoaiGiayActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_rbLoaiGiayActionPerformed
-        try {
-            com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl();
-            List<com.DuAn1.volleyballshoes.app.entity.Size> list = dao.findAll();
-            loadTableData(list, "size");
-        } catch (Exception e) {
-            e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu kích thước: " + e.getMessage());
-        }
-    }// GEN-LAST:event_rbLoaiGiayActionPerformed
-
-    private void rbLoaiBiaActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_rbLoaiBiaActionPerformed
-        try {
-            com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl();
-            List<com.DuAn1.volleyballshoes.app.entity.SoleType> list = dao.findAll();
-            loadTableData(list, "soleType");
-        } catch (Exception e) {
-            e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu loại đế: " + e.getMessage());
-        }
-    }// GEN-LAST:event_rbLoaiBiaActionPerformed
-
-    private void tblThuocTinhMouseClicked(java.awt.event.MouseEvent evt) {// GEN-FIRST:event_tblThuocTinhMouseClicked
+    private void tblThuocTinhMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblThuocTinhMouseClicked
         int row = tblThuocTinh.getSelectedRow();
         if (row != -1) {
             txtMa.setText(tblThuocTinh.getValueAt(row, 1).toString());
             txtTen.setText(tblThuocTinh.getValueAt(row, 2).toString());
         }
-    }// GEN-LAST:event_tblThuocTinhMouseClicked
+    }//GEN-LAST:event_tblThuocTinhMouseClicked
 
-    private void btnsuaActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnsuaActionPerformed
-        int row = tblThuocTinh.getSelectedRow();
-        if (row == -1) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần sửa!");
-            return;
-        }
-        String ma = txtMa.getText().trim();
-        String ten = txtTen.getText().trim();
-        try {
-            if (rb_color.isSelected()) {
-                com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl();
-                com.DuAn1.volleyballshoes.app.entity.Category cat = dao.findByName(ma);
-                cat.setCategoryName(ten);
-                dao.update(cat);
-            } else if (rb_size.isSelected()) {
-                com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl();
-                com.DuAn1.volleyballshoes.app.entity.Brand b = dao.findByCode(ma);
-                b.setBrandName(ten);
-                dao.update(b);
-            } else if (rb_brand.isSelected()) {
-                com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl();
-                com.DuAn1.volleyballshoes.app.entity.SoleType st = dao.findByCode(ma);
-                st.setSoleName(ten);
-                dao.update(st);
-            } else if (rb_category.isSelected()) {
-                com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl();
-                com.DuAn1.volleyballshoes.app.entity.Size sz = dao.findByCode(ma);
-                sz.setSizeValue(ten);
-                dao.update(sz);
-            } else if (rb_sole.isSelected()) {
-                com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl dao = new com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl();
-                com.DuAn1.volleyballshoes.app.entity.Promotion pr = dao.findByCode(ma);
-                pr.setPromoName(ten);
-                dao.update(pr);
-            }
-            javax.swing.JOptionPane.showMessageDialog(this, "Sửa thành công!");
-            loadTable();
-        } catch (Exception ex) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Lỗi sửa dữ liệu: " + ex.getMessage());
-        }
-    }// GEN-LAST:event_btnsuaActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnThem;
-    private javax.swing.JButton btnXoa;
-    private javax.swing.JButton btnsua;
+    private javax.swing.JButton btnThem1;
+    private javax.swing.JButton btnXoa1;
+    private javax.swing.JButton btnsua1;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JRadioButton rb_brand;
     private javax.swing.JRadioButton rb_category;
     private javax.swing.JRadioButton rb_color;

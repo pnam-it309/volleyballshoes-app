@@ -29,4 +29,6 @@ public interface CategoryDAO extends CrudDAO<Category, Integer> {
      * @return true if a category with the name exists, false otherwise
      */
     boolean existsByName(String name);
+    Category findByCode(String code);
+    void deleteByCode(String code);
 }

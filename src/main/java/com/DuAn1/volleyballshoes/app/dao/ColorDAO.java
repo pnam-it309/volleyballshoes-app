@@ -5,4 +5,6 @@ import java.util.List;
 
 public interface ColorDAO extends CrudDAO<Color, Integer> {
     List<Color> findAll();
+    Color findByCode(String code);
+    void deleteByCode(String code);
 }

@@ -69,4 +69,10 @@ public class SoleTypeDAOImpl implements SoleTypeDAO {
         XJdbc.executeUpdate(sql, entity.getSoleCode(), entity.getSoleName(), entity.getSoleId());
         return findById(entity.getSoleId());
     }
+
+    @Override
+    public void deleteByCode(String code) {
+        String sql = "DELETE FROM " + TABLE_NAME + " WHERE sole_code = ?";
+        XJdbc.executeUpdate(sql, code);
+    }
 }

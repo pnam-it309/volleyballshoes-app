@@ -18,7 +18,6 @@ public class ColorDAOImpl implements ColorDAO {
         return entity;
     }
 
-
     @Override
     public boolean deleteById(Integer id) {
         String sql = "DELETE FROM " + TABLE_NAME + " WHERE color_id = ?";
@@ -51,5 +50,18 @@ public class ColorDAOImpl implements ColorDAO {
         String sql = "UPDATE " + TABLE_NAME + " SET color_name = ?, color_hex_code = ? WHERE color_id = ?";
         XJdbc.executeUpdate(sql, entity.getColorName(), entity.getColorHexCode(), entity.getColorId());
         return findById(entity.getColorId());
+    }
+
+    @Override
+    public Color findByCode(String code) {
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE color_hex_code = ?";
+        List<Color> list = XJdbc.query(sql, this::mapResultSetToColor, code);
+        return list.size() > 0 ? list.get(0) : null;
+    }
+
+    @Override
+    public void deleteByCode(String code) {
+        String sql = "DELETE FROM " + TABLE_NAME + " WHERE color_hex_code = ?";
+        XJdbc.executeUpdate(sql, code) ;
     }
 }

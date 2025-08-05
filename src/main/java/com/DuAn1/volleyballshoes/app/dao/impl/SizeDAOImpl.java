@@ -67,4 +67,10 @@ public class SizeDAOImpl implements SizeDAO {
         XJdbc.executeUpdate(sql, entity.getSizeCode(), entity.getSizeValue(), entity.getSizeId());
         return findById(entity.getSizeId());
     }
+
+    @Override
+    public void deleteByCode(String code) {
+        String sql = "DELETE FROM " + TABLE_NAME + " WHERE size_code = ?";
+        XJdbc.executeUpdate(sql, code);
+    }
 }

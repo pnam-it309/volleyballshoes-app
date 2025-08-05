@@ -26,4 +26,5 @@ public interface BrandDAO extends CrudDAO<Brand, Integer> {
     boolean existsByName(String name);
     
     Brand findByCode(String code);
+    void deleteByCode(String code);
 }
