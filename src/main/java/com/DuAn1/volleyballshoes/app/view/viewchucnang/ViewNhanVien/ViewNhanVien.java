@@ -456,7 +456,7 @@ public class ViewNhanVien extends javax.swing.JPanel {
                     emp.getStaffSdt(), // Số điện thoại
                     emp.getStaffEmail(), // Email
                     emp.getStaffRole() == 1 ? "Quản lý" : "Nhân viên", // Vai trò
-                    emp.getStatus() == 1 ? "Đang làm việc" : "Đã nghỉ việc" // Trạng thái
+                    emp.getStaff_status()== 1 ? "Đang làm việc" : "Đã nghỉ việc" // Trạng thái
                 });
             }
 
@@ -517,7 +517,7 @@ public class ViewNhanVien extends javax.swing.JPanel {
                     emp.getStaffSdt(), // Số điện thoại
                     emp.getStaffEmail(), // Email
                     emp.getStaffRole() == 1 ? "Quản lý" : "Nhân viên", // Vai trò
-                    emp.getStatus() == 1 ? "Đang làm việc" : "Đã nghỉ việc" // Trạng thái
+                    emp.getStaff_status()== 1 ? "Đang làm việc" : "Đã nghỉ việc" // Trạng thái
                 });
             }
 

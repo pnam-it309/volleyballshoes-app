@@ -13,7 +13,6 @@ public class StaffDAOImpl implements StaffDAO {
         if (rs == null) {
             return null;
         }
-        
         try {
             Staff staff = new Staff();
             staff.setStaffId(rs.getInt("staff_id"));
@@ -23,6 +22,7 @@ public class StaffDAOImpl implements StaffDAO {
             staff.setStaffRole(rs.getInt("staff_role"));
             staff.setStaffSdt(rs.getString("staff_sdt"));
             staff.setStaffCode(rs.getString("staff_code"));
+            staff.setStaff_status(rs.getInt("staff_status")); // mapping status
             return staff;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -78,18 +78,17 @@ public class StaffDAOImpl implements StaffDAO {
 
     @Override
     public Staff create(Staff entity) {
-        String sql = "INSERT INTO Staff (staff_username, staff_password, staff_full_name, "
-                  + "staff_email, staff_role, staff_sdt, staff_code) "
+        String sql = "INSERT INTO Staff (staff_username, staff_password, staff_email, staff_role, staff_sdt, staff_code, staff_status) "
                   + "OUTPUT INSERTED.* "
                   + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
         return XJdbc.queryForObject(sql, this::mapResultSetToStaff,
             entity.getStaffUsername(),
             entity.getStaffPassword(),
             entity.getStaffEmail(),
             entity.getStaffRole(),
             entity.getStaffSdt(),
-            entity.getStaffCode()
+            entity.getStaffCode(),
+            entity.getStaff_status()
         );
     }
 
@@ -98,14 +97,13 @@ public class StaffDAOImpl implements StaffDAO {
         String sql = "UPDATE Staff SET "
                   + "staff_username = ?, "
                   + "staff_password = ?, "
-                  + "staff_full_name = ?, "
                   + "staff_email = ?, "
                   + "staff_role = ?, "
                   + "staff_sdt = ?, "
-                  + "staff_code = ? "
+                  + "staff_code = ?, "
+                  + "staff_status = ? "
                   + "OUTPUT INSERTED.* "
                   + "WHERE staff_id = ?";
-        
         return XJdbc.queryForObject(sql, this::mapResultSetToStaff,
             entity.getStaffUsername(),
             entity.getStaffPassword(),
@@ -113,6 +111,7 @@ public class StaffDAOImpl implements StaffDAO {
             entity.getStaffRole(),
             entity.getStaffSdt(),
             entity.getStaffCode(),
+            entity.getStaff_status(),
             entity.getStaffId()
         );
     }

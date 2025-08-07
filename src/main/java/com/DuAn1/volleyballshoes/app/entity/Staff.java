@@ -24,5 +24,5 @@ public class Staff {
     private int staffRole;
     private String staffSdt;
     private String staffCode;
-    private int status;
+    private int staff_status;
 }
