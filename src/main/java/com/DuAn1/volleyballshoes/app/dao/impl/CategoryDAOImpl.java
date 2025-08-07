@@ -80,15 +80,21 @@ public class CategoryDAOImpl implements CategoryDAO {
      * Chuyển đổi ResultSet thành đối tượng Category
      */
     private Category mapResultSetToCategory(ResultSet rs) throws SQLException {
-        if (rs == null || !rs.next()) {
+        if (rs == null) {
             return null;
         }
 
-        Category category = new Category();
-        category.setCategoryId(rs.getInt("category_id"));
-        category.setCategoryName(rs.getString("category_name"));
-
-        return category;
+        // Don't call rs.next() here - the XJdbc utility handles the cursor
+        try {
+            Category category = new Category();
+            category.setCategoryId(rs.getInt("category_id"));
+            category.setCategoryName(rs.getString("category_name"));
+            category.setCategoryCode(rs.getString("category_code"));
+            return category;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override

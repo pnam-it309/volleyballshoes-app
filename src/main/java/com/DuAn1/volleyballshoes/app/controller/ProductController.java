@@ -2,9 +2,8 @@ package com.DuAn1.volleyballshoes.app.controller;
 
 import com.DuAn1.volleyballshoes.app.dao.ProductDAO;
 import com.DuAn1.volleyballshoes.app.dao.impl.ProductDAOImpl;
-import com.DuAn1.volleyballshoes.app.dto.request.ProductCreateRequest;
-import com.DuAn1.volleyballshoes.app.dto.request.ProductUpdateRequest;
-import com.DuAn1.volleyballshoes.app.dto.response.ProductResponse;
+import com.DuAn1.volleyballshoes.app.dto.request.*;
+import com.DuAn1.volleyballshoes.app.dto.response.*;
 import com.DuAn1.volleyballshoes.app.entity.Product;
 import com.DuAn1.volleyballshoes.app.entity.ProductVariant;
 import java.util.Collections;
@@ -34,6 +33,7 @@ public class ProductController {
         }
         
         Product product = Product.builder()
+            .productCode(request.getProductCode())
             .productName(request.getProductName())
             .productDescription(request.getProductDescription())
             .brandId(request.getBrandId())
@@ -62,6 +62,7 @@ public class ProductController {
         
         Product product = Product.builder()
             .productId(request.getProductId())
+            .productCode(request.getProductCode())
             .productName(request.getProductName())
             .productDescription(request.getProductDescription())
             .brandId(request.getBrandId())

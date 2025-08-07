@@ -201,6 +201,7 @@ public class ViewThuocTinh extends javax.swing.JPanel {
         jLabel3.setForeground(new java.awt.Color(0, 0, 255));
         jLabel3.setText("Thông Tin Thuộc Tính");
 
+        buttonGroup1.add(rb_color);
         rb_color.setText("Màu");
         rb_color.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -208,6 +209,7 @@ public class ViewThuocTinh extends javax.swing.JPanel {
             }
         });
 
+        buttonGroup1.add(rb_size);
         rb_size.setText("Size");
         rb_size.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -215,6 +217,7 @@ public class ViewThuocTinh extends javax.swing.JPanel {
             }
         });
 
+        buttonGroup1.add(rb_brand);
         rb_brand.setText("Thương hiệu");
         rb_brand.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -222,6 +225,7 @@ public class ViewThuocTinh extends javax.swing.JPanel {
             }
         });
 
+        buttonGroup1.add(rb_category);
         rb_category.setText("Loại");
         rb_category.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -229,6 +233,7 @@ public class ViewThuocTinh extends javax.swing.JPanel {
             }
         });
 
+        buttonGroup1.add(rb_sole);
         rb_sole.setText("Đế giày");
         rb_sole.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -352,23 +357,27 @@ public class ViewThuocTinh extends javax.swing.JPanel {
 
     private void rb_colorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_colorActionPerformed
         type = "color";
+        loadTable();
     }//GEN-LAST:event_rb_colorActionPerformed
 
     private void rb_sizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_sizeActionPerformed
         type = "size";
+        loadTable();
     }//GEN-LAST:event_rb_sizeActionPerformed
 
     private void rb_brandActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_brandActionPerformed
         type = "brand";
+        loadTable();
     }//GEN-LAST:event_rb_brandActionPerformed
 
     private void rb_categoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_categoryActionPerformed
         type = "category";
+        loadTable();
     }//GEN-LAST:event_rb_categoryActionPerformed
 
     private void rb_soleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rb_soleActionPerformed
         type = "soleType";
-
+        loadTable();
     }//GEN-LAST:event_rb_soleActionPerformed
 
     private void btnThem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThem1ActionPerformed

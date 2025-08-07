@@ -10,20 +10,24 @@ import java.util.List;
 public class StaffDAOImpl implements StaffDAO {
 
     private Staff mapResultSetToStaff(ResultSet rs) throws SQLException {
-        if (rs == null || !rs.next()) {
+        if (rs == null) {
             return null;
         }
         
-        Staff staff = new Staff();
-        staff.setStaffId(rs.getInt("staff_id"));
-        staff.setStaffUsername(rs.getString("staff_username"));
-        staff.setStaffPassword(rs.getString("staff_password"));
-        staff.setStaffFullName(rs.getString("staff_full_name"));
-        staff.setStaffEmail(rs.getString("staff_email"));
-        staff.setStaffRole(rs.getInt("staff_role"));
-        staff.setStaffSdt(rs.getString("staff_sdt"));
-        staff.setStaffCode(rs.getString("staff_code"));
-        return staff;
+        try {
+            Staff staff = new Staff();
+            staff.setStaffId(rs.getInt("staff_id"));
+            staff.setStaffUsername(rs.getString("staff_username"));
+            staff.setStaffPassword(rs.getString("staff_password"));
+            staff.setStaffEmail(rs.getString("staff_email"));
+            staff.setStaffRole(rs.getInt("staff_role"));
+            staff.setStaffSdt(rs.getString("staff_sdt"));
+            staff.setStaffCode(rs.getString("staff_code"));
+            return staff;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override
@@ -82,7 +86,6 @@ public class StaffDAOImpl implements StaffDAO {
         return XJdbc.queryForObject(sql, this::mapResultSetToStaff,
             entity.getStaffUsername(),
             entity.getStaffPassword(),
-            entity.getStaffFullName(),
             entity.getStaffEmail(),
             entity.getStaffRole(),
             entity.getStaffSdt(),
@@ -106,7 +109,6 @@ public class StaffDAOImpl implements StaffDAO {
         return XJdbc.queryForObject(sql, this::mapResultSetToStaff,
             entity.getStaffUsername(),
             entity.getStaffPassword(),
-            entity.getStaffFullName(),
             entity.getStaffEmail(),
             entity.getStaffRole(),
             entity.getStaffSdt(),

@@ -1,6 +1,5 @@
 package com.DuAn1.volleyballshoes.app.entity;
 
-import java.time.LocalDateTime;
 import lombok.*;
 
 /**
@@ -11,19 +10,9 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Category {
-    
-
     private Integer id;
-    
     private String categoryName;
-    
     private String categoryCode;
-    
-    private String categoryDescription;
-    
-    private LocalDateTime createdAt;
-    
-    private LocalDateTime updatedAt;
     
     // For backward compatibility
     public int getCategoryId() {
@@ -33,7 +22,5 @@ public class Category {
     public void setCategoryId(int categoryId) {
         this.id = categoryId;
     }
-    
-   
 }
 

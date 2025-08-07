@@ -12,21 +12,23 @@ public class ProductDAOImpl implements ProductDAO {
     
     @Override
     public Product create(Product product) {
-        String sql = "INSERT INTO Product (product_code, product_name, product_desc, brand_id, category_id, product_create_at) "
-                  + "VALUES (?, ?, ?, ?, ?, ?)";
-        
-        product.setProductCreateAt(LocalDateTime.now());
+        String sql = "INSERT INTO Product (product_code, product_name, product_description, brand_id, category_id, product_create_at) "
+                  + "VALUES (?, ?, ?, ?, ?, GETDATE())";
         
         XJdbc.executeUpdate(sql, 
+            product.getProductCode(),
             product.getProductName(),
             product.getProductDescription(),
             product.getBrandId(),
-            product.getCategoryId(),
-            product.getProductCreateAt()
+            product.getCategoryId()
         );
         
+        // Get the created timestamp from the database
+        sql = "SELECT product_create_at FROM Product WHERE product_id = IDENT_CURRENT('Product')";
+        product.setProductCreateAt(XJdbc.getValue(sql, LocalDateTime.class));
+        
         // Lấy ID vừa tạo
-        sql = "SELECT IDENT_CURRENT('Products') as id";
+        sql = "SELECT IDENT_CURRENT('Product') as id";
         Integer id = XJdbc.getValue(sql, Integer.class);
         product.setProductId(id);
         
@@ -35,20 +37,21 @@ public class ProductDAOImpl implements ProductDAO {
     
     @Override
     public void update(Product product) {
-        String sql = "UPDATE Product SET product_code = ?, product_name = ?, product_desc = ?, "
-                  + "brand_id = ?, category_id = ?, product_updated_at = ? "
+        String sql = "UPDATE Product SET product_code = ?, product_name = ?, product_description = ?, "
+                  + "brand_id = ?, category_id = ?, product_updated_at = GETDATE() "
                   + "WHERE product_id = ?";
         
-        product.setProductUpdatedAt(LocalDateTime.now());
-        
         XJdbc.executeUpdate(sql, 
+            product.getProductCode(),
             product.getProductName(),
             product.getProductDescription(),
             product.getBrandId(),
             product.getCategoryId(),
-            product.getProductUpdatedAt(),
             product.getProductId()
         );
+        
+        // Set the updated timestamp to current time
+        product.setProductUpdatedAt(LocalDateTime.now());
     }
     
     @Override
@@ -116,8 +119,9 @@ public class ProductDAOImpl implements ProductDAO {
     private Product mapResultSetToProduct(ResultSet rs) throws SQLException {
         Product product = new Product();
         product.setProductId(rs.getInt("product_id"));
+        product.setProductCode(rs.getString("product_code"));
         product.setProductName(rs.getString("product_name"));
-        product.setProductDescription(rs.getString("product_desc"));
+        product.setProductDescription(rs.getString("product_description"));
         product.setBrandId(rs.getInt("brand_id"));
         product.setCategoryId(rs.getInt("category_id"));
         

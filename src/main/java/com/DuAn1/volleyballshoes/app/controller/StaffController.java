@@ -79,7 +79,7 @@ public class StaffController {
             }
 
             Staff staff = new Staff();
-            staff.setStaffFullName(request.getName());
+            staff.setStaffUsername(request.getName());
             staff.setStaffEmail(request.getEmail());
             // TODO: Thêm mã hóa mật khẩu nếu cần
             staff.setStaffPassword(request.getPassword());
@@ -110,7 +110,7 @@ public class StaffController {
             }
 
             if (request.getName() != null) {
-                staff.setStaffFullName(request.getName());
+                staff.setStaffUsername(request.getName());
             }
             if (request.getPhone() != null) {
                 staff.setStaffSdt(request.getPhone());
@@ -159,7 +159,7 @@ public class StaffController {
         }
         return StaffResponse.builder()
                 .id((long)staff.getStaffId())
-                .name(staff.getStaffFullName())
+                .name(staff.getStaffUsername())
                 .email(staff.getStaffEmail())
                 .phone(staff.getStaffSdt())
                 .role(String.valueOf(staff.getStaffRole()))

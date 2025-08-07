@@ -88,37 +88,22 @@ public class BrandDAOImpl implements BrandDAO {
      * Chuyển đổi ResultSet thành đối tượng Brand
      */
     private Brand mapResultSetToBrand(ResultSet rs) throws SQLException {
-        if (rs == null || !rs.next()) {
+        if (rs == null) {
             return null;
         }
 
-        Brand brand = new Brand();
-        brand.setBrandId(rs.getInt("brand_id"));
-        brand.setBrandName(rs.getString("brand_name"));
-        brand.setBrandCode(rs.getString("brand_code"));
-        brand.setBrandOrigin(rs.getString("brand_origin"));
-        brand.setBrandName(rs.getString("brand_name"));
-
-        // Xử lý giá trị NULL cho các trường datetime
-        Object createdAt = rs.getObject("created_at");
-        if (createdAt != null) {
-            if (createdAt instanceof java.sql.Timestamp) {
-                brand.setCreatedAt(((java.sql.Timestamp) createdAt).toLocalDateTime());
-            } else if (createdAt instanceof LocalDateTime) {
-                brand.setCreatedAt((LocalDateTime) createdAt);
-            }
+        try {
+            Brand brand = new Brand();
+            brand.setBrandId(rs.getInt("brand_id"));
+            brand.setBrandName(rs.getString("brand_name"));
+            brand.setBrandCode(rs.getString("brand_code"));
+            brand.setBrandOrigin(rs.getString("brand_origin"));
+            // Removed duplicate setBrandName call
+            return brand;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw e;
         }
-
-        Object updatedAt = rs.getObject("updated_at");
-        if (updatedAt != null) {
-            if (updatedAt instanceof java.sql.Timestamp) {
-                brand.setUpdatedAt(((java.sql.Timestamp) updatedAt).toLocalDateTime());
-            } else if (updatedAt instanceof LocalDateTime) {
-                brand.setUpdatedAt((LocalDateTime) updatedAt);
-            }
-        }
-
-        return brand;
     }
 
     @Override

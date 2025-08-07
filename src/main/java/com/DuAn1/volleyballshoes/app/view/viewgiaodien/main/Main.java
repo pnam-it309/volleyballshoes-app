@@ -1,187 +1,111 @@
 package com.DuAn1.volleyballshoes.app.view.viewgiaodien.main;
 
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewHoaDon.ViewHoaDon;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewKhachHang.ViewKhachHang;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewNhanVien.ViewNhanVien;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewPhieuGiamGia.ViewPhieuGiamGia;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPham;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPhamChiTiet;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewThuocTinh;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewThongKe.ViewThongKe;
-import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewTrangChu.ViewTrangChu;
-import com.DuAn1.volleyballshoes.app.view.viewdangnhap.main.MainDangNhap;
-import com.DuAn1.volleyballshoes.app.view.viewgiaodien.component.Menu;
-import com.DuAn1.volleyballshoes.app.view.viewgiaodien.event.EventMenuSelected;
-import com.DuAn1.volleyballshoes.app.view.viewgiaodien.event.EventShowPopupMenu;
-import com.DuAn1.volleyballshoes.app.view.viewgiaodien.form.MainForm;
-import com.DuAn1.volleyballshoes.app.view.viewgiaodien.swing.MenuItem;
-import com.DuAn1.volleyballshoes.app.view.viewgiaodien.swing.PopupMenu;
-
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.swing.Timer;
-
 
 
 public class Main extends javax.swing.JFrame {
+    
 
-    private Menu menu;
-    private MainForm main;
-    private Timer timer;
-    private boolean isMenuShowing = true;
-    private int menuWidth = 230;
-    private int currentWidth = 230;
-
+    
+    /**
+     * Creates new form Main
+     */
     public Main() {
         initComponents();
-        init();
     }
-
-    private void init() {
-        // Sử dụng BorderLayout thay cho MigLayout
-        bg.setLayout(new BorderLayout());
-        
-        menu = new Menu();
-        main = new MainForm();
-        menu.setPreferredSize(new Dimension(menuWidth, menu.getPreferredSize().height));
-        menu.addEvent(new EventMenuSelected() {
-            @Override
-            public void menuSelected(int menuIndex, int subMenuIndex) {
-                MainDangNhap DN = new MainDangNhap();
-                if (menuIndex == 0) {
-                    main.showForm(new ViewTrangChu());
-                }
-                if (menuIndex == 1) {
-                    main.showForm(new ViewBanHang());
-                }
-                if (menuIndex == 2) {
-                    if (subMenuIndex == 0) {
-                        main.showForm(new ViewSanPham());
-                    } else if (subMenuIndex == 1) {
-                        main.showForm(new ViewSanPhamChiTiet());
-                    } else if (subMenuIndex == 2) {
-                        main.showForm(new ViewThuocTinh());
-                    }
-                }
-                if (menuIndex == 3) {
-                    main.showForm(new ViewHoaDon());
-                }
-                if (menuIndex == 4) {
-//                    if (MainDangNhap.chucVu == 1) {
-//                        Notifications.getInstance().show(Notifications.Type.WARNING, Notifications.Location.TOP_CENTER, "Bạn không có quyền truy cập");
-//                    } else {
-                        main.showForm(new ViewThongKe());
-//                    }
-                }
-                if (menuIndex == 5) {
-//                    if (MainDangNhap.chucVu == 1) {
-//                        Notifications.getInstance().show(Notifications.Type.WARNING, Notifications.Location.TOP_CENTER, "Bạn không có quyền truy cập");
-//                    } else {
-                        main.showForm(new ViewNhanVien());
-                    //}
-                }
-                if (menuIndex == 6) {
-                    main.showForm(new ViewKhachHang());
-                }
-                if (menuIndex == 7) {
-//                    if (MainDangNhap.chucVu == 1) {
-//                        Notifications.getInstance().show(Notifications.Type.WARNING, Notifications.Location.TOP_CENTER, "Bạn không có quyền truy cập");
-//                    } else {
-                        main.showForm(new ViewPhieuGiamGia());
-                    //}
-                }
-                if (menuIndex == 13) {
-                    setVisible(false);
-                    DN.setVisible(true);
-                    dispose();
-                }
-
-            }
-
-        });
-
-        menu.addEventShowPopup(new EventShowPopupMenu() {
-            @Override
-            public void showPopup(Component com) {
-                MenuItem item = (MenuItem) com;
-                PopupMenu popup = new PopupMenu(Main.this, item.getIndex(), item.getEventSelected(), item.getMenu().getSubMenu());
-                int x = Main.this.getX() + 66;
-                int y = Main.this.getY() + com.getY() + 150;
-                popup.setLocation(x, y);
-                popup.setVisible(true);
-            }
-        });
-        menu.initMenuItem();
-        
-        // Thêm menu và main form vào panel
-        bg.add(menu, BorderLayout.WEST);
-        bg.add(main, BorderLayout.CENTER);
-        
-        // Tạo hiệu ứng mở/đóng menu bằng Timer
-        timer = new Timer(15, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int step = 10;  // Tốc độ di chuyển
-                if (!isMenuShowing) {
-                    currentWidth = Math.max(60, currentWidth - step);
-                    if (currentWidth <= 60) {
-                        currentWidth = 60;
-                        timer.stop();
-                        menu.setShowMenu(false);
-                        menu.setEnableMenu(true);
-                    }
-                } else {
-                    currentWidth = Math.min(menuWidth, currentWidth + step);
-                    if (currentWidth >= menuWidth) {
-                        currentWidth = menuWidth;
-                        timer.stop();
-                        menu.setShowMenu(true);
-                        menu.setEnableMenu(true);
-                    }
-                }
-                // Cập nhật kích thước menu
-                menu.setPreferredSize(new Dimension(currentWidth, menu.getPreferredSize().height));
-                menu.revalidate();
-                bg.revalidate();
-            }
-        });
-
-        main.showForm(new ViewTrangChu());
-    }
+    
+ 
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         bg = new javax.swing.JLayeredPane();
-        jPanel1 = new javax.swing.JPanel();
+        pnl_sidebar = new javax.swing.JPanel();
+        btn_ViewBanHang = new javax.swing.JButton();
+        btn_ViewSanPham = new javax.swing.JButton();
+        btn_viewnhanvien = new javax.swing.JButton();
+        btn_viewgiamgia = new javax.swing.JButton();
+        btn_viewkhachhang = new javax.swing.JButton();
+        jButton6 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         bg.setBackground(new java.awt.Color(245, 245, 245));
         bg.setOpaque(true);
+        bg.setLayout(new java.awt.BorderLayout());
 
-        jPanel1.setLayout(new java.awt.BorderLayout());
+        btn_ViewBanHang.setText("Bán Hàng");
+        btn_ViewBanHang.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_ViewBanHangActionPerformed(evt);
+            }
+        });
 
-        bg.setLayer(jPanel1, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        btn_ViewSanPham.setText("Sản Phẩm");
+        btn_ViewSanPham.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_ViewSanPhamActionPerformed(evt);
+            }
+        });
 
-        javax.swing.GroupLayout bgLayout = new javax.swing.GroupLayout(bg);
-        bg.setLayout(bgLayout);
-        bgLayout.setHorizontalGroup(
-            bgLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, bgLayout.createSequentialGroup()
-                .addGap(0, 1095, Short.MAX_VALUE)
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        btn_viewnhanvien.setText("Nhân Viên");
+        btn_viewnhanvien.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_viewnhanvienActionPerformed(evt);
+            }
+        });
+
+        btn_viewgiamgia.setText("Giảm giá");
+        btn_viewgiamgia.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_viewgiamgiaActionPerformed(evt);
+            }
+        });
+
+        btn_viewkhachhang.setText("Khách Hàng");
+        btn_viewkhachhang.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_viewkhachhangActionPerformed(evt);
+            }
+        });
+
+        jButton6.setText("Trang chủ");
+
+        javax.swing.GroupLayout pnl_sidebarLayout = new javax.swing.GroupLayout(pnl_sidebar);
+        pnl_sidebar.setLayout(pnl_sidebarLayout);
+        pnl_sidebarLayout.setHorizontalGroup(
+            pnl_sidebarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnl_sidebarLayout.createSequentialGroup()
+                .addGap(42, 42, 42)
+                .addGroup(pnl_sidebarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(pnl_sidebarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(btn_viewkhachhang)
+                        .addComponent(btn_viewgiamgia)
+                        .addComponent(btn_viewnhanvien)
+                        .addGroup(pnl_sidebarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(btn_ViewBanHang)
+                            .addComponent(btn_ViewSanPham)))
+                    .addGroup(pnl_sidebarLayout.createSequentialGroup()
+                        .addGap(12, 12, 12)
+                        .addComponent(jButton6)))
+                .addContainerGap(23, Short.MAX_VALUE))
         );
-        bgLayout.setVerticalGroup(
-            bgLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(bgLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 819, Short.MAX_VALUE))
+        pnl_sidebarLayout.setVerticalGroup(
+            pnl_sidebarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnl_sidebarLayout.createSequentialGroup()
+                .addGap(70, 70, 70)
+                .addComponent(jButton6)
+                .addGap(85, 85, 85)
+                .addComponent(btn_ViewBanHang)
+                .addGap(31, 31, 31)
+                .addComponent(btn_ViewSanPham)
+                .addGap(27, 27, 27)
+                .addComponent(btn_viewnhanvien)
+                .addGap(26, 26, 26)
+                .addComponent(btn_viewgiamgia)
+                .addGap(18, 18, 18)
+                .addComponent(btn_viewkhachhang)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -189,17 +113,43 @@ public class Main extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(0, 296, Short.MAX_VALUE)
-                .addComponent(bg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(pnl_sidebar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(bg, javax.swing.GroupLayout.PREFERRED_SIZE, 1064, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(bg, javax.swing.GroupLayout.Alignment.TRAILING)
+            .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(bg, javax.swing.GroupLayout.DEFAULT_SIZE, 509, Short.MAX_VALUE)
+                    .addComponent(pnl_sidebar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(0, 0, Short.MAX_VALUE))
         );
 
         pack();
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btn_ViewBanHangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_ViewBanHangActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_ViewBanHangActionPerformed
+
+    private void btn_ViewSanPhamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_ViewSanPhamActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_ViewSanPhamActionPerformed
+
+    private void btn_viewgiamgiaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_viewgiamgiaActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_viewgiamgiaActionPerformed
+
+    private void btn_viewnhanvienActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_viewnhanvienActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_viewnhanvienActionPerformed
+
+    private void btn_viewkhachhangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_viewkhachhangActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_viewkhachhangActionPerformed
 
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
@@ -237,6 +187,12 @@ public class Main extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLayeredPane bg;
-    private javax.swing.JPanel jPanel1;
+    private javax.swing.JButton btn_ViewBanHang;
+    private javax.swing.JButton btn_ViewSanPham;
+    private javax.swing.JButton btn_viewgiamgia;
+    private javax.swing.JButton btn_viewkhachhang;
+    private javax.swing.JButton btn_viewnhanvien;
+    private javax.swing.JButton jButton6;
+    private javax.swing.JPanel pnl_sidebar;
     // End of variables declaration//GEN-END:variables
 }

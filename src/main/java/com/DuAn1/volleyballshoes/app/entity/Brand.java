@@ -22,10 +22,6 @@ public class Brand {
 
     private String brandDescription;
 
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
     // For backward compatibility
     public int getBrandId() {
         return id != null ? id : 0;
