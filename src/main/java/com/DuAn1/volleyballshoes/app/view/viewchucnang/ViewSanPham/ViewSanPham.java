@@ -1408,6 +1408,7 @@ public class ViewSanPham extends javax.swing.JPanel {
 
         try {
             ProductCreateRequest request = getCreateRequest();
+            System.out.println("[DEBUG] ProductCreateRequest: " + request);
             productController.createProduct(request);
 
             loadData();
@@ -1415,7 +1416,8 @@ public class ViewSanPham extends javax.swing.JPanel {
 
             NotificationUtil.showSuccess(this, "Thêm sản phẩm thành công!");
         } catch (Exception e) {
-            NotificationUtil.showError(this, "Lỗi khi thêm sản phẩm: ");
+            NotificationUtil.showError(this, "Lỗi khi thêm sản phẩm: " + e.getMessage());
+            e.printStackTrace();
         }
     }//GEN-LAST:event_btnThemActionPerformed
 

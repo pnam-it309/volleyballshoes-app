@@ -12,8 +12,8 @@ public class ProductDAOImpl implements ProductDAO {
     
     @Override
     public Product create(Product product) {
-        String sql = "INSERT INTO Product (product_code, product_name, product_description, brand_id, category_id, product_create_at) "
-                  + "VALUES (?, ?, ?, ?, ?, GETDATE())";
+        String sql = "INSERT INTO Product (product_code, product_name, product_description, brand_id, category_id) "
+                  + "VALUES (?, ?, ?, ?, ?)";
         
         XJdbc.executeUpdate(sql, 
             product.getProductCode(),
@@ -25,11 +25,11 @@ public class ProductDAOImpl implements ProductDAO {
         
         // Get the created timestamp from the database
         sql = "SELECT product_create_at FROM Product WHERE product_id = IDENT_CURRENT('Product')";
-        product.setProductCreateAt(XJdbc.getValue(sql, LocalDateTime.class));
+        product.setProductCreateAt(XJdbc.getValue(sql, LocalDateTime.class, new Object[]{}));
         
         // Lấy ID vừa tạo
         sql = "SELECT IDENT_CURRENT('Product') as id";
-        Integer id = XJdbc.getValue(sql, Integer.class);
+        Integer id = XJdbc.getValue(sql, Integer.class, new Object[]{});
         product.setProductId(id);
         
         return product;
