@@ -1,6 +1,13 @@
 package com.DuAn1.volleyballshoes.app.view.viewgiaodien.main;
 
-
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewDotGiamGia.ViewDotGiamGia;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewKhachHang.ViewKhachHang;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewNhanVien.ViewNhanVien;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPham;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewTrangChu.ViewTrangChu;
+import java.awt.CardLayout;
+import javax.swing.JPanel;
 
 public class Main extends javax.swing.JFrame {
     
@@ -9,8 +16,49 @@ public class Main extends javax.swing.JFrame {
     /**
      * Creates new form Main
      */
+    private ViewBanHang viewBanHang;
+    private ViewSanPham viewSanPham;
+    private ViewNhanVien viewNhanVien;
+    private ViewDotGiamGia viewDotGiamGia;
+    private ViewKhachHang viewKhachHang;
+    private ViewTrangChu viewTrangChu;
+    private CardLayout cardLayout;
+    private JPanel mainPanel;
+    
     public Main() {
         initComponents();
+        initViews();
+        showDefaultView();
+    }
+    
+    private void initViews() {
+        // Initialize card layout for main content area
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(cardLayout);
+        
+        // Initialize all views
+        viewBanHang = new ViewBanHang();
+        viewSanPham = new ViewSanPham();
+        viewNhanVien = new ViewNhanVien();
+        viewDotGiamGia = new ViewDotGiamGia();
+        viewKhachHang = new ViewKhachHang();
+        viewTrangChu = new ViewTrangChu();
+        
+        // Add views to card layout with unique names
+        mainPanel.add(viewTrangChu, "trangchu");
+        mainPanel.add(viewBanHang, "banhang");
+        mainPanel.add(viewSanPham, "sanpham");
+        mainPanel.add(viewNhanVien, "nhanvien");
+        mainPanel.add(viewDotGiamGia, "giamgia");
+        mainPanel.add(viewKhachHang, "khachhang");
+        
+        // Add main panel to the center of the bg layered pane
+        bg.setLayout(new java.awt.BorderLayout());
+        bg.add(mainPanel, java.awt.BorderLayout.CENTER);
+    }
+    
+    private void showDefaultView() {
+        cardLayout.show(mainPanel, "trangchu");
     }
     
  
@@ -70,6 +118,11 @@ public class Main extends javax.swing.JFrame {
         });
 
         jButton6.setText("Trang chủ");
+        jButton6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton6ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout pnl_sidebarLayout = new javax.swing.GroupLayout(pnl_sidebar);
         pnl_sidebar.setLayout(pnl_sidebarLayout);
@@ -132,24 +185,33 @@ public class Main extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btn_ViewBanHangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_ViewBanHangActionPerformed
-        // TODO add your handling code here:
+        cardLayout.show(mainPanel, "banhang");
+        setTitle("Bán Hàng");
     }//GEN-LAST:event_btn_ViewBanHangActionPerformed
 
     private void btn_ViewSanPhamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_ViewSanPhamActionPerformed
-        // TODO add your handling code here:
+        cardLayout.show(mainPanel, "sanpham");
+        setTitle("Sản Phẩm");
     }//GEN-LAST:event_btn_ViewSanPhamActionPerformed
 
     private void btn_viewgiamgiaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_viewgiamgiaActionPerformed
-        // TODO add your handling code here:
+        cardLayout.show(mainPanel, "giamgia");
+        setTitle("Đợt Giảm Giá");
     }//GEN-LAST:event_btn_viewgiamgiaActionPerformed
 
     private void btn_viewnhanvienActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_viewnhanvienActionPerformed
-        // TODO add your handling code here:
+        cardLayout.show(mainPanel, "nhanvien");
+        setTitle("Nhân Viên");
     }//GEN-LAST:event_btn_viewnhanvienActionPerformed
 
     private void btn_viewkhachhangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_viewkhachhangActionPerformed
-        // TODO add your handling code here:
+        cardLayout.show(mainPanel, "khachhang");
+        setTitle("Khách Hàng");
     }//GEN-LAST:event_btn_viewkhachhangActionPerformed
+
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton6ActionPerformed
 
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */

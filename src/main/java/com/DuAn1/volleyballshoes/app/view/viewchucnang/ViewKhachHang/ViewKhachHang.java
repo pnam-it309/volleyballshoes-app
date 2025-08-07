@@ -47,18 +47,28 @@ public class ViewKhachHang extends javax.swing.JPanel {
             customerTableModel.setRowCount(0); // Xóa dữ liệu cũ
             List<Customer> customers = customerController.getAllCustomers();
 
+            if (customers == null || customers.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                    "Không có dữ liệu khách hàng.",
+                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
             for (Customer customer : customers) {
-                customerTableModel.addRow(new Object[]{
-                    customer.getCustomerCode(), // Mã KH
-                    customer.getCustomerUsername(), // Tên KH
-                    customer.getCustomerPhone(), // SĐT
-                    customer.getCustomerEmail() // Email
-                });
+                if (customer != null) {
+                    customerTableModel.addRow(new Object[]{
+                        customer.getCustomerCode() != null ? customer.getCustomerCode() : "",
+                        customer.getCustomerUsername() != null ? customer.getCustomerUsername() : "",
+                        customer.getCustomerPhone() != null ? customer.getCustomerPhone() : "",
+                        customer.getCustomerEmail() != null ? customer.getCustomerEmail() : ""
+                    });
+                }
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "Lỗi khi tải dữ liệu khách hàng: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 

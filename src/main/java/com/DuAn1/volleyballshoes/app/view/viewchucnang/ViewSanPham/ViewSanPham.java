@@ -55,6 +55,31 @@ public class ViewSanPham extends javax.swing.JPanel {
     SizeDAO sizeDAO = new SizeDAOImpl();
     private String type = "color";
 
+    private void processQRCodeData(String data) {
+        // TODO: Thực hiện xử lý dữ liệu QR code ở đây
+        System.out.println("QR Data: " + data);
+    }
+
+    private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) {
+            return "";
+        }
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                return String.valueOf(cell.getNumericCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return cell.getCellFormula();
+            case BLANK:
+                return "";
+            default:
+                return "";
+        }
+    }
+
     public ViewSanPham() {
         this.productController = new ProductController();
         initComponents();
@@ -833,6 +858,7 @@ public class ViewSanPham extends javax.swing.JPanel {
         jLabel9.setForeground(new java.awt.Color(0, 0, 255));
         jLabel9.setText("Thông Tin Thuộc Tính");
 
+        buttonGroup1.add(rb_color);
         rb_color.setText("Màu");
         rb_color.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -840,6 +866,7 @@ public class ViewSanPham extends javax.swing.JPanel {
             }
         });
 
+        buttonGroup1.add(rb_size);
         rb_size.setText("Size");
         rb_size.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -847,6 +874,7 @@ public class ViewSanPham extends javax.swing.JPanel {
             }
         });
 
+        buttonGroup1.add(rb_brand);
         rb_brand.setText("Thương hiệu");
         rb_brand.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -854,6 +882,7 @@ public class ViewSanPham extends javax.swing.JPanel {
             }
         });
 
+        buttonGroup1.add(rb_category);
         rb_category.setText("Loại");
         rb_category.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -861,6 +890,7 @@ public class ViewSanPham extends javax.swing.JPanel {
             }
         });
 
+        buttonGroup1.add(rb_sole);
         rb_sole.setText("Đế giày");
         rb_sole.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -2250,81 +2280,5 @@ public class ViewSanPham extends javax.swing.JPanel {
     private javax.swing.JTextField txtTen;
     private javax.swing.JTextField txtTenSP;
     private javax.swing.JTextArea txtaMoTa;
-    
-    /**
-     * Process QR code data
-     * @param qrText The text extracted from QR code
-     */
-    private void processQRCodeData(String qrText) {
-        try {
-            // Parse the QR code data (assuming it's in a specific format)
-            // Example format: "PRODUCT:12345"
-            if (qrText != null && qrText.startsWith("PRODUCT:")) {
-                String productId = qrText.substring(8); // Extract product ID
-                // Search for the product by ID and select it in the table
-                // This is a simplified example - you may need to adjust based on your actual requirements
-                JOptionPane.showMessageDialog(this, 
-                    "QR Code Scanned for Product ID: " + productId, 
-                    "QR Code Scanned", 
-                    JOptionPane.INFORMATION_MESSAGE);
-                // TODO: Implement product lookup and selection logic
-            } else {
-                JOptionPane.showMessageDialog(this, 
-                    "Invalid QR Code format. Expected format: 'PRODUCT:ID'", 
-                    "Invalid QR Code", 
-                    JOptionPane.WARNING_MESSAGE);
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, 
-                "Error processing QR code: " + e.getMessage(), 
-                "Error", 
-                JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    /**
-     * Get cell value as string from Excel cell
-     * @param cell The Excel cell
-     * @return String representation of the cell value
-     */
-    private String getCellValueAsString(Cell cell) {
-        if (cell == null) {
-            return "";
-        }
-        
-        switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue().trim();
-            case NUMERIC:
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    return cell.getDateCellValue().toString();
-                } else {
-                    // Check if the numeric value is actually an integer
-                    double value = cell.getNumericCellValue();
-                    if (value == (long) value) {
-                        return String.valueOf((long) value);
-                    } else {
-                        return String.valueOf(value);
-                    }
-                }
-            case BOOLEAN:
-                return String.valueOf(cell.getBooleanCellValue());
-            case FORMULA:
-                switch (cell.getCachedFormulaResultType()) {
-                    case STRING:
-                        return cell.getStringCellValue().trim();
-                    case NUMERIC:
-                        return String.valueOf(cell.getNumericCellValue());
-                    case BOOLEAN:
-                        return String.valueOf(cell.getBooleanCellValue());
-                    default:
-                        return cell.getCellFormula();
-                }
-            case BLANK:
-                return "";
-            default:
-                return "";
-        }
-    }
     // End of variables declaration//GEN-END:variables
 }
