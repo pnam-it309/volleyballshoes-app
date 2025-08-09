@@ -99,9 +99,13 @@ public class PromotionDAOImpl implements PromotionDAO {
 
     @Override
     public boolean existsById(Integer id) {
-        String sql = "SELECT COUNT(*) FROM Promotion WHERE promotion_id = ?";
-        Integer count = XJdbc.getValue(sql, id);
-        return count != null && count > 0;
+//        String sql = "SELECT COUNT(*) FROM Promotion WHERE promotion_id = ?";
+//        Integer count = XJdbc.getValue(sql, id);
+//        return count != null && count > 0;
+        return false;
+//        String sql = "SELECT COUNT(*) FROM Promotion WHERE promotion_id = ?";
+//        Integer count = XJdbc.getValue(sql, id);
+//        return count != null && count > 0;
     }
 
     @Override

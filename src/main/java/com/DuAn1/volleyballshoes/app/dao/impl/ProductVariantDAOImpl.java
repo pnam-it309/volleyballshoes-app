@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProductVariantDAOImpl implements ProductVariantDAO {
-    
+
     private ProductVariant mapResultSetToProductVariant(ResultSet rs) throws SQLException {
         ProductVariant variant = new ProductVariant();
         variant.setVariantId(rs.getInt("variant_id"));
@@ -32,35 +32,35 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
     @Override
     public ProductVariant create(ProductVariant entity) {
         String sql = "INSERT INTO ProductVariant (product_id, size_id, color_id, sole_id, variant_sku, variant_orig_price, variant_img_url) "
-                  + "OUTPUT INSERTED.* "
-                  + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
+                + "OUTPUT INSERTED.* "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
         return XJdbc.queryForObject(sql, this::mapResultSetToProductVariant,
-            entity.getProductId(),
-            entity.getSizeId(),
-            entity.getColorId(),
-            entity.getSoleId(),
-            entity.getVariantSku(),
-            entity.getVariantOrigPrice(),
-            entity.getVariantImgUrl()
+                entity.getProductId(),
+                entity.getSizeId(),
+                entity.getColorId(),
+                entity.getSoleId(),
+                entity.getVariantSku(),
+                entity.getVariantOrigPrice(),
+                entity.getVariantImgUrl()
         );
     }
 
     @Override
     public ProductVariant update(ProductVariant entity) {
         String sql = "UPDATE ProductVariant SET product_id = ?, size_id = ?, color_id = ?, "
-                  + "sole_id = ?, variant_sku = ?, variant_orig_price = ?, variant_img_url = ? "
-                  + "OUTPUT INSERTED.* WHERE variant_id = ?";
-        
+                + "sole_id = ?, variant_sku = ?, variant_orig_price = ?, variant_img_url = ? "
+                + "OUTPUT INSERTED.* WHERE variant_id = ?";
+
         return XJdbc.queryForObject(sql, this::mapResultSetToProductVariant,
-            entity.getProductId(),
-            entity.getSizeId(),
-            entity.getColorId(),
-            entity.getSoleId(),
-            entity.getVariantSku(),
-            entity.getVariantOrigPrice(),
-            entity.getVariantImgUrl(),
-            entity.getVariantId()
+                entity.getProductId(),
+                entity.getSizeId(),
+                entity.getColorId(),
+                entity.getSoleId(),
+                entity.getVariantSku(),
+                entity.getVariantOrigPrice(),
+                entity.getVariantImgUrl(),
+                entity.getVariantId()
         );
     }
 
@@ -80,22 +80,23 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
     public List<ProductVariant> findWithPagination(int page, int pageSize, String filter) {
         int offset = (page - 1) * pageSize;
         String sql = "SELECT * FROM ProductVariant "
-                   + "WHERE variant_sku LIKE ? OR variant_img_url LIKE ? "
-                   + "ORDER BY variant_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
-        
+                + "WHERE variant_sku LIKE ? OR variant_img_url LIKE ? "
+                + "ORDER BY variant_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
         String searchPattern = "%" + (filter != null ? filter : "") + "%";
-        return XJdbc.query(sql, this::mapResultSetToProductVariant, 
-            searchPattern, searchPattern, offset, pageSize);
+        return XJdbc.query(sql, this::mapResultSetToProductVariant,
+                searchPattern, searchPattern, offset, pageSize);
     }
 
     @Override
     public int count(String filter) {
-        String sql = "SELECT COUNT(*) FROM ProductVariant "
-                   + "WHERE variant_sku LIKE ? OR variant_img_url LIKE ?";
-        
-        String searchPattern = "%" + (filter != null ? filter : "") + "%";
-        Long count = XJdbc.getValue(sql, searchPattern, searchPattern);
-        return count != null ? count.intValue() : 0;
+//        String sql = "SELECT COUNT(*) FROM ProductVariant "
+//                   + "WHERE variant_sku LIKE ? OR variant_img_url LIKE ?";
+//        
+//        String searchPattern = "%" + (filter != null ? filter : "") + "%";
+//        Long count = XJdbc.getValue(sql, searchPattern, searchPattern);
+//        return count != null ? count.intValue() : 0;
+        return 0;
     }
 
     @Override
@@ -104,11 +105,12 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
         List<ProductVariant> list = XJdbc.query(sql, this::mapResultSetToProductVariant, id);
         return list.isEmpty() ? null : list.get(0);
     }
-    
+
     @Override
     public boolean existsBySku(String sku) {
-        String sql = "SELECT COUNT(*) FROM ProductVariant WHERE variant_sku = ?";
-        Integer count = XJdbc.getValue(sql, sku);
-        return count != null && count > 0;
+//        String sql = "SELECT COUNT(*) FROM ProductVariant WHERE variant_sku = ?";
+//        Integer count = XJdbc.getValue(sql, sku);
+//        return count != null && count > 0;
+        return false;
     }
 }

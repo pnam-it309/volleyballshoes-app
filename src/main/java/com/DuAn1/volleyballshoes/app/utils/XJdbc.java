@@ -55,6 +55,7 @@ public class XJdbc {
 
     /**
      * Kiểm tra kết nối đã sẵn sàng hay chưa
+     *
      * @return true nếu kết nối đã được mở
      */
     public static boolean isReady() {
@@ -108,11 +109,23 @@ public class XJdbc {
      * @return giá trị truy vấn hoặc null
      * @throws RuntimeException không thực thi được câu lệnh SQL
      */
-    public static <T> T getValue(String sql, Object... values) {
+    public static <T> T getValue(String sql, Class<T> type, Object... values) {
         try {
-            var resultSet = XJdbc.executeQuery(sql, values);
+            PreparedStatement stmt;
+            Connection conn = XJdbc.openConnection();
+
+            if (values != null && values.length > 0) {
+                stmt = conn.prepareStatement(sql);
+                for (int i = 0; i < values.length; i++) {
+                    stmt.setObject(i + 1, values[i]);
+                }
+            } else {
+                stmt = conn.prepareStatement(sql);
+            }
+
+            ResultSet resultSet = stmt.executeQuery();
             if (resultSet.next()) {
-                return (T) resultSet.getObject(1);
+                return resultSet.getObject(1, type);
             }
             return null;
         } catch (SQLException ex) {
@@ -139,6 +152,7 @@ public class XJdbc {
 
     // --- RowMapper interface ---
     public interface RowMapper<T> {
+
         T mapRow(ResultSet rs) throws SQLException;
     }
 
@@ -171,8 +185,7 @@ public class XJdbc {
     }
 
     private static void demo2() {
-        String sql = "SELECT max(UnitPrice) FROM Drinks WHERE UnitPrice > ?";
-        var maxPrice = XJdbc.getValue(sql, 1.5);
+
     }
 
     private static void demo3() {

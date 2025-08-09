@@ -76,9 +76,14 @@ public class ProductVariantPromotionDAOImpl implements ProductVariantPromotionDA
 
     @Override
     public boolean existsByProductVariantIdAndPromotionId(Long productVariantId, Long promotionId) {
-        String sql = "SELECT COUNT(*) FROM ProductVariantPromotion "
-                   + "WHERE productVariantId = ? AND promotionId = ?";
-        Integer count = XJdbc.getValue(sql, productVariantId, promotionId);
-        return count != null && count > 0;
+//        String sql = "SELECT COUNT(*) FROM ProductVariantPromotion "
+//                   + "WHERE productVariantId = ? AND promotionId = ?";
+//        Integer count = XJdbc.getValue(sql, productVariantId, promotionId);
+//        return count != null && count > 0;
+        return false;
+//        String sql = "SELECT COUNT(*) FROM ProductVariantPromotion "
+//                   + "WHERE productVariantId = ? AND promotionId = ?";
+//        Integer count = XJdbc.getValue(sql, productVariantId, promotionId);
+//        return count != null && count > 0;
     }
 }

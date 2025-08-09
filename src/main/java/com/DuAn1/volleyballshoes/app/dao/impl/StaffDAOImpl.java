@@ -38,16 +38,24 @@ public class StaffDAOImpl implements StaffDAO {
 
     @Override
     public boolean existsByEmail(String email) {
-        String sql = "SELECT COUNT(*) FROM Staff WHERE staff_email = ?";
-        Integer count = XJdbc.getValue(sql, email);
-        return count != null && count > 0;
+//        String sql = "SELECT COUNT(*) FROM Staff WHERE staff_email = ?";
+//        Integer count = XJdbc.getValue(sql, email);
+//        return count != null && count > 0;
+        return false;
+//        String sql = "SELECT COUNT(*) FROM Staff WHERE staff_email = ?";
+//        Integer count = XJdbc.getValue(sql, email);
+//        return count != null && count > 0;
     }
     
     @Override
     public boolean existsByUsername(String username) {
-        String sql = "SELECT COUNT(*) FROM Staff WHERE staff_username = ?";
-        Integer count = XJdbc.getValue(sql, username);
-        return count != null && count > 0;
+//        String sql = "SELECT COUNT(*) FROM Staff WHERE staff_username = ?";
+//        Integer count = XJdbc.getValue(sql, username);
+//        return count != null && count > 0;
+        return false;
+//        String sql = "SELECT COUNT(*) FROM Staff WHERE staff_username = ?";
+//        Integer count = XJdbc.getValue(sql, username);
+//        return count != null && count > 0;
     }
 
     @Override
@@ -142,9 +150,13 @@ public class StaffDAOImpl implements StaffDAO {
     
     @Override
     public long count() {
-        String sql = "SELECT COUNT(*) FROM Staff";
-        Long count = XJdbc.getValue(sql);
-        return count != null ? count : 0;
+//        String sql = "SELECT COUNT(*) FROM Staff";
+//        Long count = XJdbc.getValue(sql);
+//        return count != null ? count : 0;
+        return 0;
+//        String sql = "SELECT COUNT(*) FROM Staff";
+//        Long count = XJdbc.getValue(sql);
+//        return count != null ? count : 0;
     }
     
     @Override
