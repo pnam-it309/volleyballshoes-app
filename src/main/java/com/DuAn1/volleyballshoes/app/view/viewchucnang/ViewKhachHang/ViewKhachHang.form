@@ -101,16 +101,16 @@
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
-                      <Component id="tbl_them" alignment="0" min="-2" max="-2" attributes="0"/>
+                      <Component id="tbl_Them" alignment="0" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace min="-2" pref="72" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" attributes="0">
-                          <Component id="tbl_sửa1" min="-2" max="-2" attributes="0"/>
+                          <Component id="tbl_capNhat" min="-2" max="-2" attributes="0"/>
                           <EmptySpace min="-2" pref="60" max="-2" attributes="0"/>
-                          <Component id="tbl_lammoi" min="-2" max="-2" attributes="0"/>
+                          <Component id="tbl_lamMoi" min="-2" max="-2" attributes="0"/>
                           <EmptySpace min="-2" pref="39" max="-2" attributes="0"/>
-                          <Component id="tbl_xóa" min="-2" max="-2" attributes="0"/>
+                          <Component id="tbl_Xoa" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <Group type="102" attributes="0">
                           <Group type="103" groupAlignment="0" max="-2" attributes="0">
@@ -166,10 +166,10 @@
                   </Group>
                   <EmptySpace pref="95" max="32767" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="tbl_them" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="tbl_lammoi" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="tbl_sửa1" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="tbl_xóa" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="tbl_Them" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="tbl_lamMoi" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="tbl_capNhat" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="tbl_Xoa" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Component id="jPanel2" min="-2" max="-2" attributes="0"/>
@@ -179,7 +179,7 @@
         </DimensionLayout>
       </Layout>
       <SubComponents>
-        <Component class="javax.swing.JButton" name="tbl_them">
+        <Component class="javax.swing.JButton" name="tbl_Them">
           <Properties>
             <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="ff" green="33" red="0" type="rgb"/>
@@ -193,10 +193,10 @@
             <Property name="text" type="java.lang.String" value="Th&#xea;m"/>
           </Properties>
           <Events>
-            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="tbl_themActionPerformed"/>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="tbl_ThemActionPerformed"/>
           </Events>
         </Component>
-        <Component class="javax.swing.JButton" name="tbl_x&#xf3;a">
+        <Component class="javax.swing.JButton" name="tbl_Xoa">
           <Properties>
             <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="ff" green="33" red="0" type="rgb"/>
@@ -210,7 +210,7 @@
             <Property name="text" type="java.lang.String" value="X&#xf3;a"/>
           </Properties>
           <Events>
-            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="tbl_x&#xf3;aActionPerformed"/>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="tbl_XoaActionPerformed"/>
           </Events>
         </Component>
         <Component class="javax.swing.JLabel" name="jLabel3">
@@ -239,7 +239,7 @@
         </Component>
         <Component class="javax.swing.JTextField" name="txt_email">
         </Component>
-        <Component class="javax.swing.JButton" name="tbl_lammoi">
+        <Component class="javax.swing.JButton" name="tbl_lamMoi">
           <Properties>
             <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="ff" green="33" red="0" type="rgb"/>
@@ -253,7 +253,7 @@
             <Property name="text" type="java.lang.String" value="L&#xe0;m M&#x1edb;i"/>
           </Properties>
           <Events>
-            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="tbl_lammoiActionPerformed"/>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="tbl_lamMoiActionPerformed"/>
           </Events>
         </Component>
         <Container class="javax.swing.JPanel" name="jPanel2">
@@ -275,7 +275,7 @@
                       <EmptySpace max="32767" attributes="0"/>
                       <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
-                      <Component id="txt_nhạptim" min="-2" pref="549" max="-2" attributes="0"/>
+                      <Component id="txt_nhapTim" min="-2" pref="549" max="-2" attributes="0"/>
                       <EmptySpace min="-2" pref="30" max="-2" attributes="0"/>
                       <Component id="tbl_timkiem" min="-2" pref="105" max="-2" attributes="0"/>
                       <EmptySpace min="-2" pref="114" max="-2" attributes="0"/>
@@ -288,7 +288,7 @@
                       <EmptySpace min="-2" pref="11" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="txt_nhạptim" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="txt_nhapTim" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="tbl_timkiem" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace pref="15" max="32767" attributes="0"/>
@@ -302,7 +302,10 @@
                 <Property name="text" type="java.lang.String" value="Nh&#x1ead;p T&#xea;n  C&#x1ea7;n T&#xec;m"/>
               </Properties>
             </Component>
-            <Component class="javax.swing.JTextField" name="txt_nh&#x1ea1;ptim">
+            <Component class="javax.swing.JTextField" name="txt_nhapTim">
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="txt_nhapTimActionPerformed"/>
+              </Events>
             </Component>
             <Component class="javax.swing.JButton" name="tbl_timkiem">
               <Properties>
@@ -328,7 +331,7 @@
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="txt_tenActionPerformed"/>
           </Events>
         </Component>
-        <Component class="javax.swing.JButton" name="tbl_s&#x1eed;a1">
+        <Component class="javax.swing.JButton" name="tbl_capNhat">
           <Properties>
             <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="ff" green="33" red="0" type="rgb"/>
@@ -342,7 +345,7 @@
             <Property name="text" type="java.lang.String" value="C&#x1ead;p Nh&#x1ead;t"/>
           </Properties>
           <Events>
-            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="tbl_s&#x1eed;a1ActionPerformed"/>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="tbl_capNhatActionPerformed"/>
           </Events>
         </Component>
       </SubComponents>
