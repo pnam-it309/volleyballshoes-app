@@ -38,12 +38,17 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class ViewSanPham extends javax.swing.JPanel {
 
     private int currentPage = 1;
     private int pageSize = 10;
     private int totalPages = 1;
     private final ProductController productController;
+private final Map<Integer, String> brandIdToName = new HashMap<>();
+private final Map<Integer, String> categoryIdToName = new HashMap<>();
     private final BrandDAO brandDAO = new BrandDAOImpl();
     private final CategoryDAO categoryDAO = new CategoryDAOImpl();
     private DefaultTableModel tableModel;
@@ -106,15 +111,17 @@ public class ViewSanPham extends javax.swing.JPanel {
             List<ProductResponse> products = productController.getProductsWithPagination(currentPage, pageSize);
 
             for (ProductResponse product : products) {
-                Object[] row = {
-                    product.getProductCode(),
-                    product.getProductName(),
-                    product.getProductDescription(),
-                    product.getBrandName(),
-                    product.getCategoryName()
-                };
-                tableModel.addRow(row);
-            }
+    String brandName = brandIdToName.getOrDefault(product.getBrandId(), String.valueOf(product.getBrandId()));
+    String categoryName = categoryIdToName.getOrDefault(product.getCategoryId(), String.valueOf(product.getCategoryId()));
+    Object[] row = {
+        product.getProductCode(),
+        product.getProductName(),
+        product.getProductDescription(),
+        brandName,
+        categoryName
+    };
+    tableModel.addRow(row);
+}
 
             updatePaginationInfo();
         } catch (Exception e) {
@@ -259,13 +266,14 @@ public class ViewSanPham extends javax.swing.JPanel {
     private void loadBrands() {
         try {
             cbo_brand.removeAllItems();
+            brandIdToName.clear();
             List<Brand> brands = brandDAO.findAll();
             for (Brand brand : brands) {
                 if (brand != null && brand.getBrandName() != null) {
                     ComboBoxItem item = new ComboBoxItem(brand.getBrandId(), brand.getBrandName());
                     cbo_brand.addItem(item.toString());
-                    // Store the ComboBoxItem in client property for later retrieval
                     cbo_brand.putClientProperty(item.toString(), item);
+                    brandIdToName.put(brand.getBrandId(), brand.getBrandName());
                 }
             }
         } catch (Exception e) {
@@ -277,13 +285,14 @@ public class ViewSanPham extends javax.swing.JPanel {
     private void loadCategories() {
         try {
             cbo_category.removeAllItems();
+            categoryIdToName.clear();
             List<com.DuAn1.volleyballshoes.app.entity.Category> categories = categoryDAO.findAll();
             for (com.DuAn1.volleyballshoes.app.entity.Category category : categories) {
                 if (category != null && category.getCategoryName() != null) {
                     ComboBoxItem item = new ComboBoxItem(category.getCategoryId(), category.getCategoryName());
                     cbo_category.addItem(item.toString());
-                    // Store the ComboBoxItem in client property for later retrieval
                     cbo_category.putClientProperty(item.toString(), item);
+                    categoryIdToName.put(category.getCategoryId(), category.getCategoryName());
                 }
             }
         } catch (Exception e) {
