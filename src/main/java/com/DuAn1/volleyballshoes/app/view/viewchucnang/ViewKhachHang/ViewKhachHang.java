@@ -79,8 +79,8 @@ public class ViewKhachHang extends javax.swing.JPanel {
         buttonGroup1 = new javax.swing.ButtonGroup();
         jLabel1 = new javax.swing.JLabel();
         jPanel1 = new javax.swing.JPanel();
-        tbl_them = new javax.swing.JButton();
-        tbl_xóa = new javax.swing.JButton();
+        tbl_Them = new javax.swing.JButton();
+        tbl_Xoa = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
         txt_ma = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
@@ -88,13 +88,13 @@ public class ViewKhachHang extends javax.swing.JPanel {
         jLabel9 = new javax.swing.JLabel();
         txt_sdt = new javax.swing.JTextField();
         txt_email = new javax.swing.JTextField();
-        tbl_lammoi = new javax.swing.JButton();
+        tbl_lamMoi = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
-        txt_nhạptim = new javax.swing.JTextField();
+        txt_nhapTim = new javax.swing.JTextField();
         tbl_timkiem = new javax.swing.JButton();
         txt_ten = new javax.swing.JTextField();
-        tbl_sửa1 = new javax.swing.JButton();
+        tbl_capNhat = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         tbl_bangls = new javax.swing.JTable();
         jLabel10 = new javax.swing.JLabel();
@@ -109,23 +109,23 @@ public class ViewKhachHang extends javax.swing.JPanel {
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Thông Tin Khách Hàng", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 0, 18))); // NOI18N
         jPanel1.setForeground(new java.awt.Color(255, 255, 255));
 
-        tbl_them.setBackground(new java.awt.Color(0, 51, 255));
-        tbl_them.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        tbl_them.setForeground(new java.awt.Color(255, 255, 255));
-        tbl_them.setText("Thêm");
-        tbl_them.addActionListener(new java.awt.event.ActionListener() {
+        tbl_Them.setBackground(new java.awt.Color(0, 51, 255));
+        tbl_Them.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        tbl_Them.setForeground(new java.awt.Color(255, 255, 255));
+        tbl_Them.setText("Thêm");
+        tbl_Them.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tbl_themActionPerformed(evt);
+                tbl_ThemActionPerformed(evt);
             }
         });
 
-        tbl_xóa.setBackground(new java.awt.Color(0, 51, 255));
-        tbl_xóa.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        tbl_xóa.setForeground(new java.awt.Color(255, 255, 255));
-        tbl_xóa.setText("Xóa");
-        tbl_xóa.addActionListener(new java.awt.event.ActionListener() {
+        tbl_Xoa.setBackground(new java.awt.Color(0, 51, 255));
+        tbl_Xoa.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        tbl_Xoa.setForeground(new java.awt.Color(255, 255, 255));
+        tbl_Xoa.setText("Xóa");
+        tbl_Xoa.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tbl_xóaActionPerformed(evt);
+                tbl_XoaActionPerformed(evt);
             }
         });
 
@@ -137,13 +137,13 @@ public class ViewKhachHang extends javax.swing.JPanel {
 
         jLabel9.setText("Số Điện Thoại");
 
-        tbl_lammoi.setBackground(new java.awt.Color(0, 51, 255));
-        tbl_lammoi.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        tbl_lammoi.setForeground(new java.awt.Color(255, 255, 255));
-        tbl_lammoi.setText("Làm Mới");
-        tbl_lammoi.addActionListener(new java.awt.event.ActionListener() {
+        tbl_lamMoi.setBackground(new java.awt.Color(0, 51, 255));
+        tbl_lamMoi.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        tbl_lamMoi.setForeground(new java.awt.Color(255, 255, 255));
+        tbl_lamMoi.setText("Làm Mới");
+        tbl_lamMoi.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tbl_lammoiActionPerformed(evt);
+                tbl_lamMoiActionPerformed(evt);
             }
         });
 
@@ -151,6 +151,12 @@ public class ViewKhachHang extends javax.swing.JPanel {
         jPanel2.setForeground(new java.awt.Color(255, 255, 255));
 
         jLabel2.setText("Nhập Tên  Cần Tìm");
+
+        txt_nhapTim.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txt_nhapTimActionPerformed(evt);
+            }
+        });
 
         tbl_timkiem.setBackground(new java.awt.Color(0, 51, 255));
         tbl_timkiem.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
@@ -170,7 +176,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jLabel2)
                 .addGap(18, 18, 18)
-                .addComponent(txt_nhạptim, javax.swing.GroupLayout.PREFERRED_SIZE, 549, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(txt_nhapTim, javax.swing.GroupLayout.PREFERRED_SIZE, 549, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(30, 30, 30)
                 .addComponent(tbl_timkiem, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(114, 114, 114))
@@ -181,7 +187,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
                 .addGap(11, 11, 11)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(txt_nhạptim, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txt_nhapTim, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(tbl_timkiem))
                 .addContainerGap(15, Short.MAX_VALUE))
         );
@@ -192,13 +198,13 @@ public class ViewKhachHang extends javax.swing.JPanel {
             }
         });
 
-        tbl_sửa1.setBackground(new java.awt.Color(0, 51, 255));
-        tbl_sửa1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        tbl_sửa1.setForeground(new java.awt.Color(255, 255, 255));
-        tbl_sửa1.setText("Cập Nhật");
-        tbl_sửa1.addActionListener(new java.awt.event.ActionListener() {
+        tbl_capNhat.setBackground(new java.awt.Color(0, 51, 255));
+        tbl_capNhat.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        tbl_capNhat.setForeground(new java.awt.Color(255, 255, 255));
+        tbl_capNhat.setText("Cập Nhật");
+        tbl_capNhat.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tbl_sửa1ActionPerformed(evt);
+                tbl_capNhatActionPerformed(evt);
             }
         });
 
@@ -211,15 +217,15 @@ public class ViewKhachHang extends javax.swing.JPanel {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel3)
                     .addComponent(jLabel4)
-                    .addComponent(tbl_them))
+                    .addComponent(tbl_Them))
                 .addGap(72, 72, 72)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(tbl_sửa1)
+                        .addComponent(tbl_capNhat)
                         .addGap(60, 60, 60)
-                        .addComponent(tbl_lammoi)
+                        .addComponent(tbl_lamMoi)
                         .addGap(39, 39, 39)
-                        .addComponent(tbl_xóa))
+                        .addComponent(tbl_Xoa))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(txt_ten, javax.swing.GroupLayout.DEFAULT_SIZE, 192, Short.MAX_VALUE)
@@ -260,10 +266,10 @@ public class ViewKhachHang extends javax.swing.JPanel {
                             .addComponent(txt_ten, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 95, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(tbl_them)
-                    .addComponent(tbl_lammoi)
-                    .addComponent(tbl_sửa1)
-                    .addComponent(tbl_xóa))
+                    .addComponent(tbl_Them)
+                    .addComponent(tbl_lamMoi)
+                    .addComponent(tbl_capNhat)
+                    .addComponent(tbl_Xoa))
                 .addGap(18, 18, 18)
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
@@ -346,7 +352,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void tbl_themActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_themActionPerformed
+    private void tbl_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_ThemActionPerformed
         try {
             // Kiểm tra dữ liệu đầu vào
             if (txt_ma.getText().trim().isEmpty()
@@ -372,19 +378,25 @@ public class ViewKhachHang extends javax.swing.JPanel {
             // Làm mới dữ liệu
             loadCustomerData();
             clearFields();
+            DefaultTableModel model = (DefaultTableModel) tbl_bang.getModel();
+            Object ten = null;
+            Object email = null;
+            Object sdt = null;
+        model.addRow(new Object[]{ten, sdt, email});
 
             JOptionPane.showMessageDialog(this,
                     "Thêm khách hàng thành công!",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            lamMoiForm();
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "Lỗi khi thêm khách hàng: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
-    }//GEN-LAST:event_tbl_themActionPerformed
+    }//GEN-LAST:event_tbl_ThemActionPerformed
 
-    private void tbl_xóaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_xóaActionPerformed
+    private void tbl_XoaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_XoaActionPerformed
         try {
             int selectedRow = tbl_bang.getSelectedRow();
             if (selectedRow < 0) {
@@ -420,10 +432,10 @@ public class ViewKhachHang extends javax.swing.JPanel {
                     "Lỗi khi cập nhật khách hàng: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
-    }//GEN-LAST:event_tbl_xóaActionPerformed
+    }//GEN-LAST:event_tbl_XoaActionPerformed
 
     private void tbl_timkiemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_timkiemActionPerformed
-        String keyword = txt_nhạptim.getText().trim();
+        String keyword = txt_nhapTim.getText().trim();
         if (keyword.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "Vui lòng nhập từ khóa tìm kiếm!",
@@ -457,10 +469,11 @@ public class ViewKhachHang extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_tbl_timkiemActionPerformed
 
-    private void tbl_lammoiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_lammoiActionPerformed
+    private void tbl_lamMoiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_lamMoiActionPerformed
         clearFields();
         loadCustomerData();
-    }//GEN-LAST:event_tbl_lammoiActionPerformed
+        lamMoiForm();
+    }//GEN-LAST:event_tbl_lamMoiActionPerformed
 
     private void txt_tenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txt_tenActionPerformed
         // TODO add your handling code here:
@@ -495,9 +508,41 @@ public class ViewKhachHang extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_tbl_bangMouseClicked
 
-    private void tbl_sửa1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_sửa1ActionPerformed
+    private void tbl_capNhatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_capNhatActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_tbl_sửa1ActionPerformed
+            int row = tbl_bang.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần cập nhật!");
+        return;
+    }
+
+    try {
+        String ma = txt_ma.getText().trim();
+        String ten = txt_ten.getText().trim();
+        String sdt = txt_sdt.getText().trim();
+
+        if (ma.isEmpty() || ten.isEmpty() || sdt.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!");
+            return;
+        }
+
+        double gia = Double.parseDouble(sdt);
+
+        DefaultTableModel model = (DefaultTableModel) tbl_bang.getModel();
+        model.setValueAt(ma, row, 0);
+        model.setValueAt(ten, row, 1);
+        model.setValueAt(gia, row, 2);
+
+        JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+        lamMoiForm();
+    } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(this, "sdt phải là số!");
+    }
+    }//GEN-LAST:event_tbl_capNhatActionPerformed
+
+    private void txt_nhapTimActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txt_nhapTimActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txt_nhapTimActionPerformed
     /**
      * Loads order history for a specific customer
      *
@@ -541,7 +586,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
         txt_ten.setText("");
         txt_sdt.setText("");
         txt_email.setText("");
-        txt_nhạptim.setText("");
+        txt_nhapTim.setText("");
         tbl_bang.clearSelection();
         orderHistoryTableModel.setRowCount(0); // Clear order history
     }
@@ -578,6 +623,13 @@ public class ViewKhachHang extends javax.swing.JPanel {
             }
         });
     }
+    private void lamMoiForm() {
+    txt_ma.setText("");
+    txt_ten.setText("");
+    txt_sdt.setText("");
+    txt_nhapTim.setText("");
+    tbl_bang.clearSelection();
+}
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JLabel jLabel1;
@@ -592,18 +644,20 @@ public class ViewKhachHang extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JButton tbl_Them;
+    private javax.swing.JButton tbl_Xoa;
     private javax.swing.JTable tbl_bang;
     private javax.swing.JTable tbl_bangls;
-    private javax.swing.JButton tbl_lammoi;
-    private javax.swing.JButton tbl_sửa1;
-    private javax.swing.JButton tbl_them;
+    private javax.swing.JButton tbl_capNhat;
+    private javax.swing.JButton tbl_lamMoi;
     private javax.swing.JButton tbl_timkiem;
-    private javax.swing.JButton tbl_xóa;
     private javax.swing.JTextField txt_email;
     private javax.swing.JTextField txt_ma;
-    private javax.swing.JTextField txt_nhạptim;
+    private javax.swing.JTextField txt_nhapTim;
     private javax.swing.JTextField txt_sdt;
     private javax.swing.JTextField txt_ten;
     // End of variables declaration//GEN-END:variables
+
+   
 
 }
