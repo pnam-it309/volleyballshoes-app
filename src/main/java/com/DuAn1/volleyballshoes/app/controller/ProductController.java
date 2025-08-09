@@ -134,7 +134,7 @@ public class ProductController {
             throw new IllegalArgumentException("Tham số phân trang không hợp lệ");
         }
         
-        int offset = page * size;
+        int offset = (page - 1) * size;
         return productDAO.findWithPagination(offset, size).stream()
             .map(ProductResponse::fromEntity)
             .collect(Collectors.toList());
