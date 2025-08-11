@@ -25,10 +25,7 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace min="-2" pref="181" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                  <Component id="jLabel1" alignment="1" min="-2" pref="305" max="-2" attributes="0"/>
-                  <Component id="lbTK" max="32767" attributes="0"/>
-              </Group>
+              <Component id="lbTK" min="-2" pref="305" max="-2" attributes="0"/>
               <EmptySpace pref="166" max="32767" attributes="0"/>
           </Group>
       </Group>
@@ -36,9 +33,7 @@
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="1" attributes="0">
-              <EmptySpace min="-2" pref="58" max="-2" attributes="0"/>
-              <Component id="jLabel1" min="-2" pref="118" max="-2" attributes="0"/>
-              <EmptySpace min="-2" pref="66" max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="242" max="-2" attributes="0"/>
               <Component id="lbTK" min="-2" max="-2" attributes="0"/>
               <EmptySpace pref="238" max="32767" attributes="0"/>
           </Group>
@@ -46,14 +41,6 @@
     </DimensionLayout>
   </Layout>
   <SubComponents>
-    <Component class="javax.swing.JLabel" name="jLabel1">
-      <Properties>
-        <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-          <Image iconType="3" name="/duan1/view/viewdangnhap/icon/logob.png"/>
-        </Property>
-        <Property name="text" type="java.lang.String" value="jLabel1"/>
-      </Properties>
-    </Component>
     <Component class="javax.swing.JLabel" name="lbTK">
       <Properties>
         <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">

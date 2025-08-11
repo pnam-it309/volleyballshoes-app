@@ -7,22 +7,23 @@ import com.DuAn1.volleyballshoes.app.dto.request.*;
 import com.DuAn1.volleyballshoes.app.dto.response.*;
 import com.DuAn1.volleyballshoes.app.entity.*;
 import com.DuAn1.volleyballshoes.app.utils.NotificationUtil;
+import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.LuminanceSource;
 import com.google.zxing.MultiFormatReader;
 import com.google.zxing.NotFoundException;
 import com.google.zxing.Result;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.BitMatrix;
 import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeWriter;
+import java.awt.Component;
 import java.awt.image.BufferedImage;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.JComboBox;
@@ -31,15 +32,17 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumnModel;
 
 public class ViewSanPham extends javax.swing.JPanel {
 
@@ -47,8 +50,8 @@ public class ViewSanPham extends javax.swing.JPanel {
     private int pageSize = 10;
     private int totalPages = 1;
     private final ProductController productController;
-private final Map<Integer, String> brandIdToName = new HashMap<>();
-private final Map<Integer, String> categoryIdToName = new HashMap<>();
+    private final Map<Integer, String> brandIdToName = new HashMap<>();
+    private final Map<Integer, String> categoryIdToName = new HashMap<>();
     private final BrandDAO brandDAO = new BrandDAOImpl();
     private final CategoryDAO categoryDAO = new CategoryDAOImpl();
     private DefaultTableModel tableModel;
@@ -59,10 +62,14 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
     SoleTypeDAO soleTypeDAO = new SoleTypeDAOImpl();
     SizeDAO sizeDAO = new SizeDAOImpl();
     private String type = "color";
+    private long lastClickTime = 0;
+    private long lastEditClickTime = 0;
+    private long lastDeleteClickTime = 0;
+    private static final int DOUBLE_CLICK_DELAY = 300;
 
     private void processQRCodeData(String data) {
         // TODO: Thực hiện xử lý dữ liệu QR code ở đây
-        System.out.println("QR Data: " + data);
+        // Process QR data
     }
 
     private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
@@ -92,6 +99,14 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         loadBrands();
         loadCategories();
         loadData();
+        loadProductVariants();
+        // Initialize product variants table
+        setupProductVariantTable();
+        // Load product variants for the first product if available
+        if (tblSanPham.getRowCount() > 0) {
+            tblSanPham.setRowSelectionInterval(0, 0);
+            loadSelectedProductVariants();
+        }
     }
 
     private void setupTable() {
@@ -111,17 +126,17 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             List<ProductResponse> products = productController.getProductsWithPagination(currentPage, pageSize);
 
             for (ProductResponse product : products) {
-    String brandName = brandIdToName.getOrDefault(product.getBrandId(), String.valueOf(product.getBrandId()));
-    String categoryName = categoryIdToName.getOrDefault(product.getCategoryId(), String.valueOf(product.getCategoryId()));
-    Object[] row = {
-        product.getProductCode(),
-        product.getProductName(),
-        product.getProductDescription(),
-        brandName,
-        categoryName
-    };
-    tableModel.addRow(row);
-}
+                String brandName = brandIdToName.getOrDefault(product.getBrandId(), String.valueOf(product.getBrandId()));
+                String categoryName = categoryIdToName.getOrDefault(product.getCategoryId(), String.valueOf(product.getCategoryId()));
+                Object[] row = {
+                    product.getProductCode(),
+                    product.getProductName(),
+                    product.getProductDescription(),
+                    brandName,
+                    categoryName
+                };
+                tableModel.addRow(row);
+            }
 
             updatePaginationInfo();
         } catch (Exception e) {
@@ -132,20 +147,19 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
     private void updatePaginationInfo() {
         try {
             int totalPages = productController.getTotalPages(pageSize);
-            phanTrang.setText("Trang " + (currentPage + 1) + " / " + totalPages);
+            jlabel5.setText("Trang " + (currentPage + 1) + " / " + totalPages);
 
             nhoNhat.setEnabled(currentPage > 0);
             nho.setEnabled(currentPage > 0);
             lon.setEnabled(currentPage < totalPages - 1);
             lonNhat.setEnabled(currentPage < totalPages - 1);
         } catch (Exception e) {
-            phanTrang.setText("Trang 1 / 1");
+            jlabel5.setText("Trang 1 / 1");
         }
     }
 
     private void clearForm() {
-        // Generate a new product code when clearing the form
-        txtMaSP.setText("SP" + System.currentTimeMillis());
+        txtMaSP.setText("");
         txtTenSP.setText("");
         txtaMoTa.setText("");
         if (cbo_brand.getItemCount() > 0) {
@@ -278,7 +292,10 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi tải danh sách thương hiệu: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tải biến thể sản phẩm: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -286,8 +303,8 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         try {
             cbo_category.removeAllItems();
             categoryIdToName.clear();
-            List<com.DuAn1.volleyballshoes.app.entity.Category> categories = categoryDAO.findAll();
-            for (com.DuAn1.volleyballshoes.app.entity.Category category : categories) {
+            List<Category> categorys = categoryDAO.findAll();
+            for (Category category : categorys) {
                 if (category != null && category.getCategoryName() != null) {
                     ComboBoxItem item = new ComboBoxItem(category.getCategoryId(), category.getCategoryName());
                     cbo_category.addItem(item.toString());
@@ -297,7 +314,255 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi tải danh sách danh mục: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tải biến thể sản phẩm: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void updateVariantTableModel(List<ProductVariant> variants) {
+        System.out.println("\n=== updateVariantTableModel called ===");
+        System.out.println("Input variants list is " + (variants == null ? "null" : "not null"));
+        System.out.println("Number of variants to process: " + (variants != null ? variants.size() : 0));
+
+        // Log the actual variants list content
+        if (variants != null && !variants.isEmpty()) {
+            System.out.println("\n--- Variants List Content ---");
+            for (int i = 0; i < variants.size(); i++) {
+                ProductVariant v = variants.get(i);
+                System.out.println(String.format("[%d] ID: %d, SKU: %s, Qty: %d, Price: %s, SizeID: %d, ColorID: %d, SoleID: %d",
+                        i, v.getVariantId(), v.getVariantSku(), v.getQuantity(),
+                        v.getVariantOrigPrice(), v.getSizeId(), v.getColorId(), v.getSoleId()));
+            }
+            System.out.println("----------------------------");
+        }
+
+        // Get the table model
+        DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
+        System.out.println("\n--- Table Model Info ---");
+        System.out.println("Current row count: " + model.getRowCount());
+        System.out.println("Column count: " + model.getColumnCount());
+
+        // Log column names
+        System.out.println("Column names:");
+        for (int i = 0; i < model.getColumnCount(); i++) {
+            System.out.println("  " + i + ": " + model.getColumnName(i));
+        }
+
+        // Clear existing data
+        System.out.println("\nClearing table model...");
+        model.setRowCount(0);
+        System.out.println("Table model cleared. New row count: " + model.getRowCount());
+
+        if (variants == null || variants.isEmpty()) {
+            System.out.println("No variants to display. Exiting updateVariantTableModel.");
+            return;
+        }
+
+        // Initialize DAOs for lookups
+        SizeDAO sizeDAO = new SizeDAOImpl();
+        ColorDAO colorDAO = new ColorDAOImpl();
+        SoleTypeDAO soleTypeDAO = new SoleTypeDAOImpl();
+
+        System.out.println("\n--- Processing Variants ---");
+        int rowCount = 0;
+
+        for (ProductVariant variant : variants) {
+            try {
+                rowCount++;
+                System.out.println("\nProcessing variant " + rowCount + " of " + variants.size());
+                System.out.println("Variant ID: " + variant.getVariantId());
+                System.out.println("Variant SKU: " + variant.getVariantSku());
+                System.out.println("Quantity from variant object: " + variant.getQuantity());
+                System.out.println("Price from variant object: " + variant.getVariantOrigPrice());
+
+                // Look up related data with null checks
+                Size size = variant.getSizeId() > 0 ? sizeDAO.findById(variant.getSizeId()) : null;
+                Color color = variant.getColorId() > 0 ? colorDAO.findById(variant.getColorId()) : null;
+                SoleType soleType = variant.getSoleId() > 0 ? soleTypeDAO.findById(variant.getSoleId()) : null;
+
+                // Debug information
+                System.out.println("Looked up data - Size: " + (size != null ? size.getSizeCode() : "null")
+                        + ", Color: " + (color != null ? color.getColorHexCode() : "null")
+                        + ", Sole: " + (soleType != null ? soleType.getSoleCode() : "null"));
+
+                // Prepare row data with product name, color and sole type in the first column
+                String productName = selectedProduct != null ? selectedProduct.getProductName() : "";
+                String colorName = color != null ? color.getColorHexCode() : "";
+                String soleTypeName = soleType != null ? soleType.getSoleCode() : "";
+                String displayName = String.format("%s - %s - %s",
+                        productName,
+                        colorName,
+                        soleTypeName);
+
+                Object[] rowData = new Object[]{
+                    displayName,
+                    variant.getVariantSku(),
+                    size != null ? size.getSizeCode() : "N/A",
+                    color != null ? color.getColorHexCode() : "N/A",
+                    soleType != null ? soleType.getSoleCode() : "N/A",
+                    formatCurrency(variant.getVariantOrigPrice()),
+                    variant.getQuantity() // Quantity from variant
+                };
+
+                // Debug: Print the row data before adding
+                System.out.println("Adding row with data: " + Arrays.toString(rowData));
+
+                // Add row to model
+                model.addRow(rowData);
+
+                // Verify the row was added correctly
+                int lastRow = model.getRowCount() - 1;
+                Object addedQuantity = model.getValueAt(lastRow, 5); // Quantity is at index 5
+                System.out.println("Added row " + lastRow + ". Quantity in table: " + addedQuantity);
+
+            } catch (Exception e) {
+                System.err.println("ERROR processing variant " + (variant != null ? variant.getVariantSku() : "null") + ":");
+                e.printStackTrace();
+
+                // Log the specific error
+                System.err.println("Error details: " + e.getMessage());
+                if (e.getCause() != null) {
+                    System.err.println("Caused by: " + e.getCause().getMessage());
+                }
+            }
+        }
+
+        System.out.println("\n=== updateVariantTableModel completed ===");
+        System.out.println("Total rows added to table: " + model.getRowCount());
+        System.out.println("Table model column count: " + model.getColumnCount());
+    }
+
+    private void setupProductVariantTable() {
+        System.out.println("\n=== Setting up Product Variant Table ===");
+
+        String[] columns = {
+            "Tên Sản Phẩm",
+            "Mã SKU",
+            "Kích thước",
+            "Màu sắc",
+            "Loại đế",
+            "Giá bán",
+            "Số lượng tồn"
+        };
+
+        // Set up the table model with the columns
+        DefaultTableModel model = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Make all cells non-editable
+            }
+        };
+
+        tblSanPhamCon.setModel(model);
+
+        // Set up column widths and make sure text doesn't get truncated
+        tblSanPhamCon.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
+        // Set preferred widths for columns
+        TableColumnModel columnModel = tblSanPhamCon.getColumnModel();
+        columnModel.getColumn(0).setPreferredWidth(300); // Wider column for product name
+        columnModel.getColumn(1).setPreferredWidth(100); // SKU
+        columnModel.getColumn(2).setPreferredWidth(80);  // Size
+        columnModel.getColumn(3).setPreferredWidth(100); // Color
+        columnModel.getColumn(4).setPreferredWidth(100); // Sole type
+        columnModel.getColumn(5).setPreferredWidth(100); // Price
+        columnModel.getColumn(6).setPreferredWidth(80);  // Quantity
+
+        // Enable text wrapping for the first column
+        tblSanPhamCon.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                JLabel renderer = (JLabel) super.getTableCellRendererComponent(
+                        table, value, isSelected, hasFocus, row, column);
+
+                if (column == 0) { // Only for the product name column
+                    renderer.setToolTipText(value != null ? value.toString() : "");
+                    // Set the row height to fit wrapped text
+                    table.setRowHeight(row, Math.max(20,
+                            getPreferredSize().height + 5));
+                }
+                return renderer;
+            }
+        });
+
+        // Log the column names
+        System.out.println("Table columns (UTF-8):");
+        for (int i = 0; i < columns.length; i++) {
+            System.out.println("  " + i + ": " + columns[i]);
+        }
+
+        tblSanPhamCon.setModel(model);
+    }
+
+    private void loadSelectedProductVariants() {
+        if (selectedProduct == null) {
+            System.out.println("No product selected. Cannot load variants.");
+            return;
+        }
+
+        try {
+            System.out.println("\n=== Loading variants for product ===");
+            System.out.println("Product ID: " + selectedProduct.getProductId());
+            System.out.println("Product Name: " + selectedProduct.getProductName());
+            System.out.println("Product Code: " + selectedProduct.getProductCode());
+
+            // Load variants for the selected product
+            System.out.println("Fetching variants from DAO...");
+            List<ProductVariant> variants = productVariantDAO.findByProductId(selectedProduct.getProductId());
+
+            System.out.println("DAO returned " + (variants != null ? variants.size() : 0) + " variants");
+
+            // Debug: Print all variant details
+            if (variants != null && !variants.isEmpty()) {
+                System.out.println("\n=== Variant Details from DAO ===");
+                for (ProductVariant v : variants) {
+                    System.out.println(String.format("Variant ID: %d, SKU: %s, Qty: %d, Price: %s, SizeID: %d, ColorID: %d, SoleID: %d",
+                            v.getVariantId(),
+                            v.getVariantSku(),
+                            v.getQuantity(),
+                            v.getVariantOrigPrice(),
+                            v.getSizeId(),
+                            v.getColorId(),
+                            v.getSoleId()
+                    ));
+                }
+            } else {
+                System.out.println("No variants found for this product in the database");
+            }
+
+            // Update the table model with the variants
+            System.out.println("\nUpdating table model with variants...");
+            updateVariantTableModel(variants);
+
+            // Verify the table model was updated correctly
+            System.out.println("Table model update complete. Rows in table: " + tblSanPhamCon.getModel().getRowCount());
+
+            // Print the actual table contents for verification
+            if (tblSanPhamCon.getModel().getRowCount() > 0) {
+                System.out.println("\n=== Contents of Variant Table ===");
+                DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
+                for (int i = 0; i < model.getRowCount(); i++) {
+                    System.out.println(String.format("Row %d: %s, %s, %s, %s, %s, %s",
+                            i,
+                            model.getValueAt(i, 0), // SKU
+                            model.getValueAt(i, 1), // Size
+                            model.getValueAt(i, 2), // Color
+                            model.getValueAt(i, 3), // Sole
+                            model.getValueAt(i, 4), // Price
+                            model.getValueAt(i, 5) // Quantity
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading product variants:");
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tải biến thể sản phẩm: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -305,20 +570,20 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         try {
             if (rb_category.isSelected()) {
                 // Load danh sách danh mục
-                com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl dao
-                        = new com.DuAn1.volleyballshoes.app.dao.impl.CategoryDAOImpl();
-                List<com.DuAn1.volleyballshoes.app.entity.Category> list = dao.findAll();
+                CategoryDAOImpl dao
+                        = new CategoryDAOImpl();
+                List<Category> list = dao.findAll();
                 loadTableData(list, "category");
             } else if (rb_brand.isSelected()) {
                 // Load danh sách thương hiệu
-                com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl dao
-                        = new com.DuAn1.volleyballshoes.app.dao.impl.BrandDAOImpl();
-                List<com.DuAn1.volleyballshoes.app.entity.Brand> list = dao.findAll();
+                BrandDAOImpl dao
+                        = new BrandDAOImpl();
+                List<Brand> list = dao.findAll();
                 loadTableData(list, "brand");
             } else if (rb_sole.isSelected()) {
                 // Load danh sách loại đế
-                com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl dao
-                        = new com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl();
+                SoleTypeDAOImpl dao
+                        = new SoleTypeDAOImpl();
                 List<com.DuAn1.volleyballshoes.app.entity.SoleType> list = dao.findAll();
                 loadTableData(list, "soleType");
             } else if (rb_size.isSelected()) {
@@ -341,6 +606,16 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
                     "Lỗi",
                     javax.swing.JOptionPane.ERROR_MESSAGE
             );
+        }
+    }
+
+    private void loadProductVariants() {
+        if (selectedProduct != null) {
+            List<ProductVariant> variants = productVariantDAO.findByProductId(selectedProduct.getProductId());
+            updateVariantTableModel(variants);
+        } else {
+            DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
+            model.setRowCount(0);
         }
     }
 
@@ -379,76 +654,15 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
                     row[2] = soleType.getSoleName();
                     break;
             }
-
             model.addRow(row);
         }
     }
 
-    private void loadProductVariants() {
-        try {
-            // Get paginated data from DAO
-            List<ProductVariant> variants = productVariantDAO.findWithPagination(
-                    currentPage,
-                    pageSize,
-                    "" // No filter for now
-            );
-
-            // Get total count for pagination
-            int totalItems = productVariantDAO.count("");
-            totalPages = (int) Math.ceil((double) totalItems / pageSize);
-
-            // Update pagination label
-            updatePaginationLabel();
-
-            // Update table model with data
-            updateTableModel(variants);
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Lỗi khi tải dữ liệu biến thể sản phẩm: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE
-            );
-            e.printStackTrace();
-        }
-    }
-
-    private void updateTableModel(List<ProductVariant> variants) {
-        DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
-        model.setRowCount(0); // Clear existing data
-
-        // Set column names if not already set
-        if (model.getColumnCount() == 0) {
-            model.setColumnIdentifiers(new String[]{
-                "Mã SKU",
-                "Kích thước",
-                "Màu sắc",
-                "Loại đế",
-                "Giá bán",
-                "Số lượng tồn"
-            });
-        }
-
-        // Add data rows
-        for (ProductVariant variant : variants) {
-            model.addRow(new Object[]{
-                variant.getVariantSku(),
-                variant.getSizeId(), // Consider getting size name instead of ID
-                variant.getColorId(), // Consider getting color name instead of ID
-                variant.getSoleId(), // Consider getting sole type name instead of ID
-                formatCurrency(variant.getVariantOrigPrice()),});
-        }
-    }
-
-    /**
-     * Format currency for display
-     */
     private String formatCurrency(BigDecimal amount) {
         if (amount == null) {
-            return "0 VNĐ";
+            return "0 đ";
         }
-        return String.format("%,d VNĐ", amount.longValue());
+        return String.format("%,d đ", amount.longValue());
     }
 
     /**
@@ -466,6 +680,16 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
     }
 
     public static void main(String args[]) {
+        // Set console encoding to UTF-8
+        System.setProperty("file.encoding", "UTF-8");
+        try {
+            java.lang.reflect.Field charset = java.nio.charset.Charset.class.getDeclaredField("defaultCharset");
+            charset.setAccessible(true);
+            charset.set(null, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -523,10 +747,10 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         btnThem = new javax.swing.JButton();
         nhoNhat = new javax.swing.JButton();
         nho = new javax.swing.JButton();
-        phanTrang = new javax.swing.JLabel();
+        jlabel5 = new javax.swing.JLabel();
         lon = new javax.swing.JButton();
         lonNhat = new javax.swing.JButton();
-        jLabel5 = new javax.swing.JLabel();
+        lbl_brand = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
         cbo_brand = new javax.swing.JComboBox<>();
         cbo_category = new javax.swing.JComboBox<>();
@@ -553,7 +777,7 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         jPanel8 = new javax.swing.JPanel();
         jPanel9 = new javax.swing.JPanel();
         jLabel14 = new javax.swing.JLabel();
-        cbbLTL = new javax.swing.JComboBox<>();
+        cbo_product_variant_sku = new javax.swing.JComboBox<>();
         jPanel10 = new javax.swing.JPanel();
         jLabel17 = new javax.swing.JLabel();
         cbbKieu = new javax.swing.JComboBox<>();
@@ -567,22 +791,22 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         jLabel10 = new javax.swing.JLabel();
         btnQuetQR = new javax.swing.JButton();
         btnThem2 = new javax.swing.JButton();
-        btnXuatFile = new javax.swing.JButton();
         btnLamMoi1 = new javax.swing.JButton();
         btnTaiQR = new javax.swing.JButton();
-        cbAll = new javax.swing.JCheckBox();
         btn_dowload_template = new javax.swing.JButton();
         btn_import_file_excel = new javax.swing.JButton();
+        btnSua_productvariant = new javax.swing.JButton();
+        btnXoa_productvariant1 = new javax.swing.JButton();
 
         tblSanPham.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+                {},
+                {},
+                {},
+                {}
             },
             new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
+
             }
         ));
         tblSanPham.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -651,13 +875,13 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         jPanel5Layout.setHorizontalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel5Layout.createSequentialGroup()
-                .addGap(35, 35, 35)
+                .addGap(20, 20, 20)
                 .addComponent(btnThem)
-                .addGap(18, 18, 18)
+                .addGap(33, 33, 33)
                 .addComponent(btnSua, javax.swing.GroupLayout.PREFERRED_SIZE, 84, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 15, Short.MAX_VALUE)
                 .addComponent(btnXoa)
-                .addGap(49, 49, 49)
+                .addGap(27, 27, 27)
                 .addComponent(btnLamMoi)
                 .addGap(32, 32, 32))
         );
@@ -670,7 +894,7 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
                     .addComponent(btnXoa)
                     .addComponent(btnLamMoi)
                     .addComponent(btnThem))
-                .addContainerGap(50, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         nhoNhat.setText("<<");
@@ -687,7 +911,7 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             }
         });
 
-        phanTrang.setText("jLabel5");
+        jlabel5.setText("jLabel5");
 
         lon.setText(">");
         lon.addActionListener(new java.awt.event.ActionListener() {
@@ -703,7 +927,7 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             }
         });
 
-        jLabel5.setText("Thương Hiệu");
+        lbl_brand.setText("Thương Hiệu");
 
         jLabel6.setText("Loại");
 
@@ -716,40 +940,46 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel4Layout.createSequentialGroup()
-                .addGap(27, 27, 27)
+                .addGap(19, 19, 19)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addGap(411, 411, 411)
-                        .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel4)
-                        .addGap(494, 494, 494))
+                        .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel3)
-                            .addComponent(txtMaSP, javax.swing.GroupLayout.DEFAULT_SIZE, 214, Short.MAX_VALUE)
-                            .addComponent(txtTenSP))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel5)
-                            .addComponent(jLabel6))
-                        .addGap(38, 38, 38)
-                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(cbo_category, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(cbo_brand, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(175, 175, 175)
+                            .addComponent(txtMaSP, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel4Layout.createSequentialGroup()
+                                .addComponent(jLabel3)
+                                .addGap(179, 179, 179)
+                                .addComponent(jLabel6)
+                                .addGap(61, 61, 61)
+                                .addComponent(cbo_category, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel4Layout.createSequentialGroup()
+                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addComponent(txtTenSP, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGroup(jPanel4Layout.createSequentialGroup()
+                                        .addComponent(jLabel2)
+                                        .addGap(167, 167, 167)
+                                        .addComponent(lbl_brand)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(cbo_brand, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGap(63, 63, 63)
+                                .addComponent(jLabel4)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 173, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel4Layout.createSequentialGroup()
+                        .addGap(438, 438, 438)
+                        .addComponent(jLabel1))
                     .addGroup(jPanel4Layout.createSequentialGroup()
                         .addGap(331, 331, 331)
                         .addComponent(nhoNhat)
                         .addGap(18, 18, 18)
                         .addComponent(nho)
                         .addGap(18, 18, 18)
-                        .addComponent(phanTrang)
+                        .addComponent(jlabel5)
                         .addGap(18, 18, 18)
                         .addComponent(lon)
                         .addGap(18, 18, 18)
@@ -757,48 +987,47 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
                     .addGroup(jPanel4Layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 904, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(jPanel4Layout.createSequentialGroup()
-                .addGap(190, 190, 190)
-                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, 439, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE))
+                .addContainerGap(236, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
                 .addGap(16, 16, 16)
                 .addComponent(jLabel1)
-                .addGap(70, 70, 70)
-                .addComponent(jLabel4)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel2)
-                        .addGap(11, 11, 11)
+                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel4Layout.createSequentialGroup()
+                                .addGap(28, 28, 28)
+                                .addComponent(jLabel2)
+                                .addGap(23, 23, 23))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(cbo_brand, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(lbl_brand)
+                                    .addComponent(jLabel4))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
+                        .addComponent(txtMaSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(30, 30, 30)
                         .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(txtMaSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(cbo_brand, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel5))
-                        .addGap(53, 53, 53)
-                        .addComponent(jLabel3)
-                        .addGap(29, 29, 29)
-                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(txtTenSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel3)
                             .addComponent(jLabel6)
                             .addComponent(cbo_category, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(12, 12, 12))
-                    .addGroup(jPanel4Layout.createSequentialGroup()
                         .addGap(18, 18, 18)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtTenSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(49, 49, 49)
+                        .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel4Layout.createSequentialGroup()
+                        .addGap(33, 33, 33)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(nhoNhat)
                     .addComponent(nho)
-                    .addComponent(phanTrang)
+                    .addComponent(jlabel5)
                     .addComponent(lon)
                     .addComponent(lonNhat))
                 .addGap(85, 85, 85))
@@ -817,7 +1046,7 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         );
         pnl_productLayout.setVerticalGroup(
             pnl_productLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 716, Short.MAX_VALUE)
+            .addGap(0, 719, Short.MAX_VALUE)
             .addGroup(pnl_productLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(pnl_productLayout.createSequentialGroup()
                     .addGap(0, 0, Short.MAX_VALUE)
@@ -829,9 +1058,9 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
 
         jPanel7.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(102, 102, 102)));
 
-        jLabel7.setText("Mã Thuộc Tính");
+        jLabel7.setText("Mã ");
 
-        jLabel8.setText("Tên Thuộc Tính");
+        jLabel8.setText("Tên");
 
         javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
         jPanel7.setLayout(jPanel7Layout);
@@ -1016,20 +1245,20 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
                     .addComponent(btnXoa1))
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 290, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(36, Short.MAX_VALUE))
+                .addContainerGap(39, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("thuộc tính", pnl_thuộc_tính);
 
         tblSanPhamCon.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+                {},
+                {},
+                {},
+                {}
             },
             new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
+
             }
         ));
         tblSanPhamCon.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -1043,13 +1272,9 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
 
         jPanel9.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(102, 102, 102)));
 
-        jLabel14.setText("Thể Loại");
+        jLabel14.setText("Ma San pham");
 
-        cbbLTL.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbbLTLActionPerformed(evt);
-            }
-        });
+        cbo_product_variant_sku.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
         javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
         jPanel9.setLayout(jPanel9Layout);
@@ -1057,21 +1282,19 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel9Layout.createSequentialGroup()
                 .addContainerGap(51, Short.MAX_VALUE)
-                .addComponent(jLabel14)
+                .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(cbo_product_variant_sku, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel14))
                 .addGap(35, 35, 35))
-            .addGroup(jPanel9Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(cbbLTL, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
         );
         jPanel9Layout.setVerticalGroup(
             jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel9Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jLabel14)
-                .addGap(18, 18, 18)
-                .addComponent(cbbLTL, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(21, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(cbo_product_variant_sku, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jPanel10.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(102, 102, 102)));
@@ -1115,7 +1338,7 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
                     .addComponent(cbbKieu, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel19)
                     .addComponent(txtLGT, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(27, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
@@ -1193,16 +1416,6 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             }
         });
 
-        btnXuatFile.setBackground(new java.awt.Color(0, 102, 255));
-        btnXuatFile.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnXuatFile.setForeground(new java.awt.Color(255, 255, 255));
-        btnXuatFile.setText("Xuất File");
-        btnXuatFile.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnXuatFileActionPerformed(evt);
-            }
-        });
-
         btnLamMoi1.setBackground(new java.awt.Color(0, 102, 255));
         btnLamMoi1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         btnLamMoi1.setForeground(new java.awt.Color(255, 255, 255));
@@ -1220,13 +1433,6 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         btnTaiQR.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnTaiQRActionPerformed(evt);
-            }
-        });
-
-        cbAll.setText("All");
-        cbAll.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbAllActionPerformed(evt);
             }
         });
 
@@ -1250,6 +1456,26 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             }
         });
 
+        btnSua_productvariant.setBackground(new java.awt.Color(0, 102, 255));
+        btnSua_productvariant.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnSua_productvariant.setForeground(new java.awt.Color(255, 255, 255));
+        btnSua_productvariant.setText("Sửa");
+        btnSua_productvariant.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSua_productvariantActionPerformed(evt);
+            }
+        });
+
+        btnXoa_productvariant1.setBackground(new java.awt.Color(0, 102, 255));
+        btnXoa_productvariant1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnXoa_productvariant1.setForeground(new java.awt.Color(255, 255, 255));
+        btnXoa_productvariant1.setText("Xóa");
+        btnXoa_productvariant1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnXoa_productvariant1ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout pbl_productvariantLayout = new javax.swing.GroupLayout(pbl_productvariant);
         pbl_productvariant.setLayout(pbl_productvariantLayout);
         pbl_productvariantLayout.setHorizontalGroup(
@@ -1257,46 +1483,47 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             .addGroup(pbl_productvariantLayout.createSequentialGroup()
                 .addGroup(pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(pbl_productvariantLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jPanel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(pbl_productvariantLayout.createSequentialGroup()
                         .addGroup(pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(pbl_productvariantLayout.createSequentialGroup()
-                                .addGap(319, 319, 319)
-                                .addComponent(btnNhoNhat, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(369, 369, 369)
+                                .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 246, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(pbl_productvariantLayout.createSequentialGroup()
+                                .addGap(47, 47, 47)
+                                .addComponent(btn_dowload_template)
+                                .addGap(31, 31, 31)
+                                .addComponent(btn_import_file_excel)
+                                .addGap(64, 64, 64)
+                                .addComponent(btnThem2)
                                 .addGap(18, 18, 18)
+                                .addComponent(btnSua_productvariant)
+                                .addGap(26, 26, 26)
+                                .addComponent(btnXoa_productvariant1)
+                                .addGap(57, 57, 57)
+                                .addComponent(btnQuetQR)
+                                .addGap(46, 46, 46)
+                                .addComponent(btnTaiQR)
+                                .addGap(42, 42, 42)
+                                .addComponent(btnLamMoi1))
+                            .addGroup(pbl_productvariantLayout.createSequentialGroup()
+                                .addGap(298, 298, 298)
+                                .addComponent(btnNhoNhat, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(btnNho)
                                 .addGap(18, 18, 18)
                                 .addComponent(trang)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGap(27, 27, 27)
                                 .addComponent(btnLon)
                                 .addGap(18, 18, 18)
-                                .addComponent(btnLonNhat, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(pbl_productvariantLayout.createSequentialGroup()
-                                .addGap(369, 369, 369)
-                                .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 246, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(pbl_productvariantLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jPanel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jScrollPane4))))
+                                .addComponent(btnLonNhat, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
             .addGroup(pbl_productvariantLayout.createSequentialGroup()
-                .addGap(64, 64, 64)
-                .addComponent(btnXuatFile)
-                .addGap(18, 18, 18)
-                .addComponent(cbAll)
-                .addGap(45, 45, 45)
-                .addComponent(btn_dowload_template)
-                .addGap(30, 30, 30)
-                .addComponent(btn_import_file_excel)
-                .addGap(75, 75, 75)
-                .addComponent(btnThem2)
-                .addGap(32, 32, 32)
-                .addComponent(btnQuetQR)
-                .addGap(46, 46, 46)
-                .addComponent(btnTaiQR)
-                .addGap(42, 42, 42)
-                .addComponent(btnLamMoi1)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap()
+                .addComponent(jScrollPane4)
+                .addGap(46, 46, 46))
         );
         pbl_productvariantLayout.setVerticalGroup(
             pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1309,22 +1536,22 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
                 .addGroup(pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnQuetQR)
                     .addComponent(btnThem2)
-                    .addComponent(btnXuatFile)
                     .addComponent(btnLamMoi1)
                     .addComponent(btnTaiQR)
-                    .addComponent(cbAll)
                     .addComponent(btn_dowload_template)
-                    .addComponent(btn_import_file_excel))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
-                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 351, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(38, 38, 38)
+                    .addComponent(btn_import_file_excel)
+                    .addComponent(btnSua_productvariant)
+                    .addComponent(btnXoa_productvariant1))
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 189, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 22, Short.MAX_VALUE)
                 .addGroup(pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnNhoNhat, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnNho)
                     .addComponent(trang, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnLon)
-                    .addComponent(btnNhoNhat, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnLonNhat))
-                .addContainerGap())
+                .addGap(197, 197, 197))
         );
 
         jTabbedPane1.addTab("Biến thể sản phẩm", pbl_productvariant);
@@ -1341,20 +1568,67 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void tblSanPhamMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblSanPhamMouseClicked
+    private void tblSanPhamMouseClicked(java.awt.event.MouseEvent evt) {
+        System.out.println("\n=== tblSanPhamMouseClicked triggered ===");
         selectedRow = tblSanPham.getSelectedRow();
+        System.out.println("Selected row index: " + selectedRow);
+
         if (selectedRow != -1) {
             try {
-                List<ProductResponse> products = productController.getProductsWithPagination(currentPage, pageSize);
-                if (selectedRow < products.size()) {
-                    ProductResponse product = products.get(selectedRow);
-                    fillForm(product);
+                System.out.println("\n=== Processing row selection ===");
+
+                // Get the product code directly from the selected row in the table
+                String productCode = (String) tblSanPham.getValueAt(selectedRow, 0);
+                System.out.println("Selected product code from table: " + productCode);
+
+                if (productCode == null || productCode.trim().isEmpty()) {
+                    System.out.println("ERROR: Product code is null or empty");
+                    return;
+                }
+
+                // Log the selected row data for debugging
+                System.out.println("\n--- Selected Row Data ---");
+                int colCount = tblSanPham.getColumnCount();
+                for (int i = 0; i < colCount; i++) {
+                    System.out.println(tblSanPham.getColumnName(i) + ": " + tblSanPham.getValueAt(selectedRow, i));
+                }
+
+                // Find the product by code to get its ID
+                System.out.println("\nLooking up product with code: " + productCode);
+                selectedProduct = productController.getProductByCode(productCode);
+
+                if (selectedProduct != null) {
+                    System.out.println("\n--- Found Product Details ---");
+                    System.out.println("Product ID: " + selectedProduct.getProductId());
+                    System.out.println("Name: " + selectedProduct.getProductName());
+                    System.out.println("Code: " + selectedProduct.getProductCode());
+
+                    // Fill the form with product details
+                    System.out.println("Filling product form...");
+                    fillForm(selectedProduct);
+
+                    // Load variants for the selected product
+                    System.out.println("Loading product variants...");
+                    loadSelectedProductVariants();
+                } else {
+                    System.out.println("ERROR: No product found with code: " + productCode);
+                    // Clear the variant table if no product is selected
+                    DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
+                    System.out.println("Clearing variant table (no product found)");
+                    model.setRowCount(0);
                 }
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi chọn sản phẩm: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                System.err.println("Error in tblSanPhamMouseClicked: " + e.getMessage());
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi tải thông tin sản phẩm: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
             }
+        } else {
+            System.out.println("No row selected or invalid selection");
         }
-    }//GEN-LAST:event_tblSanPhamMouseClicked
+    }
 
     private void btnSuaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSuaActionPerformed
         if (selectedProduct == null) {
@@ -1651,8 +1925,99 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         }
     }//GEN-LAST:event_tblThuocTinhMouseClicked
 
-    private void tblSanPhamConMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblSanPhamConMouseClicked
+    private void generateQRCodeForRow(int rowIndex) {
+        try {
+            String sku = tblSanPhamCon.getValueAt(rowIndex, 1).toString(); // Assuming SKU is in column 1
+            String productName = tblSanPhamCon.getValueAt(rowIndex, 0).toString();
+            
+            // Create QR code content with product info
+            String qrContent = String.format("SKU: %s\nProduct: %s", sku, productName);
+            
+            // Create and show QR code dialog
+            JDialog qrDialog = new JDialog();
+            qrDialog.setTitle("QR Code - " + productName);
+            
+            // Generate QR code
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+            BitMatrix bitMatrix = qrCodeWriter.encode(qrContent, BarcodeFormat.QR_CODE, 300, 300);
+            
+            // Convert to BufferedImage
+            BufferedImage qrImage = new BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB);
+            for (int x = 0; x < 300; x++) {
+                for (int y = 0; y < 300; y++) {
+                    qrImage.setRGB(x, y, bitMatrix.get(x, y) ? 0x000000 : 0xFFFFFF);
+                }
+            }
+            
+            // Display QR code
+            JLabel qrLabel = new JLabel(new ImageIcon(qrImage));
+            qrDialog.add(qrLabel);
+            qrDialog.pack();
+            qrDialog.setLocationRelativeTo(this);
+            qrDialog.setVisible(true);
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Lỗi khi tạo mã QR: " + ex.getMessage(), 
+                "Lỗi", 
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void handleEditAction() {
         int selectedRow = tblSanPhamCon.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần sửa");
+            return;
+        }
+        
+        // Tạo JDialog mới
+        JDialog dialog = new JDialog();
+        dialog.setTitle("Sửa Sản phẩm");
+
+        // Thêm panel vào dialog
+        ViewThemSanPhamm themSanPhamPanel = new ViewThemSanPhamm();
+        dialog.add(themSanPhamPanel);
+
+        // Đặt kích thước dialog
+        dialog.pack();
+
+        // Căn giữa màn hình
+        dialog.setLocationRelativeTo(null);
+
+        // Hiển thị dialog
+        dialog.setModal(true);
+        dialog.setVisible(true);
+    }
+    
+    private void handleDeleteAction() {
+        int selectedRow = tblSanPhamCon.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần xóa");
+            return;
+        }
+        
+        int confirm = JOptionPane.showConfirmDialog(this, 
+            "Bạn có chắc chắn muốn xóa sản phẩm này?", 
+            "Xác nhận xóa", 
+            JOptionPane.YES_NO_OPTION);
+            
+        if (confirm == JOptionPane.YES_OPTION) {
+            // TODO: Implement delete logic here
+            // Get product ID from the selected row and delete it
+            JOptionPane.showMessageDialog(this, "Đã xóa sản phẩm thành công!");
+        }
+    }
+
+    private void tblSanPhamConMouseClicked(java.awt.event.MouseEvent evt) {
+        int selectedRow = tblSanPhamCon.getSelectedRow();
+        if (evt.getClickCount() == 2) {
+            int clickedRow = tblSanPhamCon.rowAtPoint(evt.getPoint());
+            if (clickedRow != -1) {
+                generateQRCodeForRow(clickedRow);
+                return;
+            }
+        }
         if (selectedRow >= 0) {
             try {
                 // Lấy dữ liệu từ hàng được chọn
@@ -1718,48 +2083,48 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
                         JOptionPane.ERROR_MESSAGE);
             }
         }
-    }//GEN-LAST:event_tblSanPhamConMouseClicked
+    }                                          
 
     private void cbbLTLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbbLTLActionPerformed
-        currentPage = 1;
-
-        // Lấy loại thuộc tính được chọn
-        String selectedType = cbbLTL.getSelectedItem().toString();
-        String filter = "";
-
-        // Tạo bộ lọc dựa trên loại được chọn
-        if (!"Tất cả".equals(selectedType)) {
-            filter = "attribute_type = '" + selectedType + "'";
-        }
-
-        try {
-            // Lấy dữ liệu phân trang với bộ lọc
-            List<ProductVariant> variants = productVariantDAO.findWithPagination(
-                    currentPage,
-                    pageSize,
-                    filter
-            );
-
-            // Cập nhật tổng số trang
-            int totalItems = productVariantDAO.count(filter);
-            totalPages = (int) Math.ceil((double) totalItems / pageSize);
-
-            // Cập nhật bảng với dữ liệu mới
-            updateTableModel(variants);
-
-            // Cập nhật trạng thái nút phân trang
-            updatePaginationButtons();
-
-            // Cập nhật nhãn phân trang
-            updatePaginationLabel();
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tải dữ liệu: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
-        }
+//        currentPage = 1;
+//
+//        // Lấy loại thuộc tính được chọn
+//        String selectedType = cbbLTL.getSelectedItem().toString();
+//        String filter = "";
+//
+//        // Tạo bộ lọc dựa trên loại được chọn
+//        if (!"Tất cả".equals(selectedType)) {
+//            filter = "attribute_type = '" + selectedType + "'";
+//        }
+//
+//        try {
+//            // Lấy dữ liệu phân trang với bộ lọc
+//            List<ProductVariant> variants = productVariantDAO.findWithPagination(
+//                    currentPage,
+//                    pageSize,
+//                    filter
+//            );
+//
+//            // Cập nhật tổng số trang
+//            int totalItems = productVariantDAO.count(filter);
+//            totalPages = (int) Math.ceil((double) totalItems / pageSize);
+//
+//            // Cập nhật bảng với dữ liệu mới
+//            updateTableModel(variants);
+//
+//            // Cập nhật trạng thái nút phân trang
+//            updatePaginationButtons();
+//
+//            // Cập nhật nhãn phân trang
+//            updatePaginationLabel();
+//
+//        } catch (Exception e) {
+//            JOptionPane.showMessageDialog(this,
+//                    "Lỗi khi tải dữ liệu: " + e.getMessage(),
+//                    "Lỗi",
+//                    JOptionPane.ERROR_MESSAGE);
+//            e.printStackTrace();
+//        }
     }//GEN-LAST:event_cbbLTLActionPerformed
 
     private void txtLGTActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtLGTActionPerformed
@@ -1788,7 +2153,7 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             totalPages = (int) Math.ceil((double) totalItems / pageSize);
 
             // Cập nhật bảng với kết quả tìm kiếm
-            updateTableModel(variants);
+            updateVariantTableModel(variants);
 
             // Cập nhật trạng thái nút phân trang
             updatePaginationButtons();
@@ -1863,82 +2228,9 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         dialog.setVisible(true);
     }//GEN-LAST:event_btnThem2ActionPerformed
 
-    private void btnXuatFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXuatFileActionPerformed
-        // Tạo hộp thoại chọn nơi lưu file
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Lưu dữ liệu ra file");
-
-        // Đặt tên file mặc định
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        fileChooser.setSelectedFile(new File("danh_sach_san_pham_" + timestamp + ".csv"));
-
-        // Chỉ cho phép lưu file .csv
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files (*.csv)", "csv");
-        fileChooser.setFileFilter(filter);
-
-        // Hiển thị hộp thoại lưu file
-        int userSelection = fileChooser.showSaveDialog(this);
-
-        if (userSelection == JFileChooser.APPROVE_OPTION) {
-            File fileToSave = fileChooser.getSelectedFile();
-            // Đảm bảo file có đuôi .csv
-            String filePath = fileToSave.getAbsolutePath();
-            if (!filePath.toLowerCase().endsWith(".csv")) {
-                fileToSave = new File(filePath + ".csv");
-            }
-
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileToSave))) {
-                // Lấy model của bảng
-                DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
-
-                // Ghi tiêu đề cột
-                for (int i = 0; i < model.getColumnCount(); i++) {
-                    writer.write(model.getColumnName(i));
-                    if (i < model.getColumnCount() - 1) {
-                        writer.write(",");
-                    }
-                }
-                writer.newLine();
-
-                // Ghi dữ liệu từng dòng
-                for (int i = 0; i < model.getRowCount(); i++) {
-                    for (int j = 0; j < model.getColumnCount(); j++) {
-                        Object value = model.getValueAt(i, j);
-                        // Đảm bảo dữ liệu có dấu phẩy được đặt trong dấu ngoặc kép
-                        if (value != null) {
-                            String strValue = value.toString();
-                            if (strValue.contains(",") || strValue.contains("\"") || strValue.contains("\n")) {
-                                // Escape dấu ngoặc kép và đặt trong dấu ngoặc kép
-                                strValue = strValue.replace("\"", "\"\"");
-                                strValue = "\"" + strValue + "\"";
-                            }
-                            writer.write(strValue);
-                        }
-                        if (j < model.getColumnCount() - 1) {
-                            writer.write(",");
-                        }
-                    }
-                    writer.newLine();
-                }
-
-                JOptionPane.showMessageDialog(this,
-                        "Xuất dữ liệu thành công!\nĐường dẫn: " + fileToSave.getAbsolutePath(),
-                        "Thành công",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-            } catch (IOException e) {
-                JOptionPane.showMessageDialog(this,
-                        "Lỗi khi xuất dữ liệu: " + e.getMessage(),
-                        "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
-                e.printStackTrace();
-            }
-        }
-    }//GEN-LAST:event_btnXuatFileActionPerformed
-
     private void btnLamMoi1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLamMoi1ActionPerformed
         // Reset all filter fields
-        cbbLTL.setSelectedIndex(0);
+//        cbbLTL.setSelectedIndex(0);
         cbbKieu.setSelectedIndex(0);
         txtLGT.setText("");
 
@@ -2002,23 +2294,6 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
             }
         }
     }//GEN-LAST:event_btnTaiQRActionPerformed
-
-    private void cbAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbAllActionPerformed
-        boolean isSelected = cbAll.isSelected();
-        DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
-
-        // Lặp qua tất cả các dòng trong bảng
-        for (int i = 0; i < model.getRowCount(); i++) {
-            // Cập nhật cột checkbox (giả sử cột checkbox là cột đầu tiên)
-            model.setValueAt(isSelected, i, 0);
-
-            // Nếu bạn muốn cập nhật trạng thái selected của dòng
-            // tblSanPhamCon.changeSelection(i, 0, false, false);
-        }
-
-        // Cập nhật giao diện
-        tblSanPhamCon.repaint();
-    }//GEN-LAST:event_cbAllActionPerformed
 
     private void btn_dowload_templateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_dowload_templateActionPerformed
         // Tạo hộp thoại chọn nơi lưu file
@@ -2219,6 +2494,55 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
         }
     }//GEN-LAST:event_btn_import_file_excelActionPerformed
 
+    private void btnSua_productvariantActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSua_productvariantActionPerformed
+        // TODO add your handling code here:
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastEditClickTime < DOUBLE_CLICK_DELAY) {
+            // Double click - generate QR code
+            int selectedRow = tblSanPhamCon.getSelectedRow();
+            if (selectedRow != -1) {
+                generateQRCodeForRow(selectedRow);
+            }
+        } else {
+            // Single click - edit
+            handleEditAction();
+        }
+        lastEditClickTime = currentTime;
+        // Tạo JDialog mới
+        JDialog dialog = new JDialog();
+        dialog.setTitle("Sửa Sản phẩm");
+
+        // Thêm panel vào dialog
+        ViewThemSanPhamm themSanPhamPanel = new ViewThemSanPhamm();
+        dialog.add(themSanPhamPanel);
+
+        // Đặt kích thước dialog
+        dialog.pack();
+
+        // Căn giữa màn hình
+        dialog.setLocationRelativeTo(null);
+
+        // Hiển thị dialog
+        dialog.setModal(true);
+        dialog.setVisible(true);
+    }//GEN-LAST:event_btnSua_productvariantActionPerformed
+
+    private void btnXoa_productvariant1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXoa_productvariant1ActionPerformed
+        // TODO add your handling code here:
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastDeleteClickTime < DOUBLE_CLICK_DELAY) {
+            // Double click - generate QR code
+            int selectedRow = tblSanPhamCon.getSelectedRow();
+            if (selectedRow != -1) {
+                generateQRCodeForRow(selectedRow);
+            }
+        } else {
+            // Single click - delete
+            handleDeleteAction();
+        }
+        lastDeleteClickTime = currentTime;
+    }//GEN-LAST:event_btnXoa_productvariant1ActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLamMoi;
     private javax.swing.JButton btnLamMoi1;
@@ -2228,22 +2552,22 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
     private javax.swing.JButton btnNhoNhat;
     private javax.swing.JButton btnQuetQR;
     private javax.swing.JButton btnSua;
+    private javax.swing.JButton btnSua_productvariant;
     private javax.swing.JButton btnTaiQR;
     private javax.swing.JButton btnThem;
     private javax.swing.JButton btnThem1;
     private javax.swing.JButton btnThem2;
     private javax.swing.JButton btnXoa;
     private javax.swing.JButton btnXoa1;
-    private javax.swing.JButton btnXuatFile;
+    private javax.swing.JButton btnXoa_productvariant1;
     private javax.swing.JButton btn_dowload_template;
     private javax.swing.JButton btn_import_file_excel;
     private javax.swing.JButton btnsua1;
     private javax.swing.ButtonGroup buttonGroup1;
-    private javax.swing.JCheckBox cbAll;
     private javax.swing.JComboBox<String> cbbKieu;
-    private javax.swing.JComboBox<String> cbbLTL;
     private javax.swing.JComboBox<String> cbo_brand;
     private javax.swing.JComboBox<String> cbo_category;
+    private javax.swing.JComboBox<String> cbo_product_variant_sku;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel14;
@@ -2252,7 +2576,6 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
@@ -2268,12 +2591,13 @@ private final Map<Integer, String> categoryIdToName = new HashMap<>();
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JLabel jlabel5;
+    private javax.swing.JLabel lbl_brand;
     private javax.swing.JButton lon;
     private javax.swing.JButton lonNhat;
     private javax.swing.JButton nho;
     private javax.swing.JButton nhoNhat;
     private javax.swing.JPanel pbl_productvariant;
-    private javax.swing.JLabel phanTrang;
     private javax.swing.JPanel pnl_product;
     private javax.swing.JPanel pnl_thuộc_tính;
     private javax.swing.JRadioButton rb_brand;

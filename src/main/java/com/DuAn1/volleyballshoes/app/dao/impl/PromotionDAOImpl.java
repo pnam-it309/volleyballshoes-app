@@ -16,7 +16,6 @@ public class PromotionDAOImpl implements PromotionDAO {
         Promotion promotion = new Promotion();
         promotion.setPromotionId(rs.getInt("promotion_id"));
         promotion.setPromoName(rs.getString("promo_name"));
-        promotion.setPromoDescription(rs.getString("promo_description"));
         promotion.setPromoDiscountValue(rs.getBigDecimal("promo_discount_value"));
         
         // Xử lý ngày tháng
@@ -86,7 +85,6 @@ public class PromotionDAOImpl implements PromotionDAO {
         
         XJdbc.executeUpdate(sql, 
                 promotion.getPromoName(),
-                promotion.getPromoDescription(),
                 promotion.getPromoDiscountValue(),
                 promotion.getPromoStartDate(),
                 promotion.getPromoEndDate(),
@@ -121,7 +119,6 @@ public class PromotionDAOImpl implements PromotionDAO {
         
         XJdbc.executeUpdate(sql, 
                 entity.getPromoName(),
-                entity.getPromoDescription(),
                 entity.getPromoDiscountValue(),
                 entity.getPromoStartDate(),
                 entity.getPromoEndDate(),

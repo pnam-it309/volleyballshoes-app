@@ -58,7 +58,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
                 if (customer != null) {
                     customerTableModel.addRow(new Object[]{
                         customer.getCustomerCode() != null ? customer.getCustomerCode() : "",
-                        customer.getCustomerUsername() != null ? customer.getCustomerUsername() : "",
+                        customer.getCustomerFullName()!= null ? customer.getCustomerFullName(): "",
                         customer.getCustomerPhone() != null ? customer.getCustomerPhone() : "",
                         customer.getCustomerEmail() != null ? customer.getCustomerEmail() : ""
                     });
@@ -412,7 +412,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
             // Cập nhật thông tin khách hàng
             Customer updatedCustomer = new Customer();
             updatedCustomer.setCustomerCode(customerCode);
-            updatedCustomer.setCustomerUsername(txt_ten.getText().trim());
+            updatedCustomer.setCustomerFullName(txt_ten.getText().trim());
             updatedCustomer.setCustomerPhone(txt_sdt.getText().trim());
             updatedCustomer.setCustomerEmail(txt_email.getText().trim());
 
@@ -457,7 +457,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
             for (Customer customer : searchResults) {
                 customerTableModel.addRow(new Object[]{
                     customer.getCustomerCode(),
-                    customer.getCustomerUsername(),
+                    customer.getCustomerFullName(),
                     customer.getCustomerPhone(),
                     customer.getCustomerEmail()
                 });
@@ -493,7 +493,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
                 if (customer != null) {
                     // Populate the form fields with customer data
                     txt_ma.setText(customer.getCustomerCode());
-                    txt_ten.setText(customer.getCustomerUsername());
+                    txt_ten.setText(customer.getCustomerFullName());
                     txt_sdt.setText(customer.getCustomerPhone());
                     txt_email.setText(customer.getCustomerEmail());
 

@@ -4,6 +4,10 @@
  */
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang;
 
+import com.DuAn1.volleyballshoes.app.dao.CustomerDAO;
+import com.DuAn1.volleyballshoes.app.dao.impl.CustomerDAOImpl;
+import com.DuAn1.volleyballshoes.app.entity.Customer;
+import java.util.List;
 import javax.swing.table.DefaultTableModel;
 
 
@@ -13,14 +17,45 @@ import javax.swing.table.DefaultTableModel;
  */
 public class ViewThemKhachHang extends javax.swing.JFrame {
 
+    private final CustomerDAO customerDAO;
     /**
      * Creates new form KhachHang
      */
 
     public ViewThemKhachHang() {
         initComponents();
-        loadTableData();
-
+        customerDAO = new CustomerDAOImpl();
+        loadCustomerData();
+    }
+    
+    private void loadCustomerData() {
+        try {
+            // Lấy danh sách khách hàng từ database
+            List<Customer> customers = customerDAO.findAll();
+            
+            // Tạo model cho bảng
+            DefaultTableModel model = (DefaultTableModel) tblKhachHang.getModel();
+            model.setRowCount(0); // Xóa dữ liệu cũ
+            
+            // Thêm dữ liệu vào bảng
+            int stt = 1;
+            for (Customer customer : customers) {
+                model.addRow(new Object[]{
+                    stt++,
+                    customer.getCustomerFullName(),
+                    customer.getCustomerCode(),
+                    customer.getCustomerEmail() != null ? customer.getCustomerEmail() : "",
+                    customer.getCustomerPhone() != null ? customer.getCustomerPhone() : ""
+                });
+            }
+            
+            // Đặt lại chiều rộng cột
+            tblKhachHang.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_ALL_COLUMNS);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Xử lý lỗi nếu cần
+        }
     }
 
    
@@ -48,6 +83,8 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
         btn_themkhachhang = new javax.swing.JButton();
         jLabel5 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
+        jTextField2 = new javax.swing.JTextField();
 
         tblKhachHang.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -57,7 +94,7 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
                 {null, null, null, null, null}
             },
             new String [] {
-                "STT", "Title 2", "Title 3", "Title 4", "Title 5"
+                "STT", "tên khách hàng", "Mã khách hàng", "email", "số điện thoại"
             }
         ));
         tblKhachHang.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -118,6 +155,8 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
 
         jLabel5.setText("email");
 
+        jLabel3.setText("Mã khách hàng");
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -139,7 +178,12 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
                         .addComponent(jLabel5))
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 363, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jLabel3))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jTextField2, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 363, Short.MAX_VALUE))))
                 .addContainerGap(28, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
@@ -157,7 +201,11 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
                 .addComponent(jLabel5)
                 .addGap(18, 18, 18)
                 .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(149, 149, 149)
+                .addGap(18, 18, 18)
+                .addComponent(jLabel3)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(81, 81, 81)
                 .addComponent(btn_themkhachhang)
                 .addContainerGap(32, Short.MAX_VALUE))
         );
@@ -269,45 +317,44 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
         String tenKH = txtTenKH.getText().trim();
         String sdt = txtSDT.getText().trim();
         String email = jTextField1.getText().trim();
+        String code = jTextField2.getText().trim();
         
         // Validate dữ liệu
         if (tenKH.isEmpty() || sdt.isEmpty()) {
             return;
         }
         
-        // Thêm vào bảng
-        DefaultTableModel model = (DefaultTableModel) tblKhachHang.getModel();
-        model.addRow(new Object[]{
-            model.getRowCount() + 1,
-            tenKH,
-            sdt,
-            email,
-            "Mới"
-        });
-        
-        // Xóa dữ liệu form
-        txtTenKH.setText("");
-        txtSDT.setText("");
-        jTextField1.setText("");
-        
-        // Chuyển về tab danh sách
-        jTabbedPane1.setSelectedIndex(0);
+        try {
+            // Tạo đối tượng khách hàng mới
+            Customer newCustomer = new Customer();
+            newCustomer.setCustomerFullName(tenKH);
+            newCustomer.setCustomerPhone(sdt);
+            newCustomer.setCustomerEmail(email.isEmpty() ? null : email);
+            newCustomer.setCustomerCode(code.isEmpty() ? null : code);
+            
+            // Lưu vào database
+            Customer createdCustomer = customerDAO.create(newCustomer);
+            
+            if (createdCustomer != null) {
+                // Làm mới dữ liệu bảng
+                loadCustomerData();
+                
+                // Xóa dữ liệu form
+                txtTenKH.setText("");
+                txtSDT.setText("");
+                jTextField1.setText("");
+                jTextField2.setText("");
+                
+                // Chuyển về tab danh sách
+                jTabbedPane1.setSelectedIndex(0);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Xử lý lỗi nếu cần
+        }
     }
     
-    // Phương thức tải dữ liệu vào bảng
-    private void loadTableData() {
-        DefaultTableModel model = (DefaultTableModel) tblKhachHang.getModel();
-        model.setRowCount(0); // Xóa dữ liệu cũ
-        
-        // Đặt lại tên cột
-        String[] columnNames = {"STT", "Tên Khách Hàng", "SĐT", "Email", "Trạng thái"};
-        model.setColumnIdentifiers(columnNames);
-        
-        // TODO: Thêm code để tải dữ liệu từ database ở đây
-        // Ví dụ tạm thời thêm dữ liệu mẫu
-        model.addRow(new Object[]{1, "Nguyễn Văn A", "0912345678", "nguyenvana@example.com", "Đã mua hàng"});
-        model.addRow(new Object[]{2, "Trần Thị B", "0987654321", "tranthib@example.com", "Mới"});
-    }
+
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn_chon;
@@ -315,12 +362,14 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
     private javax.swing.JTable tblKhachHang;
     private javax.swing.JTextField txtSDT;
     private javax.swing.JTextField txtTenKH;

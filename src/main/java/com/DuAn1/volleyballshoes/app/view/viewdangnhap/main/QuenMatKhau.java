@@ -16,7 +16,11 @@ public class QuenMatKhau extends javax.swing.JFrame {
     public QuenMatKhau() {
         initComponents();
     }
-  
+    public boolean quenMK(){
+
+        return false;
+
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -27,13 +31,9 @@ public class QuenMatKhau extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLabel1 = new javax.swing.JLabel();
         lbTK = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-
-        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/duan1/view/viewdangnhap/icon/logob.png"))); // NOI18N
-        jLabel1.setText("jLabel1");
 
         lbTK.setForeground(new java.awt.Color(255, 51, 51));
 
@@ -43,17 +43,13 @@ public class QuenMatKhau extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(181, 181, 181)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lbTK, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(lbTK, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(166, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(58, 58, 58)
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 118, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(66, 66, 66)
+                .addGap(242, 242, 242)
                 .addComponent(lbTK)
                 .addContainerGap(238, Short.MAX_VALUE))
         );
@@ -63,11 +59,13 @@ public class QuenMatKhau extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void button1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button1ActionPerformed
-    
+
     }//GEN-LAST:event_button1ActionPerformed
 
     private void button2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button2ActionPerformed
-
+        setVisible(false);
+        MainDangNhap dn = new MainDangNhap();
+        dn.setVisible(true);
     }//GEN-LAST:event_button2ActionPerformed
 
     /**
@@ -97,6 +95,8 @@ public class QuenMatKhau extends javax.swing.JFrame {
         }
         //</editor-fold>
         //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -107,7 +107,6 @@ public class QuenMatKhau extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel lbTK;
     // End of variables declaration//GEN-END:variables
 }

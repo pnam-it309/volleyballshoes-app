@@ -74,6 +74,33 @@ public class OrderDAOImpl implements OrderDAO {
         return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
     }
 
+    /**
+     * Find the maximum order code in format HD####
+     * @return the maximum order code number found, or 0 if none found
+     */
+    private int findMaxOrderCodeNumber() {
+        String sql = "SELECT MAX(CAST(SUBSTRING(order_code, 3, LEN(order_code) - 2) AS INT)) " +
+                "FROM " + TABLE_NAME + " WHERE order_code LIKE 'HD[0-9][0-9][0-9][0-9]' OR " +
+                "order_code LIKE 'HD[0-9][0-9][0-9]' OR order_code LIKE 'HD[0-9][0-9]' OR " +
+                "order_code LIKE 'HD[0-9]'";
+        
+        List<Integer> maxNumbers = XJdbc.query(sql, rs -> {
+            return rs.next() ? rs.getInt(1) : 0;
+        });
+        
+        return maxNumbers.isEmpty() ? 0 : (maxNumbers.get(0) != null ? maxNumbers.get(0) : 0);
+    }
+
+    /**
+     * Generate the next order code in format HD####
+     * @return the next order code (e.g., HD0001, HD0002, ...)
+     */
+    private String generateNextOrderCode() {
+        int maxNumber = findMaxOrderCodeNumber();
+        int nextNumber = maxNumber + 1;
+        return String.format("HD%04d", nextNumber);
+    }
+
     @Override
     public Order save(Order order) {
         if (order.getOrderId() <= 0) {
@@ -84,7 +111,7 @@ public class OrderDAOImpl implements OrderDAO {
 
             // Tạo mã đơn hàng nếu chưa có
             if (order.getOrderCode() == null || order.getOrderCode().isEmpty()) {
-                order.setOrderCode("ORD" + System.currentTimeMillis());
+                order.setOrderCode(generateNextOrderCode());
             }
 
             // Đặt thời gian tạo nếu chưa có

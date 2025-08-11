@@ -14,16 +14,16 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public Customer create(Customer customer) {
-        String sql = "INSERT INTO Customer (customer_username, customer_email, "
-                  + "customer_sdt, customer_code) "
-                  + "OUTPUT INSERTED.* "
-                  + "VALUES (?, ?, ?, ?)";
-        
+        String sql = "INSERT INTO Customer (customer_full_name, customer_email, "
+                + "customer_phone, customer_code) "
+                + "OUTPUT INSERTED.* "
+                + "VALUES (?, ?, ?, ?)";
+
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer,
-            customer.getCustomerUsername(),
-            customer.getCustomerEmail(),
-            customer.getCustomerSdt(),
-            customer.getCustomerCode()
+                customer.getCustomerFullName(),
+                customer.getCustomerEmail(),
+                customer.getCustomerPhone(),
+                customer.getCustomerCode()
         );
     }
 
@@ -68,7 +68,8 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public Customer findByCode(String customerCode) {
-        String sql = "SELECT * FROM Customer WHERE customer_code = ?";
+        String sql = "SELECT * FROM Customer "
+                + "WHERE UPPER(LTRIM(RTRIM(customer_code))) = UPPER(LTRIM(RTRIM(?)))";
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer, customerCode);
     }
 
@@ -99,7 +100,7 @@ public class CustomerDAOImpl implements CustomerDAO {
         String searchPattern = "%" + keyword.trim() + "%";
         String sql = "SELECT * FROM Customer WHERE "
                 + "customer_code LIKE ? OR "
-                + "customer_username LIKE ? OR "
+                + "customer_full_name LIKE ? OR "
                 + "customer_email LIKE ? OR "
                 + "customer_sdt LIKE ? "
                 + "ORDER BY customer_id DESC";
@@ -113,7 +114,6 @@ public class CustomerDAOImpl implements CustomerDAO {
         String sql = "SELECT * FROM Customer ORDER BY customer_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
         return XJdbc.query(sql, this::mapResultSetToCustomer, offset, limit);
     }
-
 
     @Override
     public int getNewCustomersCount() {
@@ -156,26 +156,26 @@ public class CustomerDAOImpl implements CustomerDAO {
 
         Customer customer = new Customer();
         customer.setCustomerId(rs.getInt("customer_id"));
-        customer.setCustomerUsername(rs.getString("customer_username"));
+        customer.setCustomerFullName(rs.getString("customer_full_name"));
         customer.setCustomerEmail(rs.getString("customer_email"));
-        customer.setCustomerSdt(rs.getString("customer_sdt"));
+        customer.setCustomerPhone(rs.getString("customer_phone"));
         customer.setCustomerCode(rs.getString("customer_code"));
-        
+
         return customer;
     }
 
     @Override
     public Customer update(Customer customer) {
         String sql = "UPDATE Customer SET customer_username = ?, "
-                  + "customer_email = ?, customer_sdt = ?, customer_code = ? "
-                  + "OUTPUT INSERTED.* WHERE customer_id = ?";
-        
+                + "customer_email = ?, customer_sdt = ?, customer_code = ? "
+                + "OUTPUT INSERTED.* WHERE customer_id = ?";
+
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer,
-            customer.getCustomerUsername(),
-            customer.getCustomerEmail(),
-            customer.getCustomerSdt(),
-            customer.getCustomerCode(),
-            customer.getCustomerId()
+                customer.getCustomerFullName(),
+                customer.getCustomerEmail(),
+                customer.getCustomerPhone(),
+                customer.getCustomerCode(),
+                customer.getCustomerId()
         );
     }
 
@@ -184,7 +184,7 @@ public class CustomerDAOImpl implements CustomerDAO {
         String sql = "DELETE FROM Customer WHERE customer_id = ?";
         return XJdbc.executeUpdate(sql, id) > 0;
     }
-    
+
     @Override
     public boolean existsByUsername(String username) {
 //        String sql = "SELECT COUNT(*) FROM Customer WHERE customer_username = ?";
@@ -195,7 +195,7 @@ public class CustomerDAOImpl implements CustomerDAO {
 //        Integer count = XJdbc.getValue(sql, username);
 //        return count != null && count > 0;
     }
-    
+
     @Override
     public boolean existsByEmail(String email) {
 //        String sql = "SELECT COUNT(*) FROM Customer WHERE customer_email = ?";

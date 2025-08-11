@@ -21,7 +21,6 @@ public class Promotion {
 
     private int promotionId;
     private String promoName;
-    private String promoDescription;
     private BigDecimal promoDiscountValue;
     private LocalDateTime promoStartDate;
     private LocalDateTime promoEndDate;

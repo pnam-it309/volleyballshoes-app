@@ -170,4 +170,10 @@ public class StaffDAOImpl implements StaffDAO {
         return XJdbc.query(sql, this::mapResultSetToStaff, 
             searchPattern, searchPattern, searchPattern, offset, pageSize);
     }
+    
+    @Override
+    public Staff findByStaffCode(String staffCode) {
+        String sql = "SELECT * FROM Staff WHERE staff_code = ?";
+        return XJdbc.queryForObject(sql, this::mapResultSetToStaff, staffCode);
+    }
 }

@@ -61,4 +61,11 @@ public interface StaffDAO extends CrudDAO<Staff, Integer> {
      * @return List of staff members for the specified page and filter
      */
     List<Staff> findWithPagination(int page, int pageSize, String filter);
+    
+    /**
+     * Find a staff member by their staff code.
+     * @param staffCode The staff code to search for
+     * @return The staff member with the given code, or null if not found
+     */
+    Staff findByStaffCode(String staffCode);
 }

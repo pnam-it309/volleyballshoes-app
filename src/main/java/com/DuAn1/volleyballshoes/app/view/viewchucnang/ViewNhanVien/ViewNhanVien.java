@@ -77,8 +77,8 @@ public class ViewNhanVien extends javax.swing.JPanel {
         jLabel51 = new javax.swing.JLabel();
         txt_email3 = new javax.swing.JTextField();
         jLabel53 = new javax.swing.JLabel();
-        rdo_danglamviec3 = new javax.swing.JRadioButton();
-        rdo_nghiviec3 = new javax.swing.JRadioButton();
+        rdo_nghiviec = new javax.swing.JRadioButton();
+        rdo_lamviec = new javax.swing.JRadioButton();
         jLabel55 = new javax.swing.JLabel();
         txt_matkhau3 = new javax.swing.JTextField();
         btn_Them1 = new javax.swing.JButton();
@@ -140,11 +140,11 @@ public class ViewNhanVien extends javax.swing.JPanel {
 
         jLabel53.setText("Trạng Thái");
 
-        buttonGroup3.add(rdo_danglamviec3);
-        rdo_danglamviec3.setText("Đang làm việc");
+        buttonGroup3.add(rdo_nghiviec);
+        rdo_nghiviec.setText("Nghỉ việc");
 
-        buttonGroup3.add(rdo_nghiviec3);
-        rdo_nghiviec3.setText("Nghỉ Việc");
+        buttonGroup3.add(rdo_lamviec);
+        rdo_lamviec.setText("Đang làm việc");
 
         jLabel55.setText("Mật Khẩu");
 
@@ -206,7 +206,7 @@ public class ViewNhanVien extends javax.swing.JPanel {
                                 .addGap(18, 18, 18)
                                 .addComponent(btn_LamMoi))
                             .addComponent(rdo_NhanVien1)
-                            .addComponent(rdo_danglamviec3)))
+                            .addComponent(rdo_nghiviec)))
                     .addGroup(jPanel6Layout.createSequentialGroup()
                         .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel6Layout.createSequentialGroup()
@@ -241,7 +241,7 @@ public class ViewNhanVien extends javax.swing.JPanel {
                                     .addComponent(jLabel53))
                                 .addGap(18, 18, 18)
                                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(rdo_nghiviec3)
+                                    .addComponent(rdo_lamviec)
                                     .addComponent(rdo_QuanLy1))
                                 .addGap(183, 183, 183)))))
                 .addGap(0, 0, Short.MAX_VALUE))
@@ -276,8 +276,8 @@ public class ViewNhanVien extends javax.swing.JPanel {
                     .addComponent(rdo_NhanVien1))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(rdo_danglamviec3)
-                    .addComponent(rdo_nghiviec3)
+                    .addComponent(rdo_nghiviec)
+                    .addComponent(rdo_lamviec)
                     .addComponent(jLabel53))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -382,9 +382,9 @@ public class ViewNhanVien extends javax.swing.JPanel {
                 // Handle status
                 String trangThai = model.getValueAt(selectedRow, 8).toString();
                 if (trangThai.equals("Đang làm việc")) {
-                    rdo_danglamviec3.setSelected(true);
+                    rdo_nghiviec.setSelected(true);
                 } else {
-                    rdo_nghiviec3.setSelected(true);
+                    rdo_lamviec.setSelected(true);
                 }
 
                 // Set password field (if available in the model)
@@ -485,21 +485,19 @@ public class ViewNhanVien extends javax.swing.JPanel {
             List<Staff> staffList = staffDAO.findAll();
 
             // Lọc nhân viên theo trạng thái
-            // List<Staff> filteredStaff = staffList.stream()
-            // .filter(staff -> {
-            // String empStatus = (staff.getStatus() == 1) ? "Đang làm việc" : "Đã nghỉ
-            // việc";
-            // return selectedStatus.equals("Tất cả") || empStatus.equals(selectedStatus);
-            // })
-            // .collect(Collectors.toList());
-            // Lọc nhân viên theo trạng thái
-            // List<Staff> filteredStaff = staffList.stream()
-            // .filter(staff -> {
-            // String empStatus = (staff.getStatus() == 1) ? "Đang làm việc" : "Đã nghỉ
-            // việc";
-            // return selectedStatus.equals("Tất cả") || empStatus.equals(selectedStatus);
-            // })
-            // .collect(Collectors.toList());
+//             List<Staff> filteredStaff = staffList.stream()
+//             .filter(staff -> {
+//             String empStatus = (staff.getStatus() == 1) ? "Đang làm việc" : "Đã nghỉ
+//             việc";
+//             return selectedStatus.equals("Tất cả") || empStatus.equals(selectedStatus);
+//             })
+//             .collect(Collectors.toList());
+//             List<Staff> filteredStaff = staffList.stream()
+//             .filter(staff -> {
+//             String empStatus = (staff.getStaff_status()== 1) ? "Đang làm việc" : "Đã nghỉ            việc";
+//             return selectedStatus.equals("Tất cả") || empStatus.equals(selectedStatus);
+//             })
+//             .collect(Collectors.toList());
             // Nếu không có kết quả
             if (staffList.isEmpty()) {
                 JOptionPane.showMessageDialog(this,
@@ -530,86 +528,7 @@ public class ViewNhanVien extends javax.swing.JPanel {
         }
     }// GEN-LAST:event_btn_Locbtn_ThemActionPerformed
 
-    private void btn_XuatExcelbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btn_XuatExcelbtn_ThemActionPerformed
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Lưu file Excel");
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Excel Files", "xlsx"));
-        fileChooser.setSelectedFile(new File("DanhSachNhanVien.xlsx"));
-
-        int userSelection = fileChooser.showSaveDialog(this);
-
-        if (userSelection == JFileChooser.APPROVE_OPTION) {
-            File fileToSave = fileChooser.getSelectedFile();
-            // Ensure the file has .xlsx extension
-            String filePath = fileToSave.getAbsolutePath();
-            if (!filePath.endsWith(".xlsx")) {
-                filePath += ".xlsx";
-            }
-
-            try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-                // Create a new Excel sheet
-                XSSFSheet sheet = workbook.createSheet("Danh sách nhân viên");
-
-                // Create header row
-                String[] headers = {
-                    "Mã NV", "Họ tên", "Email", "Số điện thoại",
-                    "Giới tính", "Ngày sinh", "Địa chỉ", "Vai trò", "Trạng thái"
-                };
-
-                // Create header style
-                XSSFCellStyle headerStyle = workbook.createCellStyle();
-                XSSFFont font = workbook.createFont();
-                font.setBold(true);
-                headerStyle.setFont(font);
-                headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-                headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-                // Create header row
-                Row headerRow = sheet.createRow(0);
-                for (int i = 0; i < headers.length; i++) {
-                    Cell cell = headerRow.createCell(i);
-                    cell.setCellValue(headers[i]);
-                    cell.setCellStyle(headerStyle);
-                }
-
-                // Get data from table
-                DefaultTableModel model = (DefaultTableModel) tbl_bang1.getModel();
-
-                // Fill data
-                for (int i = 0; i < model.getRowCount(); i++) {
-                    Row row = sheet.createRow(i + 1);
-                    for (int j = 0; j < model.getColumnCount(); j++) {
-                        Object value = model.getValueAt(i, j);
-                        Cell cell = row.createCell(j);
-                        if (value != null) {
-                            cell.setCellValue(value.toString());
-                        }
-                    }
-                }
-
-                // Auto-size columns
-                for (int i = 0; i < headers.length; i++) {
-                    sheet.autoSizeColumn(i);
-                }
-
-                // Write the output to a file
-                try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
-                    workbook.write(fileOut);
-                    JOptionPane.showMessageDialog(this,
-                            "Xuất dữ liệu thành công!\nĐã lưu tại: " + filePath,
-                            "Thành công",
-                            JOptionPane.INFORMATION_MESSAGE);
-                }
-
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this,
-                        "Lỗi khi xuất file Excel: " + e.getMessage(),
-                        "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
-                e.printStackTrace();
-            }
-        }
-    }// GEN-LAST:event_btn_XuatExcelbtn_ThemActionPerformed
+  
 
     private void btn_LamMoibtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btn_LamMoibtn_ThemActionPerformed
         try {
@@ -833,7 +752,7 @@ public class ViewNhanVien extends javax.swing.JPanel {
             String role = rdo_QuanLy1.isSelected() ? "QUANLY" : "NHANVIEN";
 
             // Lấy trạng thái từ radio button
-            boolean isActive = rdo_danglamviec3.isSelected();
+            boolean isActive = rdo_lamviec.isSelected();
 
             Staff staff = new Staff();
             staff.setStaffCode(txt_ma3.getText().trim());
@@ -1002,8 +921,8 @@ public class ViewNhanVien extends javax.swing.JPanel {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JRadioButton rdo_NhanVien1;
     private javax.swing.JRadioButton rdo_QuanLy1;
-    private javax.swing.JRadioButton rdo_danglamviec3;
-    private javax.swing.JRadioButton rdo_nghiviec3;
+    private javax.swing.JRadioButton rdo_lamviec;
+    private javax.swing.JRadioButton rdo_nghiviec;
     private javax.swing.JTable tbl_bang1;
     private javax.swing.JTextField txt_Tim;
     private javax.swing.JTextField txt_email3;

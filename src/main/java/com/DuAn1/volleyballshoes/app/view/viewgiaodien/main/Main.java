@@ -4,46 +4,45 @@ import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewDotGiamGia.ViewDotGiamGia;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewKhachHang.ViewKhachHang;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewNhanVien.ViewNhanVien;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewPhieuGiamGia.ViewPhieuGiamGia;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPham;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewTrangChu.ViewTrangChu;
 import java.awt.CardLayout;
 import javax.swing.JPanel;
 
 public class Main extends javax.swing.JFrame {
-    
 
-    
     /**
      * Creates new form Main
      */
     private ViewBanHang viewBanHang;
     private ViewSanPham viewSanPham;
     private ViewNhanVien viewNhanVien;
-    private ViewDotGiamGia viewDotGiamGia;
+    private ViewPhieuGiamGia viewDotGiamGia;
     private ViewKhachHang viewKhachHang;
     private ViewTrangChu viewTrangChu;
     private CardLayout cardLayout;
     private JPanel mainPanel;
-    
+
     public Main() {
         initComponents();
         initViews();
         showDefaultView();
     }
-    
+
     private void initViews() {
         // Initialize card layout for main content area
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
-        
+
         // Initialize all views
         viewBanHang = new ViewBanHang();
         viewSanPham = new ViewSanPham();
         viewNhanVien = new ViewNhanVien();
-        viewDotGiamGia = new ViewDotGiamGia();
+        viewDotGiamGia = new ViewPhieuGiamGia();
         viewKhachHang = new ViewKhachHang();
         viewTrangChu = new ViewTrangChu();
-        
+
         // Add views to card layout with unique names
         mainPanel.add(viewTrangChu, "trangchu");
         mainPanel.add(viewBanHang, "banhang");
@@ -51,17 +50,15 @@ public class Main extends javax.swing.JFrame {
         mainPanel.add(viewNhanVien, "nhanvien");
         mainPanel.add(viewDotGiamGia, "giamgia");
         mainPanel.add(viewKhachHang, "khachhang");
-        
+
         // Add main panel to the center of the bg layered pane
         bg.setLayout(new java.awt.BorderLayout());
         bg.add(mainPanel, java.awt.BorderLayout.CENTER);
     }
-    
+
     private void showDefaultView() {
         cardLayout.show(mainPanel, "trangchu");
     }
-    
- 
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -75,6 +72,7 @@ public class Main extends javax.swing.JFrame {
         btn_viewgiamgia = new javax.swing.JButton();
         btn_viewkhachhang = new javax.swing.JButton();
         jButton6 = new javax.swing.JButton();
+        jButton1 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -124,6 +122,13 @@ public class Main extends javax.swing.JFrame {
             }
         });
 
+        jButton1.setText("Thống kê");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout pnl_sidebarLayout = new javax.swing.GroupLayout(pnl_sidebar);
         pnl_sidebar.setLayout(pnl_sidebarLayout);
         pnl_sidebarLayout.setHorizontalGroup(
@@ -140,7 +145,8 @@ public class Main extends javax.swing.JFrame {
                             .addComponent(btn_ViewSanPham)))
                     .addGroup(pnl_sidebarLayout.createSequentialGroup()
                         .addGap(12, 12, 12)
-                        .addComponent(jButton6)))
+                        .addComponent(jButton6))
+                    .addComponent(jButton1))
                 .addContainerGap(23, Short.MAX_VALUE))
         );
         pnl_sidebarLayout.setVerticalGroup(
@@ -158,6 +164,8 @@ public class Main extends javax.swing.JFrame {
                 .addComponent(btn_viewgiamgia)
                 .addGap(18, 18, 18)
                 .addComponent(btn_viewkhachhang)
+                .addGap(18, 18, 18)
+                .addComponent(jButton1)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -213,6 +221,10 @@ public class Main extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton6ActionPerformed
 
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton1ActionPerformed
+
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -254,6 +266,7 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JButton btn_viewgiamgia;
     private javax.swing.JButton btn_viewkhachhang;
     private javax.swing.JButton btn_viewnhanvien;
+    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton6;
     private javax.swing.JPanel pnl_sidebar;
     // End of variables declaration//GEN-END:variables

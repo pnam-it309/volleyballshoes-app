@@ -4,9 +4,14 @@
  */
 package com.DuAn1.volleyballshoes.app.view.viewdangnhap.main;
 
+import com.DuAn1.volleyballshoes.app.dao.StaffDAO;
+import com.DuAn1.volleyballshoes.app.dao.impl.StaffDAOImpl;
+import com.DuAn1.volleyballshoes.app.entity.Staff;
+import com.DuAn1.volleyballshoes.app.util.SessionManager;
 import com.DuAn1.volleyballshoes.app.view.viewgiaodien.main.Main;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -14,6 +19,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
@@ -114,6 +120,15 @@ public class MainDangNhap extends javax.swing.JFrame {
         btnDangNhap.setFocusPainted(false);
         btnDangNhap.setPreferredSize(new java.awt.Dimension(120, 35));
         
+        // Add Forgot Password button
+        JButton btnQuenMatKhau = new JButton("Quên mật khẩu");
+        btnQuenMatKhau.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        btnQuenMatKhau.setForeground(new Color(33, 105, 249));
+        btnQuenMatKhau.setContentAreaFilled(false);
+        btnQuenMatKhau.setBorderPainted(false);
+        btnQuenMatKhau.setFocusPainted(false);
+        btnQuenMatKhau.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        
         btnThoat = new JButton("Thoát");
         btnThoat.setFont(new java.awt.Font("Segoe UI", 1, 14));
         btnThoat.setBackground(new Color(220, 53, 69));
@@ -121,23 +136,38 @@ public class MainDangNhap extends javax.swing.JFrame {
         btnThoat.setFocusPainted(false);
         btnThoat.setPreferredSize(new java.awt.Dimension(120, 35));
         
+        // Button panel for login and exit buttons
+        JPanel mainButtonPanel = new JPanel(new GridBagLayout());
+        mainButtonPanel.setOpaque(false);
+        
         GridBagConstraints btnGbc = new GridBagConstraints();
         btnGbc.insets = new Insets(20, 10, 0, 10);
         
         btnGbc.gridx = 0;
         btnGbc.gridy = 0;
-        buttonPanel.add(btnDangNhap, btnGbc);
+        mainButtonPanel.add(btnDangNhap, btnGbc);
         
         btnGbc.gridx = 1;
         btnGbc.gridy = 0;
-        buttonPanel.add(btnThoat, btnGbc);
+        mainButtonPanel.add(btnThoat, btnGbc);
         
-        // Thêm button panel vào login panel
+        // Add Forgot Password button below the main buttons
+        JPanel forgotPassPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 5));
+        forgotPassPanel.setOpaque(false);
+        forgotPassPanel.add(btnQuenMatKhau);
+        
+        // Main container for all buttons
+        JPanel mainButtonContainer = new JPanel(new BorderLayout());
+        mainButtonContainer.setOpaque(false);
+        mainButtonContainer.add(mainButtonPanel, BorderLayout.CENTER);
+        mainButtonContainer.add(forgotPassPanel, BorderLayout.SOUTH);
+        
+        // Add button container to login panel
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE;
-        loginPanel.add(buttonPanel, gbc);
+        loginPanel.add(mainButtonContainer, gbc);
         
         // Thêm login panel vào main panel
         mainPanel.add(loginPanel, BorderLayout.CENTER);
@@ -146,13 +176,78 @@ public class MainDangNhap extends javax.swing.JFrame {
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
         
-        // Thêm event listeners
+        // Add action listener for Forgot Password button
+        btnQuenMatKhau.addActionListener(e -> {
+            QuenMatKhau forgotPassWindow = new QuenMatKhau();
+            forgotPassWindow.setLocationRelativeTo(this);
+            forgotPassWindow.setVisible(true);
+        });
+        
+        // Add event listeners
         btnDangNhap.addActionListener(e -> {
-            // Đăng nhập thành công luôn
-            this.dispose(); // Đóng form đăng nhập
-            SwingUtilities.invokeLater(() -> {
-                new Main().setVisible(true); // Mở form chính
-            });
+            String username = txtUsername.getText().trim();
+            String password = new String(txtPassword.getPassword());
+            
+            // Basic validation
+            if (username.isEmpty() || password.isEmpty()) {
+                JOptionPane.showMessageDialog(this, 
+                    "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!", 
+                    "Lỗi đăng nhập", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            try {
+                // Get StaffDAO instance
+                StaffDAO staffDAO = new StaffDAOImpl();
+                
+                // Find staff by username
+                Staff staff = staffDAO.findByUsername(username);
+                
+                // Authentication check
+                
+                // Check if staff exists and password matches
+                if (staff != null && staff.getStaffPassword().equals(password)) {
+                    // Check if account is active
+                    if (staff.getStaff_status() == 1) { // Assuming 1 means active
+                        // Store staff information in session
+                        SessionManager sessionManager = SessionManager.getInstance();
+                        sessionManager.setCurrentStaff(staff);
+                        
+                        // Login successful
+                        this.dispose(); // Close login window
+                        
+                        // Open main application window
+                        SwingUtilities.invokeLater(() -> {
+                            com.DuAn1.volleyballshoes.app.view.viewgiaodien.main.Main mainWindow = 
+                                new com.DuAn1.volleyballshoes.app.view.viewgiaodien.main.Main();
+                            mainWindow.setLocationRelativeTo(null);
+                            mainWindow.setExtendedState(java.awt.Frame.MAXIMIZED_BOTH);
+                            mainWindow.setVisible(true);
+                        });
+                    } else {
+                        JOptionPane.showMessageDialog(this, 
+                            "Tài khoản của bạn đã bị khóa!", 
+                            "Tài khoản bị khóa", 
+                            JOptionPane.WARNING_MESSAGE);
+                        txtPassword.setText("");
+                        txtPassword.requestFocus();
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, 
+                        "Tên đăng nhập hoặc mật khẩu không đúng!", 
+                        "Đăng nhập thất bại", 
+                        JOptionPane.ERROR_MESSAGE);
+                    txtPassword.setText("");
+                    txtPassword.requestFocus();
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, 
+                    "Đã xảy ra lỗi khi đăng nhập: " + ex.getMessage(), 
+                    "Lỗi hệ thống", 
+                    JOptionPane.ERROR_MESSAGE);
+            }
         });
         
         btnThoat.addActionListener(e -> {
@@ -167,6 +262,15 @@ public class MainDangNhap extends javax.swing.JFrame {
                 }
             }
         });
+        
+        // Add key listener to username field for Enter key
+        txtUsername.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    txtPassword.requestFocus();
+                }
+            }
+        });
     }
    
     /**
@@ -178,83 +282,18 @@ public class MainDangNhap extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        txt_ten = new javax.swing.JTextField();
-        txt_mk = new javax.swing.JTextField();
-        btn_quenmk = new javax.swing.JButton();
-        btn_dangnhap = new javax.swing.JButton();
-        btn_thoat = new javax.swing.JButton();
-
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setUndecorated(true);
-
-        jLabel1.setText("Tên");
-
-        jLabel2.setText("Mật khẩu");
-
-        btn_quenmk.setText("Quên mật khẩu");
-        btn_quenmk.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_quenmkActionPerformed(evt);
-            }
-        });
-
-        btn_dangnhap.setText("Đăng nhập");
-        btn_dangnhap.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_dangnhapActionPerformed(evt);
-            }
-        });
-
-        btn_thoat.setText("Thoát");
-        btn_thoat.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_thoatActionPerformed(evt);
-            }
-        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(165, 165, 165)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel1))
-                        .addGap(46, 46, 46)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txt_mk, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(txt_ten, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(138, 138, 138)
-                        .addComponent(btn_dangnhap)
-                        .addGap(44, 44, 44)
-                        .addComponent(btn_quenmk)
-                        .addGap(46, 46, 46)
-                        .addComponent(btn_thoat)))
-                .addContainerGap(154, Short.MAX_VALUE))
+            .addGap(0, 654, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(109, 109, 109)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(txt_ten, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(24, 24, 24)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel2)
-                    .addComponent(txt_mk, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 106, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btn_quenmk)
-                    .addComponent(btn_dangnhap)
-                    .addComponent(btn_thoat))
-                .addGap(228, 228, 228))
+            .addGap(0, 534, Short.MAX_VALUE)
         );
 
         pack();
@@ -273,18 +312,6 @@ public class MainDangNhap extends javax.swing.JFrame {
     private void btnThoatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThoatActionPerformed
 
     }//GEN-LAST:event_btnThoatActionPerformed
-
-    private void btn_quenmkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_quenmkActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btn_quenmkActionPerformed
-
-    private void btn_dangnhapActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_dangnhapActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btn_dangnhapActionPerformed
-
-    private void btn_thoatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_thoatActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btn_thoatActionPerformed
 
     /**
      * @param args the command line arguments
@@ -325,12 +352,5 @@ public class MainDangNhap extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btn_dangnhap;
-    private javax.swing.JButton btn_quenmk;
-    private javax.swing.JButton btn_thoat;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JTextField txt_mk;
-    private javax.swing.JTextField txt_ten;
     // End of variables declaration//GEN-END:variables
 }

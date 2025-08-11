@@ -51,7 +51,7 @@ public class CustomerController {
         // Build and save the new customer
         Customer customer = Customer.builder()
                 .customerCode(request.getCustomerCode())
-                .customerUsername(request.getCustomerFullName())
+                .customerFullName(request.getCustomerFullName())
                 .customerEmail(request.getCustomerEmail())
                 .customerPhone(request.getCustomerSdt())
                 .build();
@@ -77,9 +77,9 @@ public class CustomerController {
         }
 
         // Validate phone number uniqueness if changed
-        if (!Objects.equals(existingCustomer.getCustomerSdt(), customer.getCustomerSdt())
-                && customer.getCustomerSdt() != null && !customer.getCustomerSdt().trim().isEmpty()) {
-            Customer customerWithSamePhone = customerDAO.findByPhone(customer.getCustomerSdt());
+        if (!Objects.equals(existingCustomer.getCustomerPhone(), customer.getCustomerPhone())
+                && customer.getCustomerPhone() != null && !customer.getCustomerPhone().trim().isEmpty()) {
+            Customer customerWithSamePhone = customerDAO.findByPhone(customer.getCustomerPhone());
             if (customerWithSamePhone != null && customerWithSamePhone.getCustomerId() != customer.getCustomerId()) {
                 throw new IllegalArgumentException("Số điện thoại đã được sử dụng bởi khách hàng khác");
             }
