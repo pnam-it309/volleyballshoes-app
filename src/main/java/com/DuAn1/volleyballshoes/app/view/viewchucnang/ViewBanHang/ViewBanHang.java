@@ -917,26 +917,46 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     }//GEN-LAST:event_btn_Them1btn_ThemActionPerformed
 
+    // Field to store temporary customer
+    private Customer currentTemporaryCustomer = null;
+
     private void btnTheHoaDonbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTheHoaDonbtn_ThemActionPerformed
         try {
             // Get customer code from form
             String customerCode = txtMaKhachhang.getText().trim();
-            if (customerCode.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Vui lòng chọn khách hàng hoặc chọn 'Khách vãng lai' trước khi tạo đơn hàng.",
-                        "Chưa chọn khách hàng",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            // Find customer by code
-            Customer customer = customerDAO.findByCode(customerCode);
-            if (customer == null) {
-                JOptionPane.showMessageDialog(this,
-                        "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
-                        "Không tìm thấy khách hàng",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
+            Customer customer = null;
+            
+            // Only validate customer if a code is provided
+            if (!customerCode.isEmpty()) {
+                // Check if this is a temporary customer (starts with TEMP_)
+                if (customerCode.startsWith("TEMP_")) {
+                    if (currentTemporaryCustomer != null && currentTemporaryCustomer.getCustomerCode().equals(customerCode)) {
+                        customer = currentTemporaryCustomer;
+                        System.out.println("[DEBUG] Sử dụng khách hàng tạm thời: " + customerCode);
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "Không tìm thấy thông tin khách hàng tạm thời. Vui lòng chọn lại khách hàng.",
+                                "Lỗi khách hàng tạm thời",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                } else if (!customerCode.equals("CUS0000")) {
+                    // Only try to find customer if it's not the guest customer code
+                    customer = customerDAO.findByCode(customerCode);
+                    if (customer == null) {
+                        JOptionPane.showMessageDialog(this,
+                                "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
+                                "Không tìm thấy khách hàng",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                } else {
+                    // This is a guest customer (CUS0000)
+                    System.out.println("[DEBUG] Sử dụng tài khoản khách vãng lai");
+                }
+            } else {
+                // No customer selected - this is allowed for walk-in customers
+                System.out.println("[DEBUG] Không có khách hàng được chọn - tạo đơn hàng không cần khách hàng");
             }
 
             // Get staff info from session
@@ -968,20 +988,51 @@ public class ViewBanHang extends javax.swing.JPanel {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
             String formattedDate = now.format(formatter);
 
-            // Create new order object
-            Order newOrder = Order.builder()
-                    .staffId(staff.getStaffId())
-                    .orderCode(orderCode)
-                    .orderStatus("Chưa thanh toán")
-                    .orderCreatedAt(now)
-                    .build();
+            // Create new order object with all required fields
+            Order newOrder = new Order();
+            newOrder.setStaffId(staff.getStaffId());
+            newOrder.setOrderCode(orderCode);
+            newOrder.setOrderStatus("Chưa thanh toán");
+            newOrder.setOrderCreatedAt(now);
+            // Set default values for required fields
+            newOrder.setOrderFinalAmount(BigDecimal.ZERO); // Default to 0
+            newOrder.setOrderPaymentMethod("Tiền mặt"); // Default payment method
+            
+            // Set customer ID - make it optional
+            if (customer != null && customer.getCustomerId() != null) {
+                // For regular customers, use their ID if available
+                newOrder.setCustomerId(customer.getCustomerId());
+                System.out.println("[DEBUG] Using customer ID: " + customer.getCustomerId());
+            } else if (customerCode != null && customerCode.equals("CUS0000")) {
+                // For guest customer (CUS0000), try to find the guest customer
+                Customer guestCustomer = customerDAO.findByCode("CUS0000");
+                if (guestCustomer != null) {
+                    newOrder.setCustomerId(guestCustomer.getCustomerId());
+                    System.out.println("[DEBUG] Using guest customer ID: " + guestCustomer.getCustomerId());
+                } else {
+                    System.out.println("[DEBUG] Guest customer not found, proceeding without customer ID");
+                }
+            } else {
+                // For no customer selected, leave customer ID as null
+                System.out.println("[DEBUG] No customer specified, using NULL customer ID");
+            }
 
             // Save order to database
-            OrderDAO orderDAO = new OrderDAOImpl();
-            Order savedOrder = orderDAO.save(newOrder);
+            try {
+                OrderDAO orderDAO = new OrderDAOImpl();
+                System.out.println("[DEBUG] Saving order with data: " + newOrder);
+                
+                // Save the order
+                Order savedOrder = orderDAO.save(newOrder);
 
-            if (savedOrder == null || savedOrder.getOrderId() <= 0) {
-                throw new Exception("Không thể lưu hóa đơn vào cơ sở dữ liệu");
+                if (savedOrder == null || savedOrder.getOrderId() <= 0) {
+                    throw new Exception("Không thể lưu hóa đơn vào cơ sở dữ liệu: Invalid order ID");
+                }
+                System.out.println("[DEBUG] Order saved successfully with ID: " + savedOrder.getOrderId());
+            } catch (Exception e) {
+                System.err.println("[ERROR] Error saving order: " + e.getMessage());
+                e.printStackTrace();
+                throw e;
             }
 
             // Clear and setup table if needed
@@ -1216,29 +1267,53 @@ public class ViewBanHang extends javax.swing.JPanel {
                 System.out.println("Using fallback staff: " + staff.getStaffCode());
             }
 
-            // Get customer ID from form
+            // Get customer information from form
             String customerCode = txtMaKhachhang.getText().trim();
-            if (customerCode.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Vui lòng chọn khách hàng hoặc chọn 'Khách vãng lai' trước khi tạo đơn hàng.",
-                        "Chưa chọn khách hàng",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            // Find customer by code
-            Customer customer = customerDAO.findByCode(customerCode);
-            if (customer == null) {
-                JOptionPane.showMessageDialog(this,
+            Customer customer = null;
+            
+            // Check if this is a temporary customer
+            boolean isTemporaryCustomer = customerCode.startsWith("TEMP_");
+            
+            // Only try to find customer if a code is provided and it's not a temporary customer
+            if (!customerCode.isEmpty() && !isTemporaryCustomer) {
+                // First try to find by code (for guest customers and regular customers)
+                customer = customerDAO.findByCode(customerCode);
+                
+                // If not found by code, try to parse as ID
+                if (customer == null) {
+                    try {
+                        Integer customerId = Integer.parseInt(customerCode);
+                        customer = customerDAO.findById(customerId);
+                    } catch (NumberFormatException e) {
+                        // Not a valid ID, continue with null customer
+                    }
+                }
+                
+                // If still not found and it's not a guest customer, show error
+                if (customer == null && !customerCode.equals("CUS0000")) {
+                    JOptionPane.showMessageDialog(this,
                         "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
                         "Không tìm thấy khách hàng",
                         JOptionPane.ERROR_MESSAGE);
-                return;
+                    return;
+                }
+            } else if (isTemporaryCustomer) {
+                System.out.println("[DEBUG] Using temporary customer: " + customerCode);
             }
 
             // Create order
             Order order = new Order();
-            order.setCustomerId(customer.getCustomerId());
+            
+            // Set customer ID if customer was found, otherwise it will be null
+            if (customer != null) {
+                order.setCustomerId(customer.getCustomerId());
+                System.out.println("[DEBUG] Setting customer ID: " + customer.getCustomerId());
+            } else if (isTemporaryCustomer) {
+                // For temporary customers, customer_id will be NULL
+                System.out.println("[DEBUG] Using temporary customer, customer_id will be NULL");
+            } else {
+                System.out.println("[DEBUG] No customer selected, customer_id will be NULL");
+            }
             order.setStaffId(staff.getStaffId()); // Use the actual staff ID from database
             order.setOrderFinalAmount(totalAmount);
             order.setOrderPaymentMethod(paymentMethod);
@@ -1347,9 +1422,23 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     }//GEN-LAST:event_cbbPhieuGiamGiaActionPerformed
 
-    private void btn_Them4btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_Them4btn_ThemActionPerformed
+    // Callback implementation for customer selection
+    private final ViewThemKhachHang.ViewBanHangCallback customerSelectionCallback = new ViewThemKhachHang.ViewBanHangCallback() {
+        @Override
+        public void onCustomerSelected(String tenKH, String sdt, String email) {
+            // Update the customer information in the form
+            txtMaKhachhang.setText(sdt); // Using phone number as customer ID
+            lbTenKhachHang.setText(tenKH);
+            
+            // Enable the create invoice button if it was disabled
+            btnTheHoaDon.setEnabled(true);
+        }
+    };
+
+    private void btn_Them4btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {
         java.awt.EventQueue.invokeLater(() -> {
             ViewThemKhachHang viewThemKhachHang = new ViewThemKhachHang();
+            viewThemKhachHang.setViewBanHangCallback(customerSelectionCallback);
             viewThemKhachHang.setLocationRelativeTo(null);
             viewThemKhachHang.setVisible(true);
         });
@@ -1359,83 +1448,101 @@ public class ViewBanHang extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_txtMaKhachhangActionPerformed
 
+    // Helper method to generate random customer code
+    private String generateRandomCustomerCode() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String nums = "0123456789";
+        Random random = new Random();
+        
+        // Format: CUS + 3 random letters + 3 random numbers
+        StringBuilder sb = new StringBuilder("CUS");
+        
+        // Add 3 random letters
+        for (int i = 0; i < 3; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        
+        // Add 3 random numbers
+        for (int i = 0; i < 3; i++) {
+            sb.append(nums.charAt(random.nextInt(nums.length())));
+        }
+        
+        return sb.toString();
+    }
+
     private void btn_khachvanglaiActionPerformed(java.awt.event.ActionEvent evt) {
-        final String GUEST_CODE = "CUS0000";
+        String guestCode = "CUS0000";
         final String GUEST_NAME = "Khách vãng lai";
+        Customer guestCustomer = null;
 
         try {
-            // DEBUG 1: kiểm tra kết nối đang dùng DB nào
-            try (Connection conn = XJdbc.openConnection()) {
-                String dbName = XJdbc.getValue("SELECT DB_NAME()", String.class);
-                String schemaName = XJdbc.getValue("SELECT SCHEMA_NAME()", String.class);
-                System.out.println("[DEBUG] Đang kết nối DB: " + dbName + ", Schema: " + schemaName);
-            } catch (Exception e) {
-                System.out.println("[DEBUG] Lỗi khi kiểm tra DB/schema: " + e.getMessage());
-            }
-
-            // DEBUG 2: kiểm tra giá trị mã khách hàng truyền vào
-            System.out.println("[DEBUG] GUEST_CODE = '" + GUEST_CODE + "', length = " + GUEST_CODE.length());
-
-            Customer guestCustomer = null;
-
-            // DEBUG 3: thử tìm trong DB
-            try {
-                guestCustomer = customerDAO.findByCode(GUEST_CODE);
-                System.out.println("[DEBUG] Kết quả tìm lần 1: " + (guestCustomer != null ? "Tìm thấy" : "Không tìm thấy"));
-            } catch (Exception e) {
-                System.out.println("[DEBUG] Lỗi khi tìm lần 1: " + e.getMessage());
-            }
-
-            // Nếu không tìm thấy thì thử tạo mới
+            // Try to find the default guest customer first
+            guestCustomer = customerDAO.findByCode(guestCode);
+            
             if (guestCustomer == null) {
-                guestCustomer = new Customer();
-                guestCustomer.setCustomerCode(GUEST_CODE);
-                guestCustomer.setCustomerFullName(GUEST_NAME);
-                guestCustomer.setCustomerEmail("");
-                guestCustomer.setCustomerPhone("");
-
-                try {
-                    guestCustomer = customerDAO.create(guestCustomer);
-                    System.out.println("[DEBUG] Đã tạo mới khách hàng: " + guestCustomer.getCustomerCode());
-                } catch (Exception createEx) {
-                    System.out.println("[DEBUG] Lỗi khi tạo mới: " + createEx.getMessage());
-
-                    // Nếu lỗi trùng khóa
-                    if (createEx.getMessage() != null && createEx.getMessage().toLowerCase().contains("duplicate key")) {
-                        System.out.println("[DEBUG] Phát hiện trùng khóa → tìm lại khách hàng");
-                        try {
-                            guestCustomer = customerDAO.findByCode(GUEST_CODE);
-                            System.out.println("[DEBUG] Kết quả tìm lại: " + (guestCustomer != null ? "Tìm thấy" : "Không tìm thấy"));
-                        } catch (Exception findEx) {
-                            System.out.println("[DEBUG] Lỗi khi tìm lại: " + findEx.getMessage());
-                        }
-                    }
+                System.out.println("[DEBUG] Không tìm thấy khách hàng mặc định, thử tìm bất kỳ khách vãng lai nào");
+                
+                // Try to find any existing guest customer
+                List<Customer> guestCustomers = customerDAO.searchByKeyword("KHACH VANG LAI");
+                if (guestCustomers != null && !guestCustomers.isEmpty()) {
+                    guestCustomer = guestCustomers.get(0);
+                    System.out.println("[DEBUG] Đã tìm thấy khách vãng lai hiện có: " + guestCustomer.getCustomerCode());
+                } else {
+                    System.out.println("[DEBUG] Không tìm thấy khách vãng lai nào, sử dụng tạm thời");
+                    // Use a temporary in-memory customer
+                    guestCustomer = new Customer();
+                    guestCustomer.setCustomerCode("TEMP_" + System.currentTimeMillis());
+                    guestCustomer.setCustomerFullName(GUEST_NAME);
                 }
-            }
-
-            // Cập nhật form
-            if (guestCustomer != null) {
-                System.out.println("[DEBUG] Sử dụng khách hàng: " + guestCustomer.getCustomerCode());
-                setCustomerToForm(guestCustomer);
             } else {
-                System.out.println("[DEBUG] Không tìm được → dùng khách hàng tạm thời");
-                guestCustomer = new Customer();
-                guestCustomer.setCustomerCode(GUEST_CODE);
-                guestCustomer.setCustomerFullName(GUEST_NAME);
-                setCustomerToForm(guestCustomer);
+                System.out.println("[DEBUG] Tìm thấy khách hàng mặc định: " + guestCustomer.getCustomerCode());
             }
+            
+            // Update the form with the guest customer
+            setCustomerToForm(guestCustomer);
+            
         } catch (Exception e) {
-            System.err.println("[DEBUG] Lỗi nghiêm trọng: " + e.getMessage());
+            System.err.println("[DEBUG] Lỗi khi xử lý khách vãng lai: " + e.getMessage());
             e.printStackTrace();
+            
+            // Fallback to temporary customer on error
+            guestCustomer = new Customer();
+            guestCustomer.setCustomerCode("TEMP_" + System.currentTimeMillis());
+            guestCustomer.setCustomerFullName(GUEST_NAME);
+            setCustomerToForm(guestCustomer);
+            
+            JOptionPane.showMessageDialog(this,
+                "Đã xảy ra lỗi khi tìm khách vãng lai. Đang sử dụng tài khoản tạm thời.",
+                "Thông báo",
+                JOptionPane.WARNING_MESSAGE);
         }
-
     }
 
     // Helper method to set customer information to the form
     private void setCustomerToForm(Customer customer) {
         if (customer != null) {
-            txtMaKhachhang.setText(customer.getCustomerCode());
-            lbTenKhachHang.setText(customer.getCustomerFullName());
+            // Set customer code to the text field
+            txtMaKhachhang.setText(customer.getCustomerCode() != null ? customer.getCustomerCode() : "");
+            
+            // Set customer name to the label
+            lbTenKhachHang.setText(customer.getCustomerFullName() != null ? customer.getCustomerFullName() : "");
+            
+            // If this is a temporary customer, store it in the field
+            if (customer.getCustomerCode() != null && customer.getCustomerCode().startsWith("TEMP_")) {
+                currentTemporaryCustomer = customer;
+                System.out.println("[DEBUG] Đã lưu khách hàng tạm thời: " + customer.getCustomerCode());
+            } else {
+                currentTemporaryCustomer = null;
+            }
+            
+            // Enable the create invoice button
+            btnTheHoaDon.setEnabled(true);
+        } else {
+            // Clear the form if customer is null
+            txtMaKhachhang.setText("");
+            lbTenKhachHang.setText("");
+            currentTemporaryCustomer = null;
+            System.out.println("[DEBUG] Đã xóa thông tin khách hàng");
         }
     }
 

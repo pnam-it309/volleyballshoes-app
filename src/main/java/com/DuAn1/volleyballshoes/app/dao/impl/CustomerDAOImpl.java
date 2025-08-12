@@ -68,7 +68,7 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public Customer findByCode(String customerCode) {
-        String sql = "SELECT * FROM Customer "
+            String sql = "SELECT * FROM Customer "
                 + "WHERE UPPER(LTRIM(RTRIM(customer_code))) = UPPER(LTRIM(RTRIM(?)))";
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer, customerCode);
     }
@@ -102,7 +102,7 @@ public class CustomerDAOImpl implements CustomerDAO {
                 + "customer_code LIKE ? OR "
                 + "customer_full_name LIKE ? OR "
                 + "customer_email LIKE ? OR "
-                + "customer_sdt LIKE ? "
+                + "customer_phone LIKE ? "
                 + "ORDER BY customer_id DESC";
 
         return XJdbc.query(sql, this::mapResultSetToCustomer,

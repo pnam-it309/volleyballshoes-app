@@ -20,7 +20,7 @@ import lombok.*;
 @Builder
 public class Order {
     private int orderId;
-    private int customerId;
+    private Integer customerId;  // Made nullable
     private int staffId;
     private BigDecimal orderFinalAmount;
     private String orderPaymentMethod;

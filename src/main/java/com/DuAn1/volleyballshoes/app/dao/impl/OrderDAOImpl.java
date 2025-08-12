@@ -23,7 +23,15 @@ public class OrderDAOImpl implements OrderDAO {
     private Order mapResultSetToOrder(ResultSet rs) throws SQLException {
         Order order = new Order();
         order.setOrderId(rs.getInt("order_id"));
-        order.setCustomerId(rs.getInt("customer_id"));
+        
+        // Handle nullable customer_id
+        int customerId = rs.getInt("customer_id");
+        if (!rs.wasNull()) {
+            order.setCustomerId(customerId);
+        } else {
+            order.setCustomerId(null);
+        }
+        
         order.setStaffId(rs.getInt("staff_id"));
         order.setOrderFinalAmount(rs.getBigDecimal("order_final_amount"));
         order.setOrderPaymentMethod(rs.getString("order_payment_method"));
@@ -79,16 +87,63 @@ public class OrderDAOImpl implements OrderDAO {
      * @return the maximum order code number found, or 0 if none found
      */
     private int findMaxOrderCodeNumber() {
-        String sql = "SELECT MAX(CAST(SUBSTRING(order_code, 3, LEN(order_code) - 2) AS INT)) " +
-                "FROM " + TABLE_NAME + " WHERE order_code LIKE 'HD[0-9][0-9][0-9][0-9]' OR " +
-                "order_code LIKE 'HD[0-9][0-9][0-9]' OR order_code LIKE 'HD[0-9][0-9]' OR " +
-                "order_code LIKE 'HD[0-9]'";
-        
-        List<Integer> maxNumbers = XJdbc.query(sql, rs -> {
+        try {
+            // First, try to find the maximum order code with the standard HD#### format
+            String sql = "SELECT order_code FROM " + TABLE_NAME + " WHERE order_code LIKE 'HD%' ORDER BY order_code DESC";
+            
+            List<String> orderCodes = XJdbc.query(sql, rs -> {
+                return rs.next() ? rs.getString(1) : null;
+            });
+            
+            int maxNumber = 0;
+            for (String code : orderCodes) {
+                if (code != null && code.startsWith("HD") && code.length() > 2) {
+                    try {
+                        // Extract the numeric part after 'HD'
+                        String numberStr = code.substring(2);
+                        int number = Integer.parseInt(numberStr);
+                        if (number > maxNumber) {
+                            maxNumber = number;
+                        }
+                    } catch (NumberFormatException e) {
+                        // Skip invalid number formats
+                        continue;
+                    }
+                }
+            }
+            
+            // If no valid order codes found, check if there are any orders at all
+            if (maxNumber == 0) {
+                sql = "SELECT COUNT(*) FROM " + TABLE_NAME;
+                List<Integer> counts = XJdbc.query(sql, rs -> {
+                    return rs.next() ? rs.getInt(1) : 0;
+                });
+                
+                // If there are orders but none with valid HD#### format, start from 1
+                if (!counts.isEmpty() && counts.get(0) > 0) {
+                    return 0; // This will make the next number 1
+                }
+            }
+            
+            return maxNumber;
+        } catch (Exception e) {
+            e.printStackTrace();
+            // In case of any error, return 0 to start from HD0001
+            return 0;
+        }
+    }
+
+    /**
+     * Check if an order code already exists in the database
+     * @param code the order code to check
+     * @return true if the code exists, false otherwise
+     */
+    private boolean orderCodeExists(String code) {
+        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE order_code = ?";
+        List<Integer> counts = XJdbc.query(sql, rs -> {
             return rs.next() ? rs.getInt(1) : 0;
-        });
-        
-        return maxNumbers.isEmpty() ? 0 : (maxNumbers.get(0) != null ? maxNumbers.get(0) : 0);
+        }, code);
+        return !counts.isEmpty() && counts.get(0) > 0;
     }
 
     /**
@@ -96,7 +151,15 @@ public class OrderDAOImpl implements OrderDAO {
      * @return the next order code (e.g., HD0001, HD0002, ...)
      */
     private String generateNextOrderCode() {
+        // First, try to find the maximum order code number from the database
         int maxNumber = findMaxOrderCodeNumber();
+        
+        // If no orders found, start from 1
+        if (maxNumber == 0) {
+            return "HD0001";
+        }
+        
+        // Generate next number and format it
         int nextNumber = maxNumber + 1;
         return String.format("HD%04d", nextNumber);
     }
@@ -104,22 +167,38 @@ public class OrderDAOImpl implements OrderDAO {
     @Override
     public Order save(Order order) {
         if (order.getOrderId() <= 0) {
-            // Thêm mới đơn hàng
-            String sql = "INSERT INTO " + TABLE_NAME + " (customer_id, staff_id, order_final_amount, "
-                    + "order_payment_method, order_status, order_code, order_created_at) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-            // Tạo mã đơn hàng nếu chưa có
+            // Generate order code if not provided
             if (order.getOrderCode() == null || order.getOrderCode().isEmpty()) {
-                order.setOrderCode(generateNextOrderCode());
+                // Try up to 10 times to get a unique order code
+                String newCode = null;
+                for (int i = 0; i < 10; i++) {
+                    newCode = generateNextOrderCode();
+                    // Check if code already exists
+                    if (!orderCodeExists(newCode)) {
+                        order.setOrderCode(newCode);
+                        break;
+                    }
+                }
+                
+                // If all attempts failed, use timestamp as fallback
+                if (order.getOrderCode() == null) {
+                    order.setOrderCode("HD" + System.currentTimeMillis());
+                }
             }
 
             // Đặt thời gian tạo nếu chưa có
             if (order.getOrderCreatedAt() == null) {
                 order.setOrderCreatedAt(LocalDateTime.now());
             }
-
-            XJdbc.executeUpdate(sql,
+            
+            // Xây dựng câu lệnh SQL tùy thuộc vào việc customer_id có null không
+            String sql;
+            if (order.getCustomerId() != null) {
+                sql = "INSERT INTO " + TABLE_NAME + " (customer_id, staff_id, order_final_amount, "
+                    + "order_payment_method, order_status, order_code, order_created_at) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                
+                XJdbc.executeUpdate(sql,
                     order.getCustomerId(),
                     order.getStaffId(),
                     order.getOrderFinalAmount(),
@@ -127,32 +206,76 @@ public class OrderDAOImpl implements OrderDAO {
                     order.getOrderStatus(),
                     order.getOrderCode(),
                     order.getOrderCreatedAt()
-            );
+                );
+            } else {
+                sql = "INSERT INTO " + TABLE_NAME + " (staff_id, order_final_amount, "
+                    + "order_payment_method, order_status, order_code, order_created_at) "
+                    + "VALUES (?, ?, ?, ?, ?, ?)";
+                
+                XJdbc.executeUpdate(sql,
+                    order.getStaffId(),
+                    order.getOrderFinalAmount(),
+                    order.getOrderPaymentMethod(),
+                    order.getOrderStatus(),
+                    order.getOrderCode(),
+                    order.getOrderCreatedAt()
+                );
+            }
 
             // Lấy ID vừa tạo
             String idSql = "SELECT IDENT_CURRENT('" + TABLE_NAME + "')";
             List<Integer> ids = XJdbc.query(idSql, rs -> {
-                return rs.next() ? rs.getInt(1) : null;
+                return rs.next() ? rs.getInt(1) : 0;
             });
-            if (!ids.isEmpty() && ids.get(0) != null) {
-                order.setOrderId(ids.get(0));
+            
+            int newId = !ids.isEmpty() ? ids.get(0) : 0;
+            
+            if (newId > 0) {
+                order.setOrderId(newId);
+                System.out.println("[DEBUG] New order created with ID: " + newId);
+            } else {
+                // Fallback: Try to find the order by code if ID retrieval failed
+                System.err.println("[WARN] Failed to get generated ID, trying to find by code...");
+                Optional<Order> foundOrder = findByCode(order.getOrderCode());
+                if (foundOrder.isPresent()) {
+                    order.setOrderId(foundOrder.get().getOrderId());
+                    System.out.println("[DEBUG] Found order by code with ID: " + order.getOrderId());
+                } else {
+                    System.err.println("[ERROR] Could not retrieve generated order ID");
+                    throw new RuntimeException("Could not retrieve generated order ID");
+                }
             }
 
             return order;
         } else {
             // Cập nhật đơn hàng hiện có
-            String sql = "UPDATE " + TABLE_NAME + " SET customer_id = ?, staff_id = ?, "
+            String sql;
+            if (order.getCustomerId() != null) {
+                sql = "UPDATE " + TABLE_NAME + " SET customer_id = ?, staff_id = ?, "
                     + "order_final_amount = ?, order_payment_method = ?, order_status = ? "
                     + "WHERE order_id = ?";
 
-            XJdbc.executeUpdate(sql,
+                XJdbc.executeUpdate(sql,
                     order.getCustomerId(),
                     order.getStaffId(),
                     order.getOrderFinalAmount(),
                     order.getOrderPaymentMethod(),
                     order.getOrderStatus(),
                     order.getOrderId()
-            );
+                );
+            } else {
+                sql = "UPDATE " + TABLE_NAME + " SET customer_id = NULL, staff_id = ?, "
+                    + "order_final_amount = ?, order_payment_method = ?, order_status = ? "
+                    + "WHERE order_id = ?";
+
+                XJdbc.executeUpdate(sql,
+                    order.getStaffId(),
+                    order.getOrderFinalAmount(),
+                    order.getOrderPaymentMethod(),
+                    order.getOrderStatus(),
+                    order.getOrderId()
+                );
+            }
 
             return order;
         }

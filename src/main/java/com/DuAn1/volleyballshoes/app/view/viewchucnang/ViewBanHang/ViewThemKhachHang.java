@@ -40,13 +40,15 @@ public class ViewThemKhachHang extends javax.swing.JFrame {
             // Thêm dữ liệu vào bảng
             int stt = 1;
             for (Customer customer : customers) {
-                model.addRow(new Object[]{
-                    stt++,
-                    customer.getCustomerFullName(),
-                    customer.getCustomerCode(),
-                    customer.getCustomerEmail() != null ? customer.getCustomerEmail() : "",
-                    customer.getCustomerPhone() != null ? customer.getCustomerPhone() : ""
-                });
+                if (customer != null) {  // Kiểm tra customer có null không
+                    model.addRow(new Object[]{
+                        stt++,
+                        customer.getCustomerFullName() != null ? customer.getCustomerFullName() : "",
+                        customer.getCustomerCode() != null ? customer.getCustomerCode() : "",
+                        customer.getCustomerEmail() != null ? customer.getCustomerEmail() : "",
+                        customer.getCustomerPhone() != null ? customer.getCustomerPhone() : ""
+                    });
+                }
             }
             
             // Đặt lại chiều rộng cột
