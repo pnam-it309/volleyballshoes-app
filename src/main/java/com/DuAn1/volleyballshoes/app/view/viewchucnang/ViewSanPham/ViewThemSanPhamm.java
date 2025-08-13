@@ -44,7 +44,7 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
         loadAllData();
     }
 
-    private void loadAllData() {
+    public void loadAllData() {
         try {
             // Load Sole Types
             List<SoleType> soleTypes = soleTypeDAO.findAll();

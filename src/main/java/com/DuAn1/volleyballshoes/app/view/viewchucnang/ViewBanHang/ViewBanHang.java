@@ -3,6 +3,7 @@ package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang;
 import com.DuAn1.volleyballshoes.app.dao.*;
 import com.DuAn1.volleyballshoes.app.dao.impl.*;
 import com.DuAn1.volleyballshoes.app.entity.*;
+import java.util.Optional;
 import com.DuAn1.volleyballshoes.app.entity.Staff;
 import com.DuAn1.volleyballshoes.app.dao.StaffDAO;
 import java.math.BigDecimal;
@@ -10,15 +11,26 @@ import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import com.DuAn1.volleyballshoes.app.entity.OrderDetail;
+import com.DuAn1.volleyballshoes.app.entity.Size;
+import com.DuAn1.volleyballshoes.app.entity.Color;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import com.DuAn1.volleyballshoes.app.util.SessionManager;
 import com.DuAn1.volleyballshoes.app.utils.XJdbc;
+import java.math.RoundingMode;
 import java.sql.*;
 
 public class ViewBanHang extends javax.swing.JPanel {
 
     private final CustomerDAO customerDAO = new CustomerDAOImpl();
+    private final OrderDAO orderDAO = new OrderDAOImpl();
+    private final OrderDetailDAO orderDetailDAO = new OrderDetailDAOImpl();
+    private final ProductVariantDAO productVariantDAO = new ProductVariantDAOImpl();
+    private final ProductDAO productDAO = new ProductDAOImpl();
+    private final SizeDAO sizeDAO = new SizeDAOImpl();
+    private final ColorDAO colorDAO = new ColorDAOImpl();
+    private final SoleTypeDAO soleTypeDAO = new SoleTypeDAOImpl();
 
     private void initCartTable() {
         DefaultTableModel model = new DefaultTableModel() {
@@ -124,8 +136,24 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     public ViewBanHang() {
         initComponents();
+
+        // Clear the empty rows from tblHoaDon
+        DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
+        while (model.getRowCount() > 0) {
+            model.removeRow(0);
+        }
+
         loadProductVariants();
         initCartTable();
+
+        // Hide invoice information by default
+        // Hide value labels but keep static labels always visible
+        lbMaHD.setVisible(false); // Hide the invoice code value
+        jLabel8.setVisible(true); // Keep the "Mã Hóa Đơn" label always visible
+        lbMaNV.setVisible(false);  // Hide the staff code value
+        jLabel14.setVisible(true); // Keep the "Nhân Viên" label always visible
+        lbNgayTao.setVisible(false); // Hide the creation date value
+        jLabel15.setVisible(true);   // Keep the "Ngày Tạo" label always visible
     }
 
     private void loadProductVariants() {
@@ -138,14 +166,7 @@ public class ViewBanHang extends javax.swing.JPanel {
             String[] columnNames = {"Mã SP", "Tên SP", "Size", "Màu sắc", "Đế giày", "Số lượng", "Giá", "Hình ảnh"};
             model.setColumnIdentifiers(columnNames);
 
-            // Initialize DAOs
-            ProductVariantDAO productVariantDAO = new ProductVariantDAOImpl();
-            ProductDAO productDAO = new ProductDAOImpl();
-            SizeDAO sizeDAO = new SizeDAOImpl();
-            ColorDAO colorDAO = new ColorDAOImpl();
-            SoleTypeDAO soleTypeDAO = new SoleTypeDAOImpl();
-
-            // Fetch all required data
+            // Fetch all variants using the class field DAO
             List<ProductVariant> variants = productVariantDAO.findAll();
 
             // Create caches to avoid repeated database queries
@@ -208,7 +229,162 @@ public class ViewBanHang extends javax.swing.JPanel {
     }
 
     public void getMaQR(String ma) {
+        try {
+            // Clean and normalize the QR code content
+            String variantSku = ma.trim();
+            System.out.println("[DEBUG] Raw QR code input: " + variantSku);
 
+            // Extract just the code part if it's in format "SKU: code"
+            if (variantSku.startsWith("SKU:")) {
+                variantSku = variantSku.substring(4).trim();
+            }
+
+            System.out.println("[DEBUG] Searching for product variant with SKU: " + variantSku);
+
+            // Create a final copy of variantSku for use in lambda
+            final String searchSku = variantSku.trim();
+
+            // Find the product variant by SKU
+            ProductVariant variant = productVariantDAO.findAll().stream()
+                    .filter(v -> v.getVariantSku() != null && v.getVariantSku().trim().equalsIgnoreCase(searchSku))
+                    .findFirst()
+                    .orElse(null);
+
+            if (variant != null) {
+                System.out.println("[DEBUG] Found product variant: " + variant.getVariantSku());
+
+                // Find the product for this variant
+                Product product = productDAO.findById(variant.getProductId());
+                if (product != null) {
+                    System.out.println("[DEBUG] Found product: " + product.getProductName());
+
+                    // Find the product in the table
+                    DefaultTableModel model = (DefaultTableModel) tblSanPham.getModel();
+                    for (int i = 0; i < model.getRowCount(); i++) {
+                        String productId = model.getValueAt(i, 0).toString().trim();
+                        if (productId.equals(String.valueOf(product.getProductId()))) {
+                            System.out.println("[DEBUG] Found product in table at row: " + i);
+                            handleFoundProduct(model, i);
+                            return;
+                        }
+                    }
+
+                    // If we get here, product was found but not in the table
+                    JOptionPane.showMessageDialog(this,
+                            "Sản phẩm không có sẵn trong danh sách hiển thị.",
+                            "Thông báo",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    System.err.println("[ERROR] Product not found for variant: " + variant.getVariantSku());
+                    JOptionPane.showMessageDialog(this,
+                            "Không tìm thấy thông tin sản phẩm.",
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                System.err.println("[ERROR] Product variant not found with SKU: " + variantSku);
+                JOptionPane.showMessageDialog(this,
+                        "Không tìm thấy sản phẩm với mã: " + variantSku,
+                        "Thông báo",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+            // Error handling is already done above
+            // No need for additional checks here
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Có lỗi xảy ra khi xử lý mã QR: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void handleFoundProduct(DefaultTableModel model, int rowIndex) {
+        try {
+            // Get product details
+            String sku = model.getValueAt(rowIndex, 0).toString();
+            String productName = model.getValueAt(rowIndex, 1).toString();
+            BigDecimal price = new BigDecimal(model.getValueAt(rowIndex, 6).toString());
+
+            // Prompt for quantity
+            String quantityStr = JOptionPane.showInputDialog(this,
+                    "Nhập số lượng cho sản phẩm: " + productName + " (Mã: " + sku + ")",
+                    "Nhập số lượng",
+                    JOptionPane.QUESTION_MESSAGE);
+
+            if (quantityStr == null || quantityStr.trim().isEmpty()) {
+                return; // User cancelled
+            }
+
+            try {
+                int quantity = Integer.parseInt(quantityStr.trim());
+                if (quantity <= 0) {
+                    JOptionPane.showMessageDialog(this,
+                            "Số lượng phải lớn hơn 0",
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Add to cart
+                DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+                boolean productExists = false;
+
+                // Check if product already exists in cart
+                for (int j = 0; j < cartModel.getRowCount(); j++) {
+                    String cartSku = cartModel.getValueAt(j, 1).toString();
+                    if (cartSku.equals(sku)) {
+                        // Update existing product quantity
+                        int currentQty = Integer.parseInt(cartModel.getValueAt(j, 3).toString());
+                        cartModel.setValueAt(currentQty + quantity, j, 3);
+                        updateRowTotal(j);
+                        productExists = true;
+                        break;
+                    }
+                }
+
+                // If product doesn't exist in cart, add new row
+                if (!productExists) {
+                    BigDecimal lineTotal = price.multiply(new BigDecimal(quantity));
+                    Object[] rowData = {
+                        "", // Empty for checkbox
+                        sku,
+                        productName,
+                        quantity,
+                        price,
+                        0, // discount percentage
+                        lineTotal // total
+                    };
+                    cartModel.addRow(rowData);
+                }
+
+                // Update cart summary
+                updateCartSummary();
+
+                // Select and scroll to the product in the table
+                tblSanPham.setRowSelectionInterval(rowIndex, rowIndex);
+                tblSanPham.scrollRectToVisible(tblSanPham.getCellRect(rowIndex, 0, true));
+
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                        "Vui lòng nhập số lượng hợp lệ (số nguyên dương)",
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Có lỗi xảy ra khi xử lý sản phẩm: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -238,8 +414,8 @@ public class ViewBanHang extends javax.swing.JPanel {
         jLabel6 = new javax.swing.JLabel();
         txtMaKhachhang = new javax.swing.JTextField();
         btn_Them4 = new javax.swing.JButton();
-        btn_khachvanglai = new javax.swing.JButton();
-        jPanel6 = new javax.swing.JPanel();
+        btn_khachvanglai1 = new javax.swing.JButton();
+        pnl_thongtinhoadon = new javax.swing.JPanel();
         jLabel7 = new javax.swing.JLabel();
         jLabel8 = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
@@ -265,12 +441,6 @@ public class ViewBanHang extends javax.swing.JPanel {
         lbTong = new javax.swing.JLabel();
         btnThanhToan = new javax.swing.JButton();
         lbGiamGiaTot = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
-        jLabel19 = new javax.swing.JLabel();
-        jLabel20 = new javax.swing.JLabel();
-        jLabel21 = new javax.swing.JLabel();
-        jLabel22 = new javax.swing.JLabel();
-        jLabel23 = new javax.swing.JLabel();
         jPanel7 = new javax.swing.JPanel();
         jScrollPane5 = new javax.swing.JScrollPane();
         tblSanPham = new javax.swing.JTable();
@@ -296,7 +466,7 @@ public class ViewBanHang extends javax.swing.JPanel {
                 {null, null, null, null}
             },
             new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
+                "Mã hóa đơn", "Mã nhân viên", "Trạng thái", "Ngày tạo"
             }
         ));
         tblHoaDon.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -488,11 +658,11 @@ public class ViewBanHang extends javax.swing.JPanel {
             }
         });
 
-        btn_khachvanglai.setForeground(new java.awt.Color(51, 102, 255));
-        btn_khachvanglai.setText("Khách vãng lai");
-        btn_khachvanglai.addActionListener(new java.awt.event.ActionListener() {
+        btn_khachvanglai1.setForeground(new java.awt.Color(51, 102, 255));
+        btn_khachvanglai1.setText("Khách vãng lai");
+        btn_khachvanglai1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_khachvanglaiActionPerformed(evt);
+                btn_khachvanglai1ActionPerformed(evt);
             }
         });
 
@@ -503,7 +673,7 @@ public class ViewBanHang extends javax.swing.JPanel {
             .addGroup(jPanel8Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(btn_khachvanglai)
+                    .addComponent(btn_khachvanglai1)
                     .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(jLabel6)
                         .addComponent(txtMaKhachhang, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)))
@@ -521,11 +691,11 @@ public class ViewBanHang extends javax.swing.JPanel {
                     .addComponent(txtMaKhachhang, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btn_Them4))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(btn_khachvanglai)
-                .addContainerGap(13, Short.MAX_VALUE))
+                .addComponent(btn_khachvanglai1)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        jPanel6.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        pnl_thongtinhoadon.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
 
         jLabel7.setText("Thông tin hóa đơn");
 
@@ -609,151 +779,116 @@ public class ViewBanHang extends javax.swing.JPanel {
         lbGiamGiaTot.setFont(new java.awt.Font("Segoe UI", 2, 10)); // NOI18N
         lbGiamGiaTot.setForeground(new java.awt.Color(255, 0, 51));
 
-        jLabel5.setText("jLabel5");
-
-        jLabel19.setText("jLabel19");
-
-        jLabel20.setText("jLabel20");
-
-        jLabel21.setText("jLabel21");
-
-        jLabel22.setText("jLabel22");
-
-        jLabel23.setText("jLabel23");
-
-        javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
-        jPanel6.setLayout(jPanel6Layout);
-        jPanel6Layout.setHorizontalGroup(
-            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel6Layout.createSequentialGroup()
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel6Layout.createSequentialGroup()
+        javax.swing.GroupLayout pnl_thongtinhoadonLayout = new javax.swing.GroupLayout(pnl_thongtinhoadon);
+        pnl_thongtinhoadon.setLayout(pnl_thongtinhoadonLayout);
+        pnl_thongtinhoadonLayout.setHorizontalGroup(
+            pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                         .addContainerGap()
-                        .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel6Layout.createSequentialGroup()
-                                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addGroup(jPanel6Layout.createSequentialGroup()
-                                        .addComponent(jLabel8)
-                                        .addGap(18, 18, 18)
-                                        .addComponent(jLabel5))
-                                    .addGroup(jPanel6Layout.createSequentialGroup()
-                                        .addComponent(jLabel9)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(jLabel19))
+                        .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
+                                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel8)
+                                    .addComponent(jLabel9)
                                     .addComponent(jLabel7)
                                     .addComponent(jLabel11)
-                                    .addGroup(jPanel6Layout.createSequentialGroup()
-                                        .addComponent(jLabel12)
-                                        .addGap(22, 22, 22)
-                                        .addComponent(jLabel22))
+                                    .addComponent(jLabel12)
                                     .addComponent(jLabel16)
-                                    .addGroup(jPanel6Layout.createSequentialGroup()
-                                        .addComponent(jLabel10)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(jLabel20)))
+                                    .addComponent(jLabel10))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addComponent(lbNgayTao, javax.swing.GroupLayout.DEFAULT_SIZE, 122, Short.MAX_VALUE)
                                     .addComponent(lbMaHD, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(lbMaNV, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(lbTenKhachHang, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(lbTongTien, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                            .addGroup(jPanel6Layout.createSequentialGroup()
+                            .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                                 .addComponent(jLabel18)
                                 .addGap(24, 24, 24)
                                 .addComponent(lbTong, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .addGroup(jPanel6Layout.createSequentialGroup()
+                            .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                                 .addComponent(jLabel17)
-                                .addGap(18, 18, 18)
-                                .addComponent(jLabel23)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGap(67, 67, 67)
                                 .addComponent(lbTienThua, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .addGroup(jPanel6Layout.createSequentialGroup()
-                                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                        .addGroup(jPanel6Layout.createSequentialGroup()
+                            .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
+                                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                                             .addComponent(jLabel14)
                                             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                             .addComponent(cbbHinhThucThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE)
                                             .addGap(1, 1, 1))
-                                        .addGroup(jPanel6Layout.createSequentialGroup()
+                                        .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                                             .addComponent(jLabel13)
                                             .addGap(18, 18, 18)
-                                            .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                .addComponent(jLabel21)
-                                                .addComponent(cbbPhieuGiamGia, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                                    .addGroup(jPanel6Layout.createSequentialGroup()
+                                            .addComponent(cbbPhieuGiamGia, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                    .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                                         .addComponent(jLabel15)
                                         .addGap(18, 18, 18)
-                                        .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(txtTienKhachCK, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE)
                                             .addComponent(txtTienKhachDua, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE))))
                                 .addGap(0, 0, Short.MAX_VALUE))))
-                    .addGroup(jPanel6Layout.createSequentialGroup()
+                    .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                         .addGap(12, 12, 12)
                         .addComponent(lbGiamGiaTot, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
-            .addGroup(jPanel6Layout.createSequentialGroup()
+            .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                 .addGap(60, 60, 60)
                 .addComponent(btnThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-        jPanel6Layout.setVerticalGroup(
-            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel6Layout.createSequentialGroup()
+        pnl_thongtinhoadonLayout.setVerticalGroup(
+            pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jLabel7)
                 .addGap(18, 18, 18)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel8)
-                    .addComponent(lbMaHD)
-                    .addComponent(jLabel5))
+                    .addComponent(lbMaHD))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel9)
-                    .addComponent(lbNgayTao)
-                    .addComponent(jLabel19))
+                    .addComponent(lbNgayTao))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel10)
-                    .addComponent(lbMaNV)
-                    .addComponent(jLabel20))
+                    .addComponent(lbMaNV))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel11)
-                    .addComponent(lbTenKhachHang)
-                    .addComponent(jLabel21))
+                    .addComponent(lbTenKhachHang))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel12)
-                    .addComponent(lbTongTien)
-                    .addComponent(jLabel22))
+                    .addComponent(lbTongTien))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(cbbPhieuGiamGia, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel13))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lbGiamGiaTot)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel14)
                     .addComponent(cbbHinhThucThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel15)
                     .addComponent(txtTienKhachDua, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel16)
                     .addComponent(txtTienKhachCK, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel6Layout.createSequentialGroup()
-                        .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel17)
-                            .addComponent(jLabel23))
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
+                        .addComponent(jLabel17)
                         .addGap(18, 18, 18)
-                        .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel18)
                             .addComponent(lbTong)))
                     .addComponent(lbTienThua, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -872,7 +1007,7 @@ public class ViewBanHang extends javax.swing.JPanel {
                         .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, 0, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(272, 272, 272))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(pnl_thongtinhoadon, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
             .addGroup(layout.createSequentialGroup()
                 .addGap(537, 537, 537)
@@ -896,7 +1031,7 @@ public class ViewBanHang extends javax.swing.JPanel {
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(pnl_thongtinhoadon, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -925,7 +1060,7 @@ public class ViewBanHang extends javax.swing.JPanel {
             // Get customer code from form
             String customerCode = txtMaKhachhang.getText().trim();
             Customer customer = null;
-            
+
             // Only validate customer if a code is provided
             if (!customerCode.isEmpty()) {
                 // Check if this is a temporary customer (starts with TEMP_)
@@ -997,31 +1132,110 @@ public class ViewBanHang extends javax.swing.JPanel {
             // Set default values for required fields
             newOrder.setOrderFinalAmount(BigDecimal.ZERO); // Default to 0
             newOrder.setOrderPaymentMethod("Tiền mặt"); // Default payment method
-            
-            // Set customer ID - make it optional
+
+            // Ensure we have a valid customer for the order
             if (customer != null && customer.getCustomerId() != null) {
-                // For regular customers, use their ID if available
+                // 1. Use the selected customer if available
                 newOrder.setCustomerId(customer.getCustomerId());
-                System.out.println("[DEBUG] Using customer ID: " + customer.getCustomerId());
-            } else if (customerCode != null && customerCode.equals("CUS0000")) {
-                // For guest customer (CUS0000), try to find the guest customer
+                System.out.println("[DEBUG] Using selected customer ID: " + customer.getCustomerId());
+            } else {
+                // 2. Try to find the default guest customer (CUS0000)
                 Customer guestCustomer = customerDAO.findByCode("CUS0000");
                 if (guestCustomer != null) {
                     newOrder.setCustomerId(guestCustomer.getCustomerId());
                     System.out.println("[DEBUG] Using guest customer ID: " + guestCustomer.getCustomerId());
                 } else {
-                    System.out.println("[DEBUG] Guest customer not found, proceeding without customer ID");
+                    // 3. If no guest customer exists, create a temporary one
+                    System.out.println("Không tìm thấy khách hàng mặc định, thử tìm bất kỳ khách vãng lai nào");
+
+                    // Try to find any temporary customer by searching with TEMP_ prefix
+                    List<Customer> tempCustomers = null;
+                    Customer tempCustomer = null;
+
+                    try {
+                        tempCustomers = customerDAO.searchByKeyword("TEMP_");
+                        if (tempCustomers != null && !tempCustomers.isEmpty()) {
+                            tempCustomer = tempCustomers.get(0);
+                            if (tempCustomer != null && tempCustomer.getCustomerCode() != null) {
+                                System.out.println("Sử dụng khách vãng lai có sẵn: " + tempCustomer.getCustomerCode());
+                            } else {
+                                System.out.println("Tìm thấy khách vãng lai nhưng thông tin không hợp lệ");
+                                tempCustomer = null;
+                            }
+                        } else {
+                            System.out.println("Không tìm thấy khách vãng lai nào, tạo mới tạm thời");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Lỗi khi tìm kiếm khách vãng lai: " + e.getMessage());
+                        tempCustomer = null;
+                    }
+
+                    // If we still don't have a temp customer, try to create one
+                    if (tempCustomer == null || tempCustomer.getCustomerCode() == null) {
+                        try {
+                            System.out.println("Tạo mới khách hàng tạm thời...");
+                            tempCustomer = new Customer();
+                            String tempCode = "TEMP_" + System.currentTimeMillis();
+                            tempCustomer.setCustomerCode(tempCode);
+                            tempCustomer.setCustomerFullName("Khách vãng lai (" + tempCode + ")");
+                            tempCustomer.setCustomerPhone(tempCode);
+
+                            // Save the temporary customer
+                            tempCustomer = customerDAO.create(tempCustomer);
+                            System.out.println("Đã lưu khách hàng tạm thời: " + tempCode);
+                        } catch (Exception e) {
+                            System.err.println("Lỗi khi tạo khách hàng tạm thời: " + e.getMessage());
+                            tempCustomer = null;
+
+                            // Show error to user
+                            JOptionPane.showMessageDialog(this,
+                                    "Không thể tạo khách hàng tạm thời. Vui lòng thử lại hoặc liên hệ quản trị viên.",
+                                    "Lỗi tạo khách hàng",
+                                    JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                    }
+
+                    if (tempCustomer != null && tempCustomer.getCustomerId() != null) {
+                        newOrder.setCustomerId(tempCustomer.getCustomerId());
+                        System.out.println("Sử dụng khách hàng tạm thời: " + tempCustomer.getCustomerCode());
+
+                        // Update the customer display
+                        setCustomerToForm(tempCustomer);
+                    } else {
+                        // As a last resort, try to find any customer
+                        List<Customer> allCustomers = customerDAO.findAll();
+                        if (allCustomers != null && !allCustomers.isEmpty()) {
+                            Customer anyCustomer = allCustomers.get(0);
+                            if (anyCustomer != null && anyCustomer.getCustomerId() != null) {
+                                newOrder.setCustomerId(anyCustomer.getCustomerId());
+                                System.out.println("Sử dụng khách hàng bất kỳ: " + anyCustomer.getCustomerCode());
+                                setCustomerToForm(anyCustomer);
+                            } else {
+                                // If we can't find any valid customer, show an error and return
+                                JOptionPane.showMessageDialog(this,
+                                        "Không thể tạo đơn hàng: Không tìm thấy thông tin khách hàng hợp lệ.\nVui lòng thử lại hoặc liên hệ quản trị viên.",
+                                        "Lỗi khách hàng",
+                                        JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+                        } else {
+                            // If we still don't have a customer, show error and return
+                            JOptionPane.showMessageDialog(this,
+                                    "Không thể tạo đơn hàng: Không tìm thấy thông tin khách hàng.\nVui lòng thêm ít nhất một khách hàng trước khi tạo đơn hàng mới.",
+                                    "Lỗi khách hàng",
+                                    JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                    }
                 }
-            } else {
-                // For no customer selected, leave customer ID as null
-                System.out.println("[DEBUG] No customer specified, using NULL customer ID");
             }
 
             // Save order to database
             try {
                 OrderDAO orderDAO = new OrderDAOImpl();
                 System.out.println("[DEBUG] Saving order with data: " + newOrder);
-                
+
                 // Save the order
                 Order savedOrder = orderDAO.save(newOrder);
 
@@ -1029,16 +1243,74 @@ public class ViewBanHang extends javax.swing.JPanel {
                     throw new Exception("Không thể lưu hóa đơn vào cơ sở dữ liệu: Invalid order ID");
                 }
                 System.out.println("[DEBUG] Order saved successfully with ID: " + savedOrder.getOrderId());
+
+                // Save order details from cart
+                DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+                List<OrderDetail> orderDetails = new ArrayList<>();
+
+                for (int i = 0; i < cartModel.getRowCount(); i++) {
+                    try {
+                        String variantSku = (String) cartModel.getValueAt(i, 1);
+                        int quantity = (int) cartModel.getValueAt(i, 3);
+                        BigDecimal price = (BigDecimal) cartModel.getValueAt(i, 4);
+                        BigDecimal discountPercent = (BigDecimal) cartModel.getValueAt(i, 5);
+
+                        // Find variant by SKU
+                        // First try to find by SKU directly
+                        ProductVariant variant = null;
+                        try {
+                            // If variantSku is numeric, try to find by ID
+                            int variantId = Integer.parseInt(variantSku);
+                            variant = productVariantDAO.findById(variantId);
+                        } catch (NumberFormatException e) {
+                            // If not numeric, try to find by SKU
+                            List<ProductVariant> variants = productVariantDAO.findAll();
+                            for (ProductVariant v : variants) {
+                                if (variantSku.equals(v.getVariantSku())) {
+                                    variant = v;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (variant == null) {
+                            System.err.println("Variant not found for SKU/ID: " + variantSku);
+                            continue;
+                        }
+
+                        // Create order detail
+                        OrderDetail detail = new OrderDetail();
+                        detail.setOrderId(savedOrder.getOrderId());
+                        detail.setVariantId(variant.getVariantId());
+                        detail.setDetailQuantity(quantity);
+                        detail.setDetailUnitPrice(price);
+                        detail.setDetailDiscountPercent(discountPercent);
+
+                        orderDetails.add(detail);
+
+                    } catch (Exception e) {
+                        System.err.println("Error processing cart row " + i + ": " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                }
+
+                // Save all order details
+                if (!orderDetails.isEmpty()) {
+                    orderDetailDAO.saveAll(orderDetails);
+                    System.out.println("Saved " + orderDetails.size() + " order details for order ID: " + savedOrder.getOrderId());
+                } else {
+                    System.out.println("No order details to save for order ID: " + savedOrder.getOrderId());
+                }
             } catch (Exception e) {
                 System.err.println("[ERROR] Error saving order: " + e.getMessage());
                 e.printStackTrace();
                 throw e;
             }
 
-            // Clear and setup table if needed
+            // Get or initialize the table model
             DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
-            model.setRowCount(0);
 
+            // Initialize columns if table is empty
             if (model.getColumnCount() == 0) {
                 String[] columnNames = {"Mã hóa đơn", "Mã nhân viên", "Trạng thái", "Ngày tạo"};
                 for (String columnName : columnNames) {
@@ -1063,6 +1335,21 @@ public class ViewBanHang extends javax.swing.JPanel {
 
             // Select the newly created order
             tblHoaDon.setRowSelectionInterval(model.getRowCount() - 1, model.getRowCount() - 1);
+
+            // Show and update the invoice information
+            // Static labels (jLabel8, jLabel14, jLabel15) remain always visible
+            // Only update the value labels
+            lbMaHD.setVisible(true);
+            lbMaHD.setText(orderCode);
+
+            // Update staff code
+            lbMaNV.setVisible(true);
+            lbMaNV.setText(staff.getStaffCode());
+
+            // Show and update creation date
+            lbNgayTao.setVisible(true);
+            jLabel15.setVisible(true);
+            lbNgayTao.setText(formattedDate);
 
             // Show success message
             JOptionPane.showMessageDialog(this,
@@ -1090,9 +1377,154 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     }//GEN-LAST:event_btn_Them5btn_ThemActionPerformed
 
-    private void tblHoaDonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblHoaDonMouseClicked
+    private void tblHoaDonMouseClicked(java.awt.event.MouseEvent evt) {
+        try {
+            // Get the selected row index
+            int selectedRow = tblHoaDon.getSelectedRow();
 
-    }//GEN-LAST:event_tblHoaDonMouseClicked
+            // If no row is selected, do nothing
+            if (selectedRow == -1) {
+                return;
+            }
+
+            // Get the order code from the selected row
+            Object orderCodeObj = tblHoaDon.getValueAt(selectedRow, 0);
+            if (orderCodeObj == null) {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy mã hóa đơn", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            String orderCode = orderCodeObj.toString();
+
+            // Debug log
+            System.out.println("Selected order code: " + orderCode);
+
+            // Update the invoice information panel
+            lbMaHD.setVisible(true);
+            lbMaHD.setText(orderCode);
+
+            // Get staff code and creation date from the selected row with null checks
+            Object staffCodeObj = tblHoaDon.getValueAt(selectedRow, 1);
+            Object createDateObj = tblHoaDon.getValueAt(selectedRow, 3);
+
+            // Update staff code and creation date values
+            String staffCode = (staffCodeObj != null) ? staffCodeObj.toString() : "N/A";
+            String createDate = (createDateObj != null) ? createDateObj.toString() : "N/A";
+
+            lbMaNV.setVisible(true);
+            lbMaNV.setText(staffCode);
+
+            lbNgayTao.setVisible(true);
+            lbNgayTao.setText(createDate);
+
+            // Initialize cart table model if not already done
+            DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+            if (cartModel == null) {
+                initCartTable();
+                cartModel = (DefaultTableModel) tblGioHang.getModel();
+            } else {
+                // Clear existing rows
+                cartModel.setRowCount(0);
+            }
+
+            // Find the order by code
+            System.out.println("Looking up order with code: " + orderCode);
+            Optional<Order> orderOpt = orderDAO.findByCode(orderCode);
+
+            if (orderOpt.isPresent()) {
+                Order order = orderOpt.get();
+                System.out.println("Found order with ID: " + order.getOrderId());
+
+                // Get order details from OrderDetail table
+                List<OrderDetail> orderDetails = orderDetailDAO.findByOrderId(order.getOrderId());
+                System.out.println("Found " + orderDetails.size() + " order details");
+
+                // Add order details to the cart table
+                for (OrderDetail detail : orderDetails) {
+                    if (detail == null) {
+                        System.out.println("Skipping null order detail");
+                        continue;
+                    }
+
+                    System.out.println("Processing order detail - Variant ID: " + detail.getVariantId()
+                            + ", Qty: " + detail.getDetailQuantity()
+                            + ", Price: " + detail.getDetailUnitPrice());
+
+                    // Get product variant details
+                    ProductVariant variant = productVariantDAO.findById(detail.getVariantId());
+
+                    if (variant != null) {
+                        System.out.println("Found variant - SKU: " + variant.getVariantSku()
+                                + ", Product ID: " + variant.getProductId());
+
+                        // Get product details
+                        Product product = productDAO.findById(variant.getProductId());
+
+                        if (product != null) {
+                            int quantity = detail.getDetailQuantity();
+                            BigDecimal price = detail.getDetailUnitPrice();
+                            BigDecimal discountPercent = detail.getDetailDiscountPercent() != null
+                                    ? detail.getDetailDiscountPercent() : BigDecimal.ZERO;
+
+                            // Calculate total price with discount
+                            BigDecimal totalPrice = price.multiply(BigDecimal.valueOf(quantity));
+                            if (discountPercent.compareTo(BigDecimal.ZERO) > 0) {
+                                BigDecimal discountAmount = totalPrice.multiply(discountPercent)
+                                        .divide(new BigDecimal(100), 2, RoundingMode.HALF_UP);
+                                totalPrice = totalPrice.subtract(discountAmount);
+                            }
+
+                            // Get color and size information
+                            Color color = colorDAO.findById(variant.getColorId());
+                            Size size = sizeDAO.findById(variant.getSizeId());
+
+                            // Build product name with variant details
+                            String productName = product.getProductName();
+                            if (color != null) {
+                                productName += " - " + color.getColorName();
+                            }
+                            if (size != null) {
+                                productName += " - " + size.getSizeCode();
+                            }
+
+                            // Add to cart table
+                            cartModel.addRow(new Object[]{
+                                cartModel.getRowCount() + 1, // STT
+                                variant.getVariantSku(), // Mã SP
+                                productName, // Tên sản phẩm + variant
+                                quantity, // Số lượng
+                                price, // Đơn giá
+                                discountPercent, // Giảm giá (%)
+                                totalPrice, // Thành tiền
+                                variant.getVariantId() // Store variant ID for reference
+                            });
+
+                            System.out.println("Added to cart - " + productName + ", Qty: " + quantity + ", Price: " + price);
+                        } else {
+                            System.out.println("Product not found for ID: " + variant.getProductId());
+                        }
+                    } else {
+                        System.out.println("Variant not found for ID: " + detail.getVariantId());
+                    }
+                }
+
+                // Update cart summary and refresh UI
+                System.out.println("Updating cart summary");
+                updateCartSummary();
+
+                // Force UI refresh
+                tblGioHang.revalidate();
+                tblGioHang.repaint();
+
+                System.out.println("Cart updated with " + cartModel.getRowCount() + " items");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tải chi tiết hóa đơn: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     private void txtTimKiemSPCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_txtTimKiemSPCaretUpdate
 
@@ -1195,8 +1627,14 @@ public class ViewBanHang extends javax.swing.JPanel {
                 cartModel.addRow(rowData);
             }
 
-            // Update cart summary
+            // Update cart summary and refresh UI
             updateCartSummary();
+
+            // Force UI refresh
+            tblGioHang.revalidate();
+            tblGioHang.repaint();
+
+            System.out.println("Cart updated with " + cartModel.getRowCount() + " items");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -1207,6 +1645,32 @@ public class ViewBanHang extends javax.swing.JPanel {
     private void tblSanPhamMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblSanPhamMouseClicked
 
     }//GEN-LAST:event_tblSanPhamMouseClicked
+
+    // Callback implementation for customer selection
+    private final ViewThemKhachHang.ViewBanHangCallback customerSelectionCallback = new ViewThemKhachHang.ViewBanHangCallback() {
+        @Override
+        public void onCustomerSelected(String tenKH, String sdt, String email) {
+            // Update the customer information in the form
+            txtMaKhachhang.setText(sdt); // Using phone number as customer ID
+            lbTenKhachHang.setText(tenKH);
+
+            // Enable the create invoice button if it was disabled
+            btnTheHoaDon.setEnabled(true);
+        }
+    };
+
+    private void btn_Them4btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {
+        java.awt.EventQueue.invokeLater(() -> {
+            ViewThemKhachHang viewThemKhachHang = new ViewThemKhachHang();
+            viewThemKhachHang.setViewBanHangCallback(customerSelectionCallback);
+            viewThemKhachHang.setLocationRelativeTo(null);
+            viewThemKhachHang.setVisible(true);
+        });
+    }
+
+    private void txtMaKhachhangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtMaKhachhangActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtMaKhachhangActionPerformed
 
     private void btnThanhToanbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThanhToanbtn_ThemActionPerformed
         // Validate cart is not empty
@@ -1270,15 +1734,15 @@ public class ViewBanHang extends javax.swing.JPanel {
             // Get customer information from form
             String customerCode = txtMaKhachhang.getText().trim();
             Customer customer = null;
-            
+
             // Check if this is a temporary customer
             boolean isTemporaryCustomer = customerCode.startsWith("TEMP_");
-            
+
             // Only try to find customer if a code is provided and it's not a temporary customer
             if (!customerCode.isEmpty() && !isTemporaryCustomer) {
                 // First try to find by code (for guest customers and regular customers)
                 customer = customerDAO.findByCode(customerCode);
-                
+
                 // If not found by code, try to parse as ID
                 if (customer == null) {
                     try {
@@ -1288,13 +1752,13 @@ public class ViewBanHang extends javax.swing.JPanel {
                         // Not a valid ID, continue with null customer
                     }
                 }
-                
+
                 // If still not found and it's not a guest customer, show error
                 if (customer == null && !customerCode.equals("CUS0000")) {
                     JOptionPane.showMessageDialog(this,
-                        "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
-                        "Không tìm thấy khách hàng",
-                        JOptionPane.ERROR_MESSAGE);
+                            "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
+                            "Không tìm thấy khách hàng",
+                            JOptionPane.ERROR_MESSAGE);
                     return;
                 }
             } else if (isTemporaryCustomer) {
@@ -1303,7 +1767,7 @@ public class ViewBanHang extends javax.swing.JPanel {
 
             // Create order
             Order order = new Order();
-            
+
             // Set customer ID if customer was found, otherwise it will be null
             if (customer != null) {
                 order.setCustomerId(customer.getCustomerId());
@@ -1422,111 +1886,115 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     }//GEN-LAST:event_cbbPhieuGiamGiaActionPerformed
 
-    // Callback implementation for customer selection
-    private final ViewThemKhachHang.ViewBanHangCallback customerSelectionCallback = new ViewThemKhachHang.ViewBanHangCallback() {
-        @Override
-        public void onCustomerSelected(String tenKH, String sdt, String email) {
-            // Update the customer information in the form
-            txtMaKhachhang.setText(sdt); // Using phone number as customer ID
-            lbTenKhachHang.setText(tenKH);
-            
-            // Enable the create invoice button if it was disabled
-            btnTheHoaDon.setEnabled(true);
-        }
-    };
-
-    private void btn_Them4btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {
-        java.awt.EventQueue.invokeLater(() -> {
-            ViewThemKhachHang viewThemKhachHang = new ViewThemKhachHang();
-            viewThemKhachHang.setViewBanHangCallback(customerSelectionCallback);
-            viewThemKhachHang.setLocationRelativeTo(null);
-            viewThemKhachHang.setVisible(true);
-        });
-    }//GEN-LAST:event_btn_Them4btn_ThemActionPerformed
-
-    private void txtMaKhachhangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtMaKhachhangActionPerformed
+    private void btn_khachvanglai1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_khachvanglai1ActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_txtMaKhachhangActionPerformed
-
-    // Helper method to generate random customer code
-    private String generateRandomCustomerCode() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        String nums = "0123456789";
-        Random random = new Random();
-        
-        // Format: CUS + 3 random letters + 3 random numbers
-        StringBuilder sb = new StringBuilder("CUS");
-        
-        // Add 3 random letters
-        for (int i = 0; i < 3; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        
-        // Add 3 random numbers
-        for (int i = 0; i < 3; i++) {
-            sb.append(nums.charAt(random.nextInt(nums.length())));
-        }
-        
-        return sb.toString();
-    }
-
-    private void btn_khachvanglaiActionPerformed(java.awt.event.ActionEvent evt) {
         String guestCode = "CUS0000";
         final String GUEST_NAME = "Khách vãng lai";
         Customer guestCustomer = null;
 
         try {
-            // Try to find the default guest customer first
+            // First try to find by exact code (case sensitive)
             guestCustomer = customerDAO.findByCode(guestCode);
-            
+
+            // If not found, try case-insensitive search using SQL
             if (guestCustomer == null) {
-                System.out.println("[DEBUG] Không tìm thấy khách hàng mặc định, thử tìm bất kỳ khách vãng lai nào");
-                
-                // Try to find any existing guest customer
-                List<Customer> guestCustomers = customerDAO.searchByKeyword("KHACH VANG LAI");
-                if (guestCustomers != null && !guestCustomers.isEmpty()) {
-                    guestCustomer = guestCustomers.get(0);
-                    System.out.println("[DEBUG] Đã tìm thấy khách vãng lai hiện có: " + guestCustomer.getCustomerCode());
-                } else {
-                    System.out.println("[DEBUG] Không tìm thấy khách vãng lai nào, sử dụng tạm thời");
-                    // Use a temporary in-memory customer
-                    guestCustomer = new Customer();
-                    guestCustomer.setCustomerCode("TEMP_" + System.currentTimeMillis());
-                    guestCustomer.setCustomerFullName(GUEST_NAME);
+                System.out.println("[DEBUG] Không tìm thấy khách hàng với mã " + guestCode + ", đang tìm kiếm không phân biệt hoa thường...");
+
+                // Try to find using direct SQL with UPPER function for case-insensitive search
+                String sql = "SELECT * FROM Customer WHERE UPPER(customer_code) = UPPER(?)";
+                Connection conn = XJdbc.openConnection();
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setString(1, guestCode);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) {
+                            guestCustomer = new Customer();
+                            guestCustomer.setCustomerCode(rs.getString("customer_code"));
+                            guestCustomer.setCustomerFullName(rs.getString("customer_full_name"));
+                            guestCustomer.setCustomerPhone(rs.getString("customer_phone"));
+                            guestCustomer.setCustomerEmail(rs.getString("customer_email"));
+                            System.out.println("[DEBUG] Đã tìm thấy khách hàng bằng tìm kiếm không phân biệt hoa thường: " + guestCustomer.getCustomerCode());
+                        }
+                    }
+                } catch (SQLException e) {
+                    System.err.println("[DEBUG] Lỗi khi tìm kiếm khách hàng: " + e.getMessage());
                 }
-            } else {
-                System.out.println("[DEBUG] Tìm thấy khách hàng mặc định: " + guestCustomer.getCustomerCode());
             }
-            
-            // Update the form with the guest customer
-            setCustomerToForm(guestCustomer);
-            
+
+            // If still not found, try to create new one
+            if (guestCustomer == null) {
+                System.out.println("[DEBUG] Không tìm thấy khách hàng mặc định, đang tạo mới...");
+
+                try {
+                    guestCustomer = new Customer();
+                    guestCustomer.setCustomerCode(guestCode);
+                    guestCustomer.setCustomerFullName(GUEST_NAME);
+                    guestCustomer.setCustomerPhone("0000000000");
+                    guestCustomer.setCustomerEmail("guest@example.com");
+
+                    // Try to create the customer
+                    Customer createdCustomer = customerDAO.create(guestCustomer);
+                    if (createdCustomer != null && createdCustomer.getCustomerCode() != null) {
+                        guestCustomer = createdCustomer;
+                        System.out.println("[DEBUG] Đã tạo mới khách hàng mặc định: " + guestCustomer.getCustomerCode());
+                    } else {
+                        throw new Exception("Không thể tạo tài khoản khách vãng lai");
+                    }
+                } catch (Exception createEx) {
+                    // If we get a unique constraint violation, it means the customer exists but we couldn't find it
+                    if (createEx.getMessage() != null && (createEx.getMessage().contains("Violation of UNIQUE KEY")
+                            || createEx.getMessage().contains("duplicate key"))) {
+                        System.out.println("[DEBUG] Phát hiện khách hàng đã tồn tại, thử tìm lại...");
+                        // Try one more time to find the customer with direct SQL
+                        String sql = "SELECT * FROM Customer WHERE UPPER(customer_code) = UPPER(?)";
+                        Connection conn = XJdbc.openConnection();
+                        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                            stmt.setString(1, guestCode);
+                            try (ResultSet rs = stmt.executeQuery()) {
+                                if (rs.next()) {
+                                    guestCustomer = new Customer();
+                                    guestCustomer.setCustomerCode(rs.getString("customer_code"));
+                                    guestCustomer.setCustomerFullName(rs.getString("customer_full_name"));
+                                    guestCustomer.setCustomerPhone(rs.getString("customer_phone"));
+                                    guestCustomer.setCustomerEmail(rs.getString("customer_email"));
+                                    System.out.println("[DEBUG] Đã tìm thấy khách hàng sau khi phát hiện trùng lặp: " + guestCustomer.getCustomerCode());
+                                } else {
+                                    throw new Exception("Khách hàng đã tồn tại nhưng không thể tìm thấy");
+                                }
+                            }
+                        } catch (SQLException e) {
+                            throw new Exception("Không thể tìm thấy hoặc tạo khách hàng: " + e.getMessage());
+                        }
+                    } else {
+                        throw createEx;
+                    }
+                }
+            }
+
+            // Update the form with the found or created customer
+            if (guestCustomer != null) {
+                setCustomerToForm(guestCustomer);
+            } else {
+                throw new Exception("Không thể tìm hoặc tạo khách hàng mặc định");
+            }
+
         } catch (Exception e) {
             System.err.println("[DEBUG] Lỗi khi xử lý khách vãng lai: " + e.getMessage());
             e.printStackTrace();
-            
-            // Fallback to temporary customer on error
-            guestCustomer = new Customer();
-            guestCustomer.setCustomerCode("TEMP_" + System.currentTimeMillis());
-            guestCustomer.setCustomerFullName(GUEST_NAME);
-            setCustomerToForm(guestCustomer);
-            
             JOptionPane.showMessageDialog(this,
-                "Đã xảy ra lỗi khi tìm khách vãng lai. Đang sử dụng tài khoản tạm thời.",
-                "Thông báo",
-                JOptionPane.WARNING_MESSAGE);
+                    "Không thể tìm hoặc tạo tài khoản khách vãng lai. Vui lòng thử lại hoặc liên hệ quản trị viên.\n"
+                    + "Lỗi: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    // Helper method to set customer information to the form
+    }//GEN-LAST:event_btn_khachvanglai1ActionPerformed
     private void setCustomerToForm(Customer customer) {
         if (customer != null) {
             // Set customer code to the text field
             txtMaKhachhang.setText(customer.getCustomerCode() != null ? customer.getCustomerCode() : "");
-            
+
             // Set customer name to the label
             lbTenKhachHang.setText(customer.getCustomerFullName() != null ? customer.getCustomerFullName() : "");
-            
+
             // If this is a temporary customer, store it in the field
             if (customer.getCustomerCode() != null && customer.getCustomerCode().startsWith("TEMP_")) {
                 currentTemporaryCustomer = customer;
@@ -1534,7 +2002,7 @@ public class ViewBanHang extends javax.swing.JPanel {
             } else {
                 currentTemporaryCustomer = null;
             }
-            
+
             // Enable the create invoice button
             btnTheHoaDon.setEnabled(true);
         } else {
@@ -1544,6 +2012,28 @@ public class ViewBanHang extends javax.swing.JPanel {
             currentTemporaryCustomer = null;
             System.out.println("[DEBUG] Đã xóa thông tin khách hàng");
         }
+    }
+    // Helper method to generate random customer code
+
+    private String generateRandomCustomerCode() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String nums = "0123456789";
+        Random random = new Random();
+
+        // Format: CUS + 3 random letters + 3 random numbers
+        StringBuilder sb = new StringBuilder("CUS");
+
+        // Add 3 random letters
+        for (int i = 0; i < 3; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+
+        // Add 3 random numbers
+        for (int i = 0; i < 3; i++) {
+            sb.append(nums.charAt(random.nextInt(nums.length())));
+        }
+
+        return sb.toString();
     }
 
     public static void main(String args[]) {
@@ -1586,7 +2076,7 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JButton btn_Them4;
     private javax.swing.JButton btn_Them5;
     private javax.swing.JButton btn_chon_san_pham;
-    private javax.swing.JButton btn_khachvanglai;
+    private javax.swing.JButton btn_khachvanglai1;
     private javax.swing.JComboBox<String> cbbHinhThucThanhToan;
     private javax.swing.JComboBox<String> cbbPhieuGiamGia;
     private javax.swing.JComboBox<String> jComboBox1;
@@ -1603,15 +2093,9 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel18;
-    private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel20;
-    private javax.swing.JLabel jLabel21;
-    private javax.swing.JLabel jLabel22;
-    private javax.swing.JLabel jLabel23;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
@@ -1620,7 +2104,6 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
-    private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
     private javax.swing.JScrollPane jScrollPane1;
@@ -1636,6 +2119,7 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JLabel lbTienThua;
     private javax.swing.JLabel lbTong;
     private javax.swing.JLabel lbTongTien;
+    private javax.swing.JPanel pnl_thongtinhoadon;
     private javax.swing.JTable tblGioHang;
     private javax.swing.JTable tblHoaDon;
     private javax.swing.JTable tblSanPham;

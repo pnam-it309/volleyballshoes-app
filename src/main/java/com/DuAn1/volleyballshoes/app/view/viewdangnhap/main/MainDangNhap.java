@@ -149,6 +149,7 @@ public class MainDangNhap extends javax.swing.JFrame {
         
         btnGbc.gridx = 1;
         btnGbc.gridy = 0;
+        mainButtonPanel.add(btnThoat, btnGbc);
        
         // Add Forgot Password button below the main buttons
         JPanel forgotPassPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 5));

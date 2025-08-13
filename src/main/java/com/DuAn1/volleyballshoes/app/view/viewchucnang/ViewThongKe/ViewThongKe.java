@@ -1,13 +1,22 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewThongKe;
 
 import com.DuAn1.volleyballshoes.app.controller.StatisticController;
+import com.DuAn1.volleyballshoes.app.dao.ThongKeDao;
+import com.DuAn1.volleyballshoes.app.dao.impl.ThongKeDaoImpl;
+import java.awt.Color;
 import java.math.BigDecimal;
 import java.util.Date;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartFrame;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.DefaultCategoryDataset;
 
 public class ViewThongKe extends javax.swing.JPanel {
-
+    ThongKeDao rp = new ThongKeDaoImpl();
     public ViewThongKe() {
 
         initComponents();
@@ -15,9 +24,10 @@ public class ViewThongKe extends javax.swing.JPanel {
     }
 
     /**
-     * Cập nhật dữ liệu cho các bảng thống kê dựa trên khoảng thời gian được chọn
-     * 
-     * @param tuNgay  Ngày bắt đầu lọc dữ liệu
+     * Cập nhật dữ liệu cho các bảng thống kê dựa trên khoảng thời gian được
+     * chọn
+     *
+     * @param tuNgay Ngày bắt đầu lọc dữ liệu
      * @param denNgay Ngày kết thúc lọc dữ liệu
      */
     private void updateTableData(Date tuNgay, Date denNgay) {
@@ -37,9 +47,9 @@ public class ViewThongKe extends javax.swing.JPanel {
 
             // Thêm dữ liệu mới vào bảng doanh thu
             for (Object[] row : revenueData) {
-                revenueModel.addRow(new Object[] {
-                        row[0], // Tháng
-                        String.format("%,.0f VNĐ", Double.parseDouble(row[1].toString())) // Định dạng tiền tệ
+                revenueModel.addRow(new Object[]{
+                    row[0], // Tháng
+                    String.format("%,.0f VNĐ", Double.parseDouble(row[1].toString())) // Định dạng tiền tệ
                 });
             }
 
@@ -50,9 +60,9 @@ public class ViewThongKe extends javax.swing.JPanel {
 
             // Thêm dữ liệu mới vào bảng đơn hủy
             for (Object[] row : canceledData) {
-                canceledModel.addRow(new Object[] {
-                        row[0], // Tháng
-                        row[1] // Số đơn hủy
+                canceledModel.addRow(new Object[]{
+                    row[0], // Tháng
+                    row[1] // Số đơn hủy
                 });
             }
 
@@ -65,6 +75,7 @@ public class ViewThongKe extends javax.swing.JPanel {
                     JOptionPane.ERROR_MESSAGE);
         }
     }
+
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -97,6 +108,7 @@ public class ViewThongKe extends javax.swing.JPanel {
             }
         });
     }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -125,7 +137,7 @@ public class ViewThongKe extends javax.swing.JPanel {
         jLabel8 = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
         DCDenNgay = new com.toedter.calendar.JDateChooser();
-        btnTim = new javax.swing.JButton();
+        btnTim1 = new javax.swing.JButton();
         jLabel7 = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
         pnDoanhTHu = new javax.swing.JTabbedPane();
@@ -137,7 +149,7 @@ public class ViewThongKe extends javax.swing.JPanel {
         tblDoanhThu = new javax.swing.JTable();
         jPanel10 = new javax.swing.JPanel();
         cbbLocNam1 = new javax.swing.JComboBox<>();
-        btnBieuDo = new javax.swing.JButton();
+        btnBieuDo1 = new javax.swing.JButton();
 
         setBackground(new java.awt.Color(255, 255, 255));
 
@@ -147,11 +159,7 @@ public class ViewThongKe extends javax.swing.JPanel {
 
         jPanel5.setBackground(new java.awt.Color(0, 102, 255));
         jPanel5.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
-        jPanel5.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jPanel5MouseClicked(evt);
-            }
-        });
+
 
         jLabelTong.setBackground(new java.awt.Color(255, 255, 255));
         jLabelTong.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
@@ -192,11 +200,7 @@ public class ViewThongKe extends javax.swing.JPanel {
         jPanel1.setBackground(new java.awt.Color(255, 51, 51));
         jPanel1.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
         jPanel1.setForeground(new java.awt.Color(255, 255, 255));
-        jPanel1.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jPanel1MouseClicked(evt);
-            }
-        });
+
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
@@ -230,11 +234,7 @@ public class ViewThongKe extends javax.swing.JPanel {
 
         jPanel2.setBackground(new java.awt.Color(0, 204, 102));
         jPanel2.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
-        jPanel2.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jPanel2MouseClicked(evt);
-            }
-        });
+
 
         jLabel4.setBackground(new java.awt.Color(255, 255, 255));
         jLabel4.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
@@ -267,11 +267,7 @@ public class ViewThongKe extends javax.swing.JPanel {
 
         jPanel3.setBackground(new java.awt.Color(255, 204, 0));
         jPanel3.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
-        jPanel3.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jPanel3MouseClicked(evt);
-            }
-        });
+
 
         jLabel5.setBackground(new java.awt.Color(255, 255, 255));
         jLabel5.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
@@ -349,13 +345,13 @@ public class ViewThongKe extends javax.swing.JPanel {
         jLabel9.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         jLabel9.setText("Đến");
 
-        btnTim.setBackground(new java.awt.Color(0, 102, 255));
-        btnTim.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        btnTim.setForeground(new java.awt.Color(255, 255, 255));
-        btnTim.setText("Tìm");
-        btnTim.addActionListener(new java.awt.event.ActionListener() {
+        btnTim1.setBackground(new java.awt.Color(0, 102, 255));
+        btnTim1.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnTim1.setForeground(new java.awt.Color(255, 255, 255));
+        btnTim1.setText("Tìm");
+        btnTim1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnTimActionPerformed(evt);
+                btnTim1ActionPerformed(evt);
             }
         });
 
@@ -372,16 +368,16 @@ public class ViewThongKe extends javax.swing.JPanel {
                 .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(DCDenNgay, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(38, 38, 38)
-                .addComponent(btnTim, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 38, Short.MAX_VALUE)
+                .addComponent(btnTim1, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(16, 16, 16))
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel6Layout.createSequentialGroup()
                 .addGap(27, 27, 27)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(btnTim)
+                    .addComponent(btnTim1)
                     .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(DCDenNgay, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
@@ -470,10 +466,10 @@ public class ViewThongKe extends javax.swing.JPanel {
 
         cbbLocNam1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "2024", "2023" }));
 
-        btnBieuDo.setText("Biểu đồ");
-        btnBieuDo.addActionListener(new java.awt.event.ActionListener() {
+        btnBieuDo1.setText("Biểu đồ");
+        btnBieuDo1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBieuDoActionPerformed(evt);
+                btnBieuDo1ActionPerformed(evt);
             }
         });
 
@@ -485,7 +481,7 @@ public class ViewThongKe extends javax.swing.JPanel {
                 .addGap(13, 13, 13)
                 .addComponent(cbbLocNam1, 0, 67, Short.MAX_VALUE)
                 .addGap(18, 18, 18)
-                .addComponent(btnBieuDo)
+                .addComponent(btnBieuDo1)
                 .addContainerGap())
         );
         jPanel10Layout.setVerticalGroup(
@@ -494,7 +490,7 @@ public class ViewThongKe extends javax.swing.JPanel {
                 .addGap(25, 25, 25)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cbbLocNam1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnBieuDo))
+                    .addComponent(btnBieuDo1))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -570,78 +566,41 @@ public class ViewThongKe extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btnTimActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnTimActionPerformed
-        try {
-            // Lấy ngày bắt đầu và kết thúc từ JDateChooser
-            Date tuNgay = DCTuNgay.getDate();
-            Date denNgay = DCDenNgay.getDate();
+    private void btnTim1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTim1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnTim1ActionPerformed
 
-            // Kiểm tra đã chọn đủ ngày chưa
-            if (tuNgay == null || denNgay == null) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc", "Thông báo",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
+    private void btnBieuDo1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBieuDo1ActionPerformed
+        // TODO add your handling code here:
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        dataset.setValue(rp.layDoanhThu(1, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 1");
+        dataset.setValue(rp.layDoanhThu(2, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 2");
+        dataset.setValue(rp.layDoanhThu(3, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 3");
+        dataset.setValue(rp.layDoanhThu(4, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 4");
+        dataset.setValue(rp.layDoanhThu(5, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 5");
+        dataset.setValue(rp.layDoanhThu(6, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 6");
+        dataset.setValue(rp.layDoanhThu(7, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 7");
+        dataset.setValue(rp.layDoanhThu(8, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 8");
+        dataset.setValue(rp.layDoanhThu(9, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 9");
+        dataset.setValue(rp.layDoanhThu(10, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 10");
+        dataset.setValue(rp.layDoanhThu(11, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 11");
+        dataset.setValue(rp.layDoanhThu(12, cbbLocNam1.getSelectedItem().toString()), "marks", "tháng 12");
+        JFreeChart chart = ChartFactory.createBarChart("Năm " + cbbLocNam1.getSelectedItem().toString(), "các tháng", "doanh thu(đồng)", dataset, PlotOrientation.VERTICAL, false, true, false);
+        CategoryPlot p = chart.getCategoryPlot();
+        p.setRangeGridlinePaint(Color.black);
+        p.setBackgroundPaint(Color.white);
+        ChartFrame frame = new ChartFrame("biểu dồ doanh thu tháng", chart);
+        frame.setVisible(true);
 
-            // Kiểm tra ngày bắt đầu phải trước hoặc bằng ngày kết thúc
-            if (tuNgay.after(denNgay)) {
-                JOptionPane.showMessageDialog(this, "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc", "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+        frame.setSize(1131, 743);
+    }//GEN-LAST:event_btnBieuDo1ActionPerformed
 
-            // Lấy instance của StatisticController
-            StatisticController statisticController = new StatisticController();
-
-            // Lấy dữ liệu thống kê trong khoảng thời gian
-            BigDecimal doanhThu = statisticController.getRevenueByDateRange(tuNgay, denNgay);
-            int soDonHang = statisticController.getTotalOrders();
-            int soDonHuy = statisticController.getCanceledOrders();
-            int soKhachHangMoi = statisticController.getNewCustomersCount();
-
-            // Hiển thị dữ liệu lên giao diện
-            jLableDoanhThu.setText(String.format("%,.0f VNĐ", doanhThu != null ? doanhThu.doubleValue() : 0));
-            jLabelSoHoaDon.setText(String.valueOf(soDonHang));
-            lbDonHuy.setText(String.valueOf(soDonHuy));
-            lbKhachHang.setText(String.valueOf(soKhachHangMoi));
-
-            // Cập nhật dữ liệu bảng
-            updateTableData(tuNgay, denNgay);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Có lỗi xảy ra: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }// GEN-LAST:event_btnTimActionPerformed
-
-    private void jPanel5MouseClicked(java.awt.event.MouseEvent evt) {// GEN-FIRST:event_jPanel5MouseClicked
-
-    }// GEN-LAST:event_jPanel5MouseClicked
-
-    private void btnBieuDoActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnBieuDoActionPerformed
-
-    }// GEN-LAST:event_btnBieuDoActionPerformed
-
-    private void jPanel1MouseClicked(java.awt.event.MouseEvent evt) {// GEN-FIRST:event_jPanel1MouseClicked
-
-    }// GEN-LAST:event_jPanel1MouseClicked
-
-    private void jPanel2MouseClicked(java.awt.event.MouseEvent evt) {// GEN-FIRST:event_jPanel2MouseClicked
-
-    }// GEN-LAST:event_jPanel2MouseClicked
-
-    private void jPanel3MouseClicked(java.awt.event.MouseEvent evt) {// GEN-FIRST:event_jPanel3MouseClicked
-
-    }// GEN-LAST:event_jPanel3MouseClicked
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.toedter.calendar.JDateChooser DCDenNgay;
     private com.toedter.calendar.JDateChooser DCTuNgay;
-    private javax.swing.JButton btnBieuDo;
-    private javax.swing.JButton btnTim;
+    private javax.swing.JButton btnBieuDo1;
+    private javax.swing.JButton btnTim1;
     private javax.swing.JComboBox<String> cbbLocNam;
     private javax.swing.JComboBox<String> cbbLocNam1;
     private javax.swing.JLabel jLabel1;

@@ -153,39 +153,73 @@ public class QuetQRBanHang extends javax.swing.JFrame implements Runnable, Threa
         do {
             try {
                 Thread.sleep(33);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            Result result = null;
-            BufferedImage image = null;
 
-            if (webcam.isOpen()) {
-                if ((image = webcam.getImage()) == null) {
+                if (webcam == null || !webcam.isOpen()) {
+                    System.err.println("[ERROR] Webcam is not available or closed");
                     continue;
                 }
-            }
-            LuminanceSource source = new BufferedImageLuminanceSource(image);
-            BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
-            try {
-                result = new MultiFormatReader().decode(bitmap);
-            } catch (NotFoundException e) {
+                BufferedImage image = webcam.getImage();
+                if (image == null) {
+                    System.err.println("[WARN] No image received from webcam");
+                    continue;
+                }
 
-            }
+                try {
+                    LuminanceSource source = new BufferedImageLuminanceSource(image);
+                    BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
-            if (result != null) {
-                final String qrText = result.getText();
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        webcam.close();
-                        setVisible(false);
-                        viewBanHang.getMaQR(qrText);
-
+                    Result result = new MultiFormatReader().decode(bitmap);
+                    if (result != null) {
+                        final String qrText = result.getText().trim();
+                        if (!qrText.isEmpty()) {
+                            System.out.println("[DEBUG] QR Code detected: " + qrText);
+                            processQRCode(qrText);
+                            // Stop scanning after successful read
+                            break;
+                        }
                     }
-                });
+                } catch (NotFoundException e) {
+                    // No QR code found in the image, continue scanning
+                    continue;
+                } catch (Exception e) {
+                    System.err.println("[ERROR] Error processing QR code: " + e.getMessage());
+                    e.printStackTrace();
+                    // Continue scanning on error
+                    continue;
+                }
+
+            } catch (Exception e) {
+                System.err.println("[ERROR] Error in QR scanning loop: " + e.getMessage());
+                e.printStackTrace();
+                // Add a small delay to prevent tight loop on error
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ie) {
+                }
             }
         } while (true);
+    }
+
+    private void processQRCode(final String qrText) {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                if (viewBanHang != null) {
+                    viewBanHang.getMaQR(qrText);
+                } else {
+                    System.err.println("[ERROR] ViewBanHang reference is null");
+                }
+            } catch (Exception e) {
+                System.err.println("[ERROR] Error processing QR code: " + e.getMessage());
+                e.printStackTrace();
+            } finally {
+                // Close the webcam and dispose the window
+                if (webcam != null) {
+                    webcam.close();
+                }
+                dispose();
+            }
+        });
     }
 
     @Override

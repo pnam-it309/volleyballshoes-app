@@ -1,13 +1,71 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewPhieuGiamGia;
 
+import com.DuAn1.volleyballshoes.app.dao.PromotionDAO;
+import com.DuAn1.volleyballshoes.app.dao.impl.PromotionDAOImpl;
+import com.DuAn1.volleyballshoes.app.entity.Promotion;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+
 public class ViewPhieuGiamGia extends javax.swing.JPanel {
+    
+    private final PromotionDAO promotionDAO = new PromotionDAOImpl();
 
     public ViewPhieuGiamGia() {
 
         initComponents();
+        loadPromotionsToTable(); // Load data when form opens
 
     }
-
+    private void clearForm() {
+        txtMaPhieu.setText("");
+        txtTenPhieu.setText("");
+        txtPhanTramGiam.setText("");
+        DCNgayTao.setDate(null);
+        DCNgayKT.setDate(null);
+    }
+    
+    private void loadPromotionsToTable() {
+        DefaultTableModel model = (DefaultTableModel) tblPhieuGiamGia.getModel();
+        model.setRowCount(0); // Clear existing data
+        
+        try {
+            List<Promotion> promotions = promotionDAO.findAll();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+            
+            for (Promotion p : promotions) {
+                model.addRow(new Object[]{
+                    p.getPromoCode(),
+                    p.getPromoName(),
+                    p.getPromoDiscountValue() + "%",
+                    p.getPromoStartDate() != null ? 
+                        dateFormat.format(Timestamp.valueOf(p.getPromoStartDate())) : "",
+                    p.getPromoEndDate() != null ? 
+                        dateFormat.format(Timestamp.valueOf(p.getPromoEndDate())) : "",
+                    "Sửa",
+                    "Xóa"
+                });
+            }
+            
+            // Auto-resize columns to fit content
+            for (int i = 0; i < tblPhieuGiamGia.getColumnCount(); i++) {
+                tblPhieuGiamGia.getColumnModel().getColumn(i).setPreferredWidth(150);
+            }
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Lỗi khi tải dữ liệu phiếu giảm giá: " + e.getMessage(), 
+                "Lỗi", 
+                JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -75,7 +133,7 @@ public class ViewPhieuGiamGia extends javax.swing.JPanel {
         btnXoa = new javax.swing.JButton();
         btnClear = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
-        tbl = new javax.swing.JTable();
+        tblPhieuGiamGia = new javax.swing.JTable();
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(0, 0, 255));
@@ -278,7 +336,7 @@ public class ViewPhieuGiamGia extends javax.swing.JPanel {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        tbl.setModel(new javax.swing.table.DefaultTableModel(
+        tblPhieuGiamGia.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null, null, null, null},
                 {null, null, null, null, null, null, null},
@@ -289,12 +347,12 @@ public class ViewPhieuGiamGia extends javax.swing.JPanel {
                 "STT", "Mã phiếu giảm giá", "Tên phiếu giảm giá", "Phần trăm giảm giá", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái"
             }
         ));
-        tbl.addMouseListener(new java.awt.event.MouseAdapter() {
+        tblPhieuGiamGia.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                tblMouseClicked(evt);
+                tblPhieuGiamGiaMouseClicked(evt);
             }
         });
-        jScrollPane1.setViewportView(tbl);
+        jScrollPane1.setViewportView(tblPhieuGiamGia);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -339,12 +397,109 @@ public class ViewPhieuGiamGia extends javax.swing.JPanel {
 
     }//GEN-LAST:event_btnTimKiemActionPerformed
 
-    private void tblMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblMouseClicked
+    private void tblPhieuGiamGiaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblPhieuGiamGiaMouseClicked
 
-    }//GEN-LAST:event_tblMouseClicked
+    }//GEN-LAST:event_tblPhieuGiamGiaMouseClicked
 
     private void btnThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThemActionPerformed
-
+   try {
+            // Validate required fields
+            if (txtMaPhieu.getText().trim().isEmpty() || 
+                txtTenPhieu.getText().trim().isEmpty() || 
+                txtPhanTramGiam.getText().trim().isEmpty() ||
+                DCNgayTao.getDate() == null || 
+                DCNgayKT.getDate() == null) {
+                
+                JOptionPane.showMessageDialog(this, 
+                    "Vui lòng điền đầy đủ thông tin phiếu giảm giá!", 
+                    "Thông báo", 
+                    JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            // Validate discount value
+            BigDecimal discountValue;
+            try {
+                discountValue = new BigDecimal(txtPhanTramGiam.getText().trim());
+                if (discountValue.compareTo(BigDecimal.ZERO) <= 0 || discountValue.compareTo(new BigDecimal(100)) > 0) {
+                    JOptionPane.showMessageDialog(this, 
+                        "Phần trăm giảm giá phải lớn hơn 0 và nhỏ hơn hoặc bằng 100!", 
+                        "Lỗi", 
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, 
+                    "Phần trăm giảm giá không hợp lệ!", 
+                    "Lỗi", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Validate date range
+            Date startDate = DCNgayTao.getDate();
+            Date endDate = DCNgayKT.getDate();
+            
+            if (endDate.before(startDate)) {
+                JOptionPane.showMessageDialog(this, 
+                    "Ngày kết thúc phải sau ngày bắt đầu!", 
+                    "Lỗi", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Check if promotion code already exists
+            if (promotionDAO.findByCode(txtMaPhieu.getText().trim()) != null) {
+                JOptionPane.showMessageDialog(this, 
+                    "Mã phiếu giảm giá đã tồn tại!", 
+                    "Lỗi", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Create new promotion
+            Promotion promotion = new Promotion();
+            promotion.setPromoCode(txtMaPhieu.getText().trim());
+            promotion.setPromoName(txtTenPhieu.getText().trim());
+            promotion.setPromoDiscountValue(discountValue);
+            
+            // Convert Date to LocalDateTime
+            LocalDateTime startDateTime = startDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+            LocalDateTime endDateTime = endDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+                
+            promotion.setPromoStartDate(startDateTime);
+            promotion.setPromoEndDate(endDateTime);
+            
+            // Save to database
+            Promotion createdPromotion = promotionDAO.create(promotion);
+            
+            if (createdPromotion != null) {
+                JOptionPane.showMessageDialog(this, 
+                    "Thêm phiếu giảm giá thành công!", 
+                    "Thành công", 
+                    JOptionPane.INFORMATION_MESSAGE);
+                
+                clearForm();
+                loadPromotionsToTable(); // Refresh the table with updated data
+                
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Có lỗi xảy ra khi thêm phiếu giảm giá!", 
+                    "Lỗi", 
+                    JOptionPane.ERROR_MESSAGE);
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, 
+                "Lỗi: " + e.getMessage(), 
+                "Lỗi", 
+                JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnThemActionPerformed
 
     private void btnSuaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSuaActionPerformed
@@ -391,7 +546,7 @@ public class ViewPhieuGiamGia extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JButton searchDate;
-    private javax.swing.JTable tbl;
+    private javax.swing.JTable tblPhieuGiamGia;
     private javax.swing.JTextField txtHopNhap;
     private javax.swing.JTextField txtMaPhieu;
     private javax.swing.JTextField txtPhanTramGiam;

@@ -11,13 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PromotionDAOImpl implements PromotionDAO {
-    
+
     private Promotion mapResultSetToPromotion(ResultSet rs) throws SQLException {
         Promotion promotion = new Promotion();
         promotion.setPromotionId(rs.getInt("promotion_id"));
         promotion.setPromoName(rs.getString("promo_name"));
         promotion.setPromoDiscountValue(rs.getBigDecimal("promo_discount_value"));
-        
+
         // Xử lý ngày tháng
         Object startDate = rs.getObject("promo_start_date");
         if (startDate != null) {
@@ -27,7 +27,7 @@ public class PromotionDAOImpl implements PromotionDAO {
                 promotion.setPromoStartDate((LocalDateTime) startDate);
             }
         }
-        
+
         Object endDate = rs.getObject("promo_end_date");
         if (endDate != null) {
             if (endDate instanceof java.sql.Timestamp) {
@@ -36,7 +36,7 @@ public class PromotionDAOImpl implements PromotionDAO {
                 promotion.setPromoEndDate((LocalDateTime) endDate);
             }
         }
-        
+
         promotion.setPromoCode(rs.getString("promo_code"));
         return promotion;
     }
@@ -47,7 +47,7 @@ public class PromotionDAOImpl implements PromotionDAO {
         List<Promotion> list = XJdbc.query(sql, this::mapResultSetToPromotion, code);
         return list.isEmpty() ? null : list.get(0);
     }
-    
+
     @Override
     public List<Promotion> findActivePromotions() {
         String sql = "SELECT * FROM Promotion WHERE promo_start_date <= GETDATE() AND promo_end_date >= GETDATE()";
@@ -82,8 +82,8 @@ public class PromotionDAOImpl implements PromotionDAO {
                 + "promo_end_date = ?, "
                 + "promo_code = ? "
                 + "WHERE promotion_id = ?";
-        
-        XJdbc.executeUpdate(sql, 
+
+        XJdbc.executeUpdate(sql,
                 promotion.getPromoName(),
                 promotion.getPromoDiscountValue(),
                 promotion.getPromoStartDate(),
@@ -91,7 +91,7 @@ public class PromotionDAOImpl implements PromotionDAO {
                 promotion.getPromoCode(),
                 promotion.getPromotionId()
         );
-        
+
         return promotion;
     }
 
@@ -113,18 +113,18 @@ public class PromotionDAOImpl implements PromotionDAO {
 
     @Override
     public Promotion create(Promotion entity) {
-        String sql = "INSERT INTO Promotion (promo_name, promo_description, promo_discount_value, "
+        String sql = "INSERT INTO Promotion (promo_name, promo_discount_value, "
                 + "promo_start_date, promo_end_date, promo_code) "
-                + "VALUES (?, ?, ?, ?, ?, ?)";
-        
-        XJdbc.executeUpdate(sql, 
+                + "VALUES (?, ?, ?, ?, ?)";
+
+        XJdbc.executeUpdate(sql,
                 entity.getPromoName(),
                 entity.getPromoDiscountValue(),
                 entity.getPromoStartDate(),
                 entity.getPromoEndDate(),
                 entity.getPromoCode()
         );
-        
+
         // Get the newly created promotion by code
         return findByCode(entity.getPromoCode());
     }
