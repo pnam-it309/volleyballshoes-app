@@ -23,11 +23,11 @@ public class ThongKeDaoImpl implements ThongKeDao {
     public List<Map<String, Object>> getDoanhThuTheoThang() {
         String sql = """
             SELECT 
-                MONTH(NgayThanhToan) AS Thang,
-                SUM(TongTien) AS DoanhThu
-            FROM HoaDon
-            WHERE TrangThai = 1
-            GROUP BY MONTH(NgayThanhToan)
+                MONTH(order_created_at) AS Thang,
+                SUM(order_final_amount) AS DoanhThu
+            FROM [Order]
+            WHERE order_status = N'Đã thanh toán'
+            GROUP BY MONTH(order_created_at)
             ORDER BY Thang
         """;
 
@@ -49,7 +49,7 @@ public class ThongKeDaoImpl implements ThongKeDao {
 
     @Override
     public double getTongDoanhThu() {
-        String sql = "SELECT SUM(TongTien) FROM HoaDon WHERE TrangThai = 1";
+        String sql = "SELECT SUM(order_final_amount) FROM [Order] WHERE order_status = N'Đã thanh toán'";
         try {
             ResultSet rs = XJdbc.executeQuery(sql);
             if (rs.next()) {
@@ -64,7 +64,7 @@ public class ThongKeDaoImpl implements ThongKeDao {
 
     @Override
     public int getSoHoaDon() {
-        String sql = "SELECT COUNT(*) FROM HoaDon WHERE TrangThai = 1";
+        String sql = "SELECT COUNT(*) FROM [Order] WHERE order_status = N'Đã thanh toán'";
         try {
             ResultSet rs = XJdbc.executeQuery(sql);
             if (rs.next()) {
@@ -79,21 +79,22 @@ public class ThongKeDaoImpl implements ThongKeDao {
 
     @Override
     public double layDoanhThu(int month, int year) {
-//        String sql = """
-//            SELECT ISNULL(SUM(order_final_amount), 0) AS doanh_thu
-//            FROM [Order]
-//            WHERE MONTH(order_created_at) = ? 
-//              AND YEAR(order_created_at) = ?
-//              AND order_status = 'Completed'
-//        """;
-//        try {
-//            ResultSet rs = XJdbc.query(sql, month, year);
-//            if (rs.next()) {
-//                return rs.getDouble("doanh_thu");
-//            }
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
+        String sql = """
+            SELECT ISNULL(SUM(order_final_amount), 0) AS doanh_thu
+            FROM [Order]
+            WHERE MONTH(order_created_at) = ? 
+              AND YEAR(order_created_at) = ?
+              AND order_status = N'Đã thanh toán'
+        """;
+        try {
+            ResultSet rs = XJdbc.executeQuery(sql, month, year);
+            if (rs.next()) {
+                return rs.getDouble("doanh_thu");
+            }
+            rs.getStatement().getConnection().close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 }
