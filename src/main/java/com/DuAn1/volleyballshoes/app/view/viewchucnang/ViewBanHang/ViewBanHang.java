@@ -22,6 +22,18 @@ import java.math.RoundingMode;
 import java.sql.*;
 
 public class ViewBanHang extends javax.swing.JPanel {
+    // Static reference to the active instance
+    private static ViewBanHang activeInstance;
+    
+    // Method to get the active instance
+    public static ViewBanHang getActiveInstance() {
+        return activeInstance;
+    }
+    
+    // Method to update the active instance
+    private static void setActiveInstance(ViewBanHang instance) {
+        activeInstance = instance;
+    }
 
     private final CustomerDAO customerDAO = new CustomerDAOImpl();
     private final OrderDAO orderDAO = new OrderDAOImpl();
@@ -136,6 +148,8 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     public ViewBanHang() {
         initComponents();
+        // Set this as the active instance
+        setActiveInstance(this);
 
         // Clear the empty rows from tblHoaDon
         DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
@@ -156,6 +170,10 @@ public class ViewBanHang extends javax.swing.JPanel {
         jLabel15.setVisible(true);   // Keep the "Ngày Tạo" label always visible
     }
 
+    public void refreshProductVariants() {
+        loadProductVariants();
+    }
+    
     private void loadProductVariants() {
         try {
             // Get the table model
@@ -1322,7 +1340,7 @@ public class ViewBanHang extends javax.swing.JPanel {
             Object[] rowData = new Object[]{
                 orderCode, // Mã hóa đơn
                 staff.getStaffCode(), // Mã nhân viên
-                "Chưa thanh toán", // Trạng thái
+                "Chưa thanh toán", // Start as unpaid
                 formattedDate // Ngày tạo
             };
 
@@ -1378,11 +1396,22 @@ public class ViewBanHang extends javax.swing.JPanel {
     }//GEN-LAST:event_btn_Them5btn_ThemActionPerformed
 
     private void tblHoaDonMouseClicked(java.awt.event.MouseEvent evt) {
+        // Initialize cart model
+        DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+        List<Object[]> currentCart = new ArrayList<>();
+        
+        // Save current cart state
+        for (int i = 0; i < cartModel.getRowCount(); i++) {
+            Object[] row = new Object[cartModel.getColumnCount()];
+            for (int j = 0; j < cartModel.getColumnCount(); j++) {
+                row[j] = cartModel.getValueAt(i, j);
+            }
+            currentCart.add(row);
+        }
+
         try {
             // Get the selected row index
             int selectedRow = tblHoaDon.getSelectedRow();
-
-            // If no row is selected, do nothing
             if (selectedRow == -1) {
                 return;
             }
@@ -1416,27 +1445,29 @@ public class ViewBanHang extends javax.swing.JPanel {
             lbNgayTao.setVisible(true);
             lbNgayTao.setText(createDate);
 
-            // Initialize cart table model if not already done
-            DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+            // Initialize cart table model if needed
             if (cartModel == null) {
                 initCartTable();
                 cartModel = (DefaultTableModel) tblGioHang.getModel();
-            } else {
-                // Clear existing rows
-                cartModel.setRowCount(0);
             }
+            
+            // Clear existing rows
+            cartModel.setRowCount(0);
 
             // Find the order by code
             System.out.println("Looking up order with code: " + orderCode);
             Optional<Order> orderOpt = orderDAO.findByCode(orderCode);
+            
+            if (!orderOpt.isPresent()) {
+                throw new Exception("Không tìm thấy thông tin hóa đơn");
+            }
 
-            if (orderOpt.isPresent()) {
-                Order order = orderOpt.get();
-                System.out.println("Found order with ID: " + order.getOrderId());
+            Order order = orderOpt.get();
+            System.out.println("Found order with ID: " + order.getOrderId());
 
-                // Get order details from OrderDetail table
-                List<OrderDetail> orderDetails = orderDetailDAO.findByOrderId(order.getOrderId());
-                System.out.println("Found " + orderDetails.size() + " order details");
+            // Get order details from OrderDetail table
+            List<OrderDetail> orderDetails = orderDetailDAO.findByOrderId(order.getOrderId());
+            System.out.println("Found " + orderDetails.size() + " order details");
 
                 // Add order details to the cart table
                 for (OrderDetail detail : orderDetails) {
@@ -1516,13 +1547,31 @@ public class ViewBanHang extends javax.swing.JPanel {
                 tblGioHang.repaint();
 
                 System.out.println("Cart updated with " + cartModel.getRowCount() + " items");
-            }
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tải chi tiết hóa đơn: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+            try {
+                // Restore the cart if there was an error
+                cartModel.setRowCount(0);
+                for (Object[] row : currentCart) {
+                    cartModel.addRow(row);
+                }
+                
+                // Update cart summary and refresh UI
+                updateCartSummary();
+                tblGioHang.revalidate();
+                tblGioHang.repaint();
+                
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi tải chi tiết hóa đơn: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Đã xảy ra lỗi khi khôi phục giỏ hàng: " + ex.getMessage(),
+                        "Lỗi nghiêm trọng",
+                        JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -1672,196 +1721,167 @@ public class ViewBanHang extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_txtMaKhachhangActionPerformed
 
-    private void btnThanhToanbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThanhToanbtn_ThemActionPerformed
-        // Validate cart is not empty
-        if (tblGioHang.getRowCount() == 0) {
+    private void btnThanhToanbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {                                                     
+        // Check if there's a selected order and if it's already paid
+int selectedRow = tblHoaDon.getSelectedRow();
+if (selectedRow < 0) {
+    JOptionPane.showMessageDialog(this,
+            "Vui lòng chọn hóa đơn cần thanh toán.",
+            "Chưa chọn hóa đơn",
+            JOptionPane.WARNING_MESSAGE);
+    return;
+}
+
+String orderCode = tblHoaDon.getValueAt(selectedRow, 0).toString();
+String currentStatus = tblHoaDon.getValueAt(selectedRow, 2).toString();
+
+if ("Đã thanh toán".equals(currentStatus)) {
+    JOptionPane.showMessageDialog(this,
+            "Hóa đơn này đã được thanh toán. Không thể thực hiện thanh toán lại.",
+            "Thông báo",
+            JOptionPane.WARNING_MESSAGE);
+    return;
+}
+
+try {
+    // Lấy thông tin order
+    OrderDAO orderDAO = new OrderDAOImpl();
+    Optional<Order> orderOpt = orderDAO.findByCode(orderCode);
+    if (!orderOpt.isPresent()) {
+        throw new Exception("Không tìm thấy thông tin hóa đơn. Vui lòng thử lại.");
+    }
+    Order order = orderOpt.get();
+
+    if ("Đã thanh toán".equals(order.getOrderStatus())) {
+        JOptionPane.showMessageDialog(this,
+                "Hóa đơn đã được thanh toán bởi người dùng khác.",
+                "Thông báo",
+                JOptionPane.WARNING_MESSAGE);
+        loadOrders();
+        return;
+    }
+
+    // Lấy phương thức thanh toán
+    String paymentMethod = cbbHinhThucThanhToan.getSelectedItem() != null
+            ? cbbHinhThucThanhToan.getSelectedItem().toString()
+            : "Tiền mặt";
+
+    // Tính tổng tiền
+    BigDecimal totalAmount = BigDecimal.ZERO;
+    DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+    for (int i = 0; i < cartModel.getRowCount(); i++) {
+        BigDecimal rowTotal = (BigDecimal) cartModel.getValueAt(i, 6);
+        totalAmount = totalAmount.add(rowTotal);
+    }
+
+    // Xác nhận thanh toán
+    int confirm = JOptionPane.showConfirmDialog(this,
+            "Xác nhận thanh toán đơn hàng với tổng tiền: " + formatCurrency(totalAmount) + "\n"
+            + "Hình thức thanh toán: " + paymentMethod,
+            "Xác nhận thanh toán",
+            JOptionPane.YES_NO_OPTION);
+
+    if (confirm != JOptionPane.YES_OPTION) {
+        return;
+    }
+
+    // Lấy thông tin nhân viên
+    Staff staff = SessionManager.getInstance().getCurrentStaff();
+    if (staff == null) {
+        StaffDAO staffDAO = new StaffDAOImpl();
+        staff = staffDAO.findByStaffCode("NV01");
+        if (staff == null) {
+            List<Staff> staffList = staffDAO.findAll();
+            if (staffList.isEmpty()) {
+                throw new Exception("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+            }
+            staff = staffList.get(0);
+        }
+    }
+
+    // Lấy thông tin khách hàng
+    String customerCode = txtMaKhachhang.getText().trim();
+    Customer customer = null;
+    boolean isTemporaryCustomer = customerCode.startsWith("TEMP_");
+    if (!customerCode.isEmpty() && !isTemporaryCustomer) {
+        customer = customerDAO.findByCode(customerCode);
+        if (customer == null) {
+            try {
+                Integer customerId = Integer.parseInt(customerCode);
+                customer = customerDAO.findById(customerId);
+            } catch (NumberFormatException ignored) {}
+        }
+        if (customer == null && !customerCode.equals("CUS0000")) {
             JOptionPane.showMessageDialog(this,
-                    "Giỏ hàng đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.",
-                    "Giỏ hàng trống",
-                    JOptionPane.WARNING_MESSAGE);
+                    "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
+                    "Không tìm thấy khách hàng",
+                    JOptionPane.ERROR_MESSAGE);
             return;
         }
+    }
+
+    // Xử lý transaction
+    try (Connection conn = XJdbc.openConnection()) {
+        conn.setAutoCommit(false);
 
         try {
-
-            // Get payment method (default to "Tiền mặt" if not selected)
-            String paymentMethod = "Tiền mặt";
-            if (cbbHinhThucThanhToan.getSelectedItem() != null) {
-                paymentMethod = cbbHinhThucThanhToan.getSelectedItem().toString();
-            }
-
-            // Calculate total amount
-            BigDecimal totalAmount = BigDecimal.ZERO;
-            DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
-            for (int i = 0; i < cartModel.getRowCount(); i++) {
-                BigDecimal rowTotal = (BigDecimal) cartModel.getValueAt(i, 6); // Column 6 is Thành tiền
-                totalAmount = totalAmount.add(rowTotal);
-            }
-
-            // Confirm payment
-            int confirm = JOptionPane.showConfirmDialog(this,
-                    "Xác nhận thanh toán đơn hàng với tổng tiền: " + formatCurrency(totalAmount) + "\n"
-                    + "Hình thức thanh toán: " + paymentMethod + "\n"
-                    + "Bạn có chắc chắn muốn thanh toán?",
-                    "Xác nhận thanh toán",
-                    JOptionPane.YES_NO_OPTION);
-
-            if (confirm != JOptionPane.YES_OPTION) {
-                return; // User cancelled
-            }
-
-            // Get staff info from session
-            Staff staff = SessionManager.getInstance().getCurrentStaff();
-            if (staff == null) {
-                // If no staff in session, try to get a default staff (fallback)
-                StaffDAO staffDAO = new StaffDAOImpl();
-                staff = staffDAO.findByStaffCode("NV01");
-
-                if (staff == null) {
-                    // If still no staff, get the first active staff
-                    List<Staff> staffList = staffDAO.findAll();
-                    if (staffList != null && !staffList.isEmpty()) {
-                        staff = staffList.get(0);
-                    } else {
-                        throw new Exception("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
-                    }
-                }
-
-                // Log the fallback for debugging
-                System.out.println("Using fallback staff: " + staff.getStaffCode());
-            }
-
-            // Get customer information from form
-            String customerCode = txtMaKhachhang.getText().trim();
-            Customer customer = null;
-
-            // Check if this is a temporary customer
-            boolean isTemporaryCustomer = customerCode.startsWith("TEMP_");
-
-            // Only try to find customer if a code is provided and it's not a temporary customer
-            if (!customerCode.isEmpty() && !isTemporaryCustomer) {
-                // First try to find by code (for guest customers and regular customers)
-                customer = customerDAO.findByCode(customerCode);
-
-                // If not found by code, try to parse as ID
-                if (customer == null) {
-                    try {
-                        Integer customerId = Integer.parseInt(customerCode);
-                        customer = customerDAO.findById(customerId);
-                    } catch (NumberFormatException e) {
-                        // Not a valid ID, continue with null customer
-                    }
-                }
-
-                // If still not found and it's not a guest customer, show error
-                if (customer == null && !customerCode.equals("CUS0000")) {
-                    JOptionPane.showMessageDialog(this,
-                            "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
-                            "Không tìm thấy khách hàng",
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            } else if (isTemporaryCustomer) {
-                System.out.println("[DEBUG] Using temporary customer: " + customerCode);
-            }
-
-            // Create order
-            Order order = new Order();
-
-            // Set customer ID if customer was found, otherwise it will be null
-            if (customer != null) {
-                order.setCustomerId(customer.getCustomerId());
-                System.out.println("[DEBUG] Setting customer ID: " + customer.getCustomerId());
-            } else if (isTemporaryCustomer) {
-                // For temporary customers, customer_id will be NULL
-                System.out.println("[DEBUG] Using temporary customer, customer_id will be NULL");
-            } else {
-                System.out.println("[DEBUG] No customer selected, customer_id will be NULL");
-            }
-            order.setStaffId(staff.getStaffId()); // Use the actual staff ID from database
+            // Cập nhật hóa đơn
             order.setOrderFinalAmount(totalAmount);
             order.setOrderPaymentMethod(paymentMethod);
-            order.setOrderStatus("completed");
-            order.setOrderCreatedAt(LocalDateTime.now());
-
-            // Save order
-            OrderDAO orderDAO = new OrderDAOImpl();
-            Order savedOrder = orderDAO.save(order);
-
-            if (savedOrder == null) {
-                throw new Exception("Không thể tạo đơn hàng. Vui lòng thử lại.");
+            order.setOrderStatus("Đã thanh toán");
+            if (orderDAO.update(order) == null) {
+                throw new Exception("Không thể cập nhật thông tin thanh toán.");
             }
 
-            // Save order details and update inventory
-            ProductVariantDAO productVariantDAO = new ProductVariantDAOImpl();
-            OrderDetailDAO orderDetailDAO = new OrderDetailDAOImpl();
-
+            // Trừ tồn kho
             for (int i = 0; i < cartModel.getRowCount(); i++) {
-                String sku = cartModel.getValueAt(i, 1).toString();
-                int quantity = (int) cartModel.getValueAt(i, 3);
-                BigDecimal price = (BigDecimal) cartModel.getValueAt(i, 4);
-                BigDecimal discountPercent = (BigDecimal) cartModel.getValueAt(i, 5);
-                BigDecimal total = (BigDecimal) cartModel.getValueAt(i, 6);
+                String sku = cartModel.getValueAt(i, 0).toString();
+                int quantity = Integer.parseInt(cartModel.getValueAt(i, 3).toString());
 
-                // Get product variant by SKU
-                ProductVariant variant = null;
-                List<ProductVariant> variants = productVariantDAO.findAll();
-                for (ProductVariant v : variants) {
-                    if (v.getVariantSku().equals(sku)) {
-                        variant = v;
-                        break;
-                    }
-                }
-
-                if (variant == null) {
+                Optional<ProductVariant> variantOpt = productVariantDAO.findBySku(sku);
+                if (!variantOpt.isPresent()) {
                     throw new Exception("Không tìm thấy sản phẩm với mã: " + sku);
                 }
-
-                // Check stock
+                ProductVariant variant = variantOpt.get();
                 if (variant.getQuantity() < quantity) {
-                    throw new Exception("Số lượng sản phẩm " + sku + " trong kho không đủ. Chỉ còn " + variant.getQuantity() + " sản phẩm.");
+                    throw new Exception("Không đủ hàng trong kho cho sản phẩm: " + sku);
                 }
-
-                // Update inventory
                 variant.setQuantity(variant.getQuantity() - quantity);
-                productVariantDAO.update(variant);
-
-                // Create order detail
-                OrderDetail detail = new OrderDetail();
-                detail.setOrderId(savedOrder.getOrderId());
-                detail.setVariantId(variant.getVariantId());
-                detail.setDetailQuantity(quantity);
-                detail.setDetailUnitPrice(price);
-                detail.setDetailDiscountPercent(discountPercent);
-                detail.setDetailTotal(total);
-
-                orderDetailDAO.save(detail);
+                ProductVariant updatedVariant = productVariantDAO.update(variant);
+                if (updatedVariant == null) {
+                    throw new Exception("Không thể cập nhật tồn kho cho sản phẩm: " + sku);
+                }
             }
 
-            // Clear cart
-            cartModel.setRowCount(0);
-            updateCartSummary();
+            conn.commit();
 
-            // Show success message
-            JOptionPane.showMessageDialog(this,
-                    "Thanh toán thành công!\n"
-                    + "Mã đơn hàng: " + savedOrder.getOrderCode() + "\n"
-                    + "Tổng tiền: " + formatCurrency(totalAmount),
-                    "Thành công",
-                    JOptionPane.INFORMATION_MESSAGE);
+            // Cập nhật UI
+            SwingUtilities.invokeLater(() -> {
+                DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
+                int modelRow = tblHoaDon.convertRowIndexToModel(selectedRow);
+                model.setValueAt("Đã thanh toán", modelRow, 2);
+                cartModel.setRowCount(0);
+                updateCartSummary();
+                btnThanhToan.setEnabled(false);
+                JOptionPane.showMessageDialog(this, "Thanh toán thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            });
 
-            // Refresh orders list
-            // Refresh orders table if needed
-            // loadOrders(); // Commented out as it's not implemented yet
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi xử lý thanh toán: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+            conn.rollback();
+            throw e;
         }
-    }//GEN-LAST:event_btnThanhToanbtn_ThemActionPerformed
+    }
 
+} catch (Exception e) {
+    JOptionPane.showMessageDialog(this,
+            "Lỗi khi xử lý thanh toán: " + e.getMessage(),
+            "Lỗi",
+            JOptionPane.ERROR_MESSAGE);
+    e.printStackTrace();
+}
+
+    }
+    
     private void txtTienKhachCKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtTienKhachCKActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_txtTienKhachCKActionPerformed
@@ -1893,31 +1913,11 @@ public class ViewBanHang extends javax.swing.JPanel {
         Customer guestCustomer = null;
 
         try {
-            // First try to find by exact code (case sensitive)
+            // Find guest customer by code (case-insensitive search is handled by the DAO)
             guestCustomer = customerDAO.findByCode(guestCode);
-
-            // If not found, try case-insensitive search using SQL
-            if (guestCustomer == null) {
-                System.out.println("[DEBUG] Không tìm thấy khách hàng với mã " + guestCode + ", đang tìm kiếm không phân biệt hoa thường...");
-
-                // Try to find using direct SQL with UPPER function for case-insensitive search
-                String sql = "SELECT * FROM Customer WHERE UPPER(customer_code) = UPPER(?)";
-                Connection conn = XJdbc.openConnection();
-                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    stmt.setString(1, guestCode);
-                    try (ResultSet rs = stmt.executeQuery()) {
-                        if (rs.next()) {
-                            guestCustomer = new Customer();
-                            guestCustomer.setCustomerCode(rs.getString("customer_code"));
-                            guestCustomer.setCustomerFullName(rs.getString("customer_full_name"));
-                            guestCustomer.setCustomerPhone(rs.getString("customer_phone"));
-                            guestCustomer.setCustomerEmail(rs.getString("customer_email"));
-                            System.out.println("[DEBUG] Đã tìm thấy khách hàng bằng tìm kiếm không phân biệt hoa thường: " + guestCustomer.getCustomerCode());
-                        }
-                    }
-                } catch (SQLException e) {
-                    System.err.println("[DEBUG] Lỗi khi tìm kiếm khách hàng: " + e.getMessage());
-                }
+            
+            if (guestCustomer != null) {
+                System.out.println("[DEBUG] Đã tìm thấy khách hàng: " + guestCustomer.getCustomerCode());
             }
 
             // If still not found, try to create new one
@@ -2036,6 +2036,84 @@ public class ViewBanHang extends javax.swing.JPanel {
         return sb.toString();
     }
 
+    /**
+     * Updates the status of an order in the tblHoaDon table
+     * @param orderCode The order code to update
+     * @param newStatus The new status to set (e.g., "Đã thanh toán" or "Chưa thanh toán")
+     */
+    private void updateOrderStatusInTable(String orderCode, String newStatus) {
+        DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
+        
+        // Find the row with the matching order code
+        for (int i = 0; i < model.getRowCount(); i++) {
+            Object orderCodeObj = model.getValueAt(i, 0);
+            if (orderCodeObj != null && orderCodeObj.toString().equals(orderCode)) {
+                // Update the status column (index 2)
+                model.setValueAt(newStatus, i, 2);
+                
+                // Force the table to repaint
+                tblHoaDon.repaint();
+                
+                System.out.println("[DEBUG] Updated order " + orderCode + " status to: " + newStatus);
+                return;
+            }
+        }
+        
+        System.out.println("[WARNING] Order not found in table: " + orderCode);
+    }
+    
+    /**
+     * Loads or refreshes the orders in the tblHoaDon table
+     */
+    private void loadOrders() {
+        try {
+            DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
+            model.setRowCount(0); // Clear existing rows
+            
+            // Get all orders
+            OrderDAO orderDAO = new OrderDAOImpl();
+            List<Order> orders = orderDAO.findAll();
+            
+            // Sort orders by creation date (newest first)
+            orders.sort((o1, o2) -> o2.getOrderCreatedAt().compareTo(o1.getOrderCreatedAt()));
+            
+            // Add orders to table
+            for (Order order : orders) {
+                // Format the date
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+                String formattedDate = order.getOrderCreatedAt().format(formatter);
+                
+                // Get staff code
+                String staffCode = "";
+                StaffDAO staffDAO = new StaffDAOImpl();
+                Staff staff = staffDAO.findById(order.getStaffId());
+                if (staff != null) {
+                    staffCode = staff.getStaffCode();
+                }
+                
+                // Add row to table
+                model.addRow(new Object[]{
+                    order.getOrderCode(),
+                    staffCode,
+                    order.getOrderStatus(),
+                    formattedDate
+                });
+            }
+            
+            // Auto-resize columns
+            for (int i = 0; i < tblHoaDon.getColumnCount(); i++) {
+                tblHoaDon.getColumnModel().getColumn(i).setPreferredWidth(150);
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tải danh sách đơn hàng: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">

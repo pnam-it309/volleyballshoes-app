@@ -1,16 +1,19 @@
 package com.DuAn1.volleyballshoes.app.dao.impl;
 
 import com.DuAn1.volleyballshoes.app.dao.OrderDAO;
+import com.DuAn1.volleyballshoes.app.dao.OrderDetailDAO;
+import com.DuAn1.volleyballshoes.app.dao.ProductVariantDAO;
 import com.DuAn1.volleyballshoes.app.entity.Order;
 import com.DuAn1.volleyballshoes.app.utils.XJdbc;
 import java.math.BigDecimal;
-
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class OrderDAOImpl implements OrderDAO {
@@ -476,16 +479,55 @@ public class OrderDAOImpl implements OrderDAO {
 
     @Override
     public List<Order> findByCreatedDateBetween(Date from, Date to) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_created_at BETWEEN ? AND ? ORDER BY order_created_at DESC";
+        return XJdbc.query(sql, this::mapResultSetToOrder, from, to);
     }
-
+    
     @Override
     public List<Order> findByTotalAmountBetween(double min, double max) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_final_amount BETWEEN ? AND ? ORDER BY order_created_at DESC";
+        return XJdbc.query(sql, this::mapResultSetToOrder, min, max);
     }
+    
     @Override
     public List<Order> findByStatus(String status) {
         String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_status = ? ORDER BY order_created_at DESC";
         return XJdbc.query(sql, this::mapResultSetToOrder, status);
+    }
+    
+    @Override
+    public Order processPayment(Order order, Map<Integer, Integer> orderDetails) throws Exception {
+        OrderDetailDAO orderDetailDAO = new OrderDetailDAOImpl();
+        ProductVariantDAO productVariantDAO = new ProductVariantDAOImpl();
+        
+        try (Connection conn = XJdbc.openConnection()) {
+            conn.setAutoCommit(false);
+            
+            try {
+                // 1. Update order status
+                order.setOrderStatus("Đã thanh toán");
+                order = this.update(order);
+                
+                // 2. Process each order detail and update inventory
+                for (Map.Entry<Integer, Integer> entry : orderDetails.entrySet()) {
+                    int variantId = entry.getKey();
+                    int quantity = entry.getValue();
+                    
+                    // Update product variant quantity
+                    if (!productVariantDAO.reduceQuantity(variantId, quantity)) {
+                        throw new IllegalStateException("Không đủ hàng trong kho cho sản phẩm có ID: " + variantId);
+                    }
+                }
+                
+                // Commit transaction if all operations succeed
+                conn.commit();
+                return order;
+                
+            } catch (Exception e) {
+                // Rollback transaction on error
+                conn.rollback();
+                throw e;
+            }
+        }
     }
 }

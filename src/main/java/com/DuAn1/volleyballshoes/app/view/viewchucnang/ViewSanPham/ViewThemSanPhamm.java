@@ -547,6 +547,13 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                         "Thành công",
                         JOptionPane.INFORMATION_MESSAGE);
                 clearForm();
+                
+                // Notify ViewBanHang to refresh the product variants table
+                com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang viewBanHang = 
+                    com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang.getActiveInstance();
+                if (viewBanHang != null) {
+                    viewBanHang.refreshProductVariants();
+                }
             } else {
                 JOptionPane.showMessageDialog(this,
                         "Có lỗi xảy ra khi thêm biến thể sản phẩm!",

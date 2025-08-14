@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class ProductVariantDAOImpl implements ProductVariantDAO {
 
@@ -183,9 +184,33 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
 
     @Override
     public boolean existsBySku(String sku) {
-//        String sql = "SELECT COUNT(*) FROM ProductVariant WHERE variant_sku = ?";
-//        Integer count = XJdbc.getValue(sql, sku);
-//        return count != null && count > 0;
-        return false;
+        String sql = "SELECT COUNT(*) FROM ProductVariant WHERE variant_sku = ?";
+        Long count = XJdbc.getValue(sql, Long.class, sku);
+        return count != null && count > 0;
+    }
+    
+    @Override
+    public Optional<ProductVariant> findBySku(String sku) {
+        String sql = "SELECT * FROM ProductVariant WHERE variant_sku = ?";
+        List<ProductVariant> list = XJdbc.query(sql, this::mapResultSetToProductVariant, sku);
+        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
+    }
+    
+    @Override
+    public boolean reduceQuantity(int variantId, int quantity) throws IllegalStateException {
+        // First check if there's enough quantity
+        ProductVariant variant = this.findById(variantId);
+        if (variant == null) {
+            throw new IllegalStateException("Không tìm thấy sản phẩm với ID: " + variantId);
+        }
+        
+        if (variant.getQuantity() < quantity) {
+            return false;
+        }
+        
+        // Update the quantity
+        String sql = "UPDATE ProductVariant SET variant_quantity = variant_quantity - ? WHERE variant_id = ?";
+        int updated = XJdbc.executeUpdate(sql, quantity, variantId);
+        return updated > 0;
     }
 }
