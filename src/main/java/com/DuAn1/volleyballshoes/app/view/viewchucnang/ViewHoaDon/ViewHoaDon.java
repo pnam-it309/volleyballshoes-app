@@ -1,5 +1,6 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewHoaDon;
 
+import com.DuAn1.volleyballshoes.app.controller.BillController;
 import com.DuAn1.volleyballshoes.app.controller.OrderController;
 import com.DuAn1.volleyballshoes.app.dto.response.OrderDetailResponse;
 import com.DuAn1.volleyballshoes.app.dto.response.OrderResponse;
@@ -43,6 +44,18 @@ public class ViewHoaDon extends javax.swing.JPanel {
         initComponents();
         initData();
         loadAllOrders();
+        // Đặt lại tên cột tiếng Việt cho bảng hóa đơn (chỉ đúng số cột hiện tại)
+        String[] orderColumnsVN = {"Mã hóa đơn", "Khách hàng", "Tổng tiền", "Trạng thái"};
+        for (int i = 0; i < tblhoadon.getColumnCount() && i < orderColumnsVN.length; i++) {
+            tblhoadon.getColumnModel().getColumn(i).setHeaderValue(orderColumnsVN[i]);
+        }
+        tblhoadon.getTableHeader().repaint();
+        // Đặt lại tên cột tiếng Việt cho bảng chi tiết hóa đơn (chỉ đúng số cột hiện tại)
+        String[] detailColumnsVN = {"Sản phẩm", "Màu sắc", "Kích thước", "Số lượng", "Đơn giá", "Thành tiền"};
+        for (int i = 0; i < tblHDCT.getColumnCount() && i < detailColumnsVN.length; i++) {
+            tblHDCT.getColumnModel().getColumn(i).setHeaderValue(detailColumnsVN[i]);
+        }
+        tblHDCT.getTableHeader().repaint();
     }
 
     private void initData() {
@@ -75,7 +88,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }
 
     private void loadDataTable(List<OrderResponse> orders) {
-        DefaultTableModel model = (DefaultTableModel) tbl.getModel();
+        DefaultTableModel model = (DefaultTableModel) tblhoadon.getModel();
         model.setRowCount(0);
 
         for (OrderResponse order : orders) {
@@ -149,7 +162,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         btnLoc = new javax.swing.JButton();
         btnXuatPDF = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
-        tbl = new javax.swing.JTable();
+        tblhoadon = new javax.swing.JTable();
         jScrollPane3 = new javax.swing.JScrollPane();
         tblHDCT = new javax.swing.JTable();
         jScrollPane2 = new javax.swing.JScrollPane();
@@ -293,7 +306,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         jPanel5.add(btnXuatPDF);
         btnXuatPDF.setBounds(710, 20, 90, 30);
 
-        tbl.setModel(new javax.swing.table.DefaultTableModel(
+        tblhoadon.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
                 {null, null, null, null},
@@ -304,12 +317,12 @@ public class ViewHoaDon extends javax.swing.JPanel {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
-        tbl.addMouseListener(new java.awt.event.MouseAdapter() {
+        tblhoadon.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                tblMouseClicked(evt);
+                tblhoadonMouseClicked(evt);
             }
         });
-        jScrollPane1.setViewportView(tbl);
+        jScrollPane1.setViewportView(tblhoadon);
 
         tblHDCT.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
         tblHDCT.setModel(new javax.swing.table.DefaultTableModel(
@@ -546,14 +559,14 @@ public class ViewHoaDon extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_btnRestartActionPerformed
 
-    private void tblMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblMouseClicked
+    private void tblhoadonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblhoadonMouseClicked
         try {
-            int selectedRow = tbl.getSelectedRow();
+            int selectedRow = tblhoadon.getSelectedRow();
             if (selectedRow < 0) {
                 return;
             }
 
-            String orderId = tbl.getValueAt(selectedRow, 0).toString();
+            String orderId = tblhoadon.getValueAt(selectedRow, 0).toString();
             if (orderId == null || orderId.trim().isEmpty()) {
                 return;
             }
@@ -567,14 +580,40 @@ public class ViewHoaDon extends javax.swing.JPanel {
             JOptionPane.showMessageDialog(this, "Lỗi khi tải chi tiết đơn hàng: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
-    }//GEN-LAST:event_tblMouseClicked
+    }//GEN-LAST:event_tblhoadonMouseClicked
 
     private void btnXuatExcelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXuatExcelActionPerformed
-        List<OrderResponse> orders = orderController.getAllOrders();
-        ExcelUtil.exportOrdersToExcel(orders, "orders.xlsx");
-        JOptionPane.showMessageDialog(this, "Xuất Excel thành công!");
+    int selectedRow = tblhoadon.getSelectedRow();
+    if (selectedRow < 0) {
+        JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn để xuất Excel!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+    String orderId = tblhoadon.getValueAt(selectedRow, 0).toString();
+    if (orderId == null || orderId.trim().isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Hóa đơn không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+    // Sử dụng BillController để lấy BillResponse và xuất đúng mẫu
+    BillController billController = new BillController();
+    com.DuAn1.volleyballshoes.app.dto.response.BillResponse bill = billController.getBillById(Integer.parseInt(orderId));
+    if (bill == null) {
+        JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+    javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+    fileChooser.setDialogTitle("Chọn nơi lưu file Excel");
+    fileChooser.setSelectedFile(new java.io.File("order_" + orderId + ".xlsx"));
+    int userSelection = fileChooser.showSaveDialog(this);
+    if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
+        String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+        if (!filePath.toLowerCase().endsWith(".xlsx")) {
+            filePath += ".xlsx";
+        }
+        com.DuAn1.volleyballshoes.app.utils.ExcelUtil.exportBillToExcel(bill, filePath);
+        JOptionPane.showMessageDialog(this, "Xuất Excel thành công! File lưu tại: " + filePath);
+    }
 // TODO add your handling code here:
-    }//GEN-LAST:event_btnXuatExcelActionPerformed
+}//GEN-LAST:event_btnXuatExcelActionPerformed
 
     private void btnLocActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLocActionPerformed
         try {
@@ -683,12 +722,12 @@ public class ViewHoaDon extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_txtQRActionPerformed
     private void selectOrderInTable(String orderId) {
-        DefaultTableModel model = (DefaultTableModel) tbl.getModel();
+        DefaultTableModel model = (DefaultTableModel) tblhoadon.getModel();
         for (int i = 0; i < model.getRowCount(); i++) {
             String currentId = model.getValueAt(i, 0).toString(); // Assuming order ID is in first column
             if (currentId.equals(orderId)) {
-                tbl.setRowSelectionInterval(i, i);
-                tbl.scrollRectToVisible(tbl.getCellRect(i, 0, true));
+                tblhoadon.setRowSelectionInterval(i, i);
+                tblhoadon.scrollRectToVisible(tblhoadon.getCellRect(i, 0, true));
                 break;
             }
         }
@@ -710,11 +749,37 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }//GEN-LAST:event_CBtrangThaiActionPerformed
 
     private void btnXuatPDFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXuatPDFActionPerformed
-        List<OrderResponse> orders = orderController.getAllOrders();
-        PDFUtil.exportOrdersToPDF(orders, "orders.pdf");
-        JOptionPane.showMessageDialog(this, "Xuất PDF thành công!");
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btnXuatPDFActionPerformed
+    int selectedRow = tblhoadon.getSelectedRow();
+    if (selectedRow < 0) {
+        JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn để xuất PDF!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+    String orderId = tblhoadon.getValueAt(selectedRow, 0).toString();
+    if (orderId == null || orderId.trim().isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Hóa đơn không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+    OrderResponse order = orderController.getOrderById(Integer.parseInt(orderId));
+    if (order == null) {
+        JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+    List<OrderResponse> orders = new ArrayList<>();
+    orders.add(order);
+    javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+    fileChooser.setDialogTitle("Chọn nơi lưu file PDF");
+    fileChooser.setSelectedFile(new java.io.File("order_" + orderId + ".pdf"));
+    int userSelection = fileChooser.showSaveDialog(this);
+    if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
+        String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+        if (!filePath.toLowerCase().endsWith(".pdf")) {
+            filePath += ".pdf";
+        }
+        PDFUtil.exportOrdersToPDF(orders, filePath);
+        JOptionPane.showMessageDialog(this, "Xuất PDF thành công! File lưu tại: " + filePath);
+    }
+    // TODO add your handling code here:
+}//GEN-LAST:event_btnXuatPDFActionPerformed
 
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
@@ -771,9 +836,9 @@ public class ViewHoaDon extends javax.swing.JPanel {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JTable tbl;
     private javax.swing.JTable tblHDCT;
     private javax.swing.JTable tblLSHD;
+    private javax.swing.JTable tblhoadon;
     private com.toedter.calendar.JDateChooser txtDenNgay;
     private javax.swing.JTextField txtQR;
     private com.toedter.calendar.JDateChooser txtTuNgay;

@@ -95,6 +95,7 @@ public class ViewSanPham extends javax.swing.JPanel {
     public ViewSanPham() {
         this.productController = new ProductController();
         initComponents();
+        loadProductVariantSKUs();
         setupTable();
         loadBrands();
         loadCategories();
@@ -190,6 +191,29 @@ public class ViewSanPham extends javax.swing.JPanel {
             setSelectedComboItem(cbo_category, product.getCategoryId());
         }
         selectedProduct = product;
+    }
+
+    // Load tất cả mã SKU của product variant vào combobox
+    private void loadProductVariantSKUs() {
+        javax.swing.DefaultComboBoxModel<String> skuModel = new javax.swing.DefaultComboBoxModel<>();
+        try {
+            List<ProductVariant> variants = productVariantDAO.findAll();
+            for (ProductVariant variant : variants) {
+                String sku = variant.getVariantSku();
+                if (sku != null && !sku.trim().isEmpty()) {
+                    skuModel.addElement(sku);
+                }
+            }
+            if (skuModel.getSize() == 0) {
+                skuModel.addElement("Không có SKU");
+            }
+            cbo_product_variant_sku.setModel(skuModel);
+        } catch (Exception e) {
+            skuModel.removeAllElements();
+            skuModel.addElement("Lỗi tải SKU");
+            cbo_product_variant_sku.setModel(skuModel);
+            JOptionPane.showMessageDialog(this, "Lỗi khi tải mã SKU: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     // Helper method to select an item in a combo box by ID
@@ -826,6 +850,10 @@ public class ViewSanPham extends javax.swing.JPanel {
         cbbKieu = new javax.swing.JComboBox<>();
         jLabel19 = new javax.swing.JLabel();
         txtLGT = new javax.swing.JTextField();
+        btn_search = new javax.swing.JButton();
+        jPanel11 = new javax.swing.JPanel();
+        jLabel15 = new javax.swing.JLabel();
+        txt_productname = new javax.swing.JTextField();
         btnNho = new javax.swing.JButton();
         trang = new javax.swing.JLabel();
         btnLon = new javax.swing.JButton();
@@ -1315,13 +1343,18 @@ public class ViewSanPham extends javax.swing.JPanel {
         jLabel14.setText("Ma San pham");
 
         cbo_product_variant_sku.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cbo_product_variant_sku.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cbo_product_variant_skuActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
         jPanel9.setLayout(jPanel9Layout);
         jPanel9Layout.setHorizontalGroup(
             jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel9Layout.createSequentialGroup()
-                .addContainerGap(51, Short.MAX_VALUE)
+                .addContainerGap(65, Short.MAX_VALUE)
                 .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(cbo_product_variant_sku, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel14))
@@ -1334,7 +1367,7 @@ public class ViewSanPham extends javax.swing.JPanel {
                 .addComponent(jLabel14)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(cbo_product_variant_sku, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(27, Short.MAX_VALUE))
         );
 
         jPanel10.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(102, 102, 102)));
@@ -1381,6 +1414,41 @@ public class ViewSanPham extends javax.swing.JPanel {
                 .addContainerGap(27, Short.MAX_VALUE))
         );
 
+        btn_search.setText("Tìm kiếm");
+        btn_search.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_searchActionPerformed(evt);
+            }
+        });
+
+        jPanel11.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(102, 102, 102)));
+
+        jLabel15.setText("Tên");
+
+        javax.swing.GroupLayout jPanel11Layout = new javax.swing.GroupLayout(jPanel11);
+        jPanel11.setLayout(jPanel11Layout);
+        jPanel11Layout.setHorizontalGroup(
+            jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel11Layout.createSequentialGroup()
+                .addContainerGap(36, Short.MAX_VALUE)
+                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel11Layout.createSequentialGroup()
+                        .addComponent(jLabel15)
+                        .addGap(88, 88, 88))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel11Layout.createSequentialGroup()
+                        .addComponent(txt_productname, javax.swing.GroupLayout.PREFERRED_SIZE, 111, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(30, 30, 30))))
+        );
+        jPanel11Layout.setVerticalGroup(
+            jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel11Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel15)
+                .addGap(18, 18, 18)
+                .addComponent(txt_productname, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(22, Short.MAX_VALUE))
+        );
+
         javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
         jPanel8.setLayout(jPanel8Layout);
         jPanel8Layout.setHorizontalGroup(
@@ -1390,15 +1458,28 @@ public class ViewSanPham extends javax.swing.JPanel {
                 .addComponent(jPanel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(43, 43, 43)
                 .addComponent(jPanel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(37, 37, 37)
+                .addComponent(jPanel11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btn_search)
+                .addGap(124, 124, 124))
         );
         jPanel8Layout.setVerticalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel8Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btn_search)
+                .addGap(45, 45, 45))
             .addGroup(jPanel8Layout.createSequentialGroup()
-                .addGap(7, 7, 7)
-                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanel8Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(jPanel8Layout.createSequentialGroup()
+                        .addGap(7, 7, 7)
+                        .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jPanel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap(23, Short.MAX_VALUE))
         );
 
@@ -2601,6 +2682,37 @@ instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
         lastDeleteClickTime = currentTime;
     }//GEN-LAST:event_btnXoa_productvariant1ActionPerformed
 
+    private void btn_searchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_searchActionPerformed
+    try {
+        String sku = (String) cbo_product_variant_sku.getSelectedItem();
+        String priceText = txtLGT.getText().trim();
+        String productName = txt_productname.getText().trim();
+        java.math.BigDecimal price = null;
+        if (!priceText.isEmpty()) {
+            try {
+                price = new java.math.BigDecimal(priceText);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Giá không hợp lệ! Vui lòng nhập số.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+        // Nếu sku là null hoặc "Tất cả", bỏ lọc
+        if (sku != null && (sku.equalsIgnoreCase("Tất cả") || sku.trim().isEmpty())) {
+            sku = null;
+        }
+        if (productName.isEmpty()) productName = null;
+        List<ProductVariant> variants = productVariantDAO.searchVariants(sku, productName, price);
+        updateVariantTableModel(variants);
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, "Lỗi khi tìm kiếm biến thể: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
+}//GEN-LAST:event_btn_searchActionPerformed
+
+    private void cbo_product_variant_skuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbo_product_variant_skuActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cbo_product_variant_skuActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLamMoi;
     private javax.swing.JButton btnLamMoi1;
@@ -2620,6 +2732,7 @@ instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
     private javax.swing.JButton btnXoa_productvariant1;
     private javax.swing.JButton btn_dowload_template;
     private javax.swing.JButton btn_import_file_excel;
+    private javax.swing.JButton btn_search;
     private javax.swing.JButton btnsua1;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JComboBox<String> cbbKieu;
@@ -2629,6 +2742,7 @@ instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
@@ -2639,6 +2753,7 @@ instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel10;
+    private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel7;
@@ -2672,6 +2787,7 @@ instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
     private javax.swing.JTextField txtMaSP;
     private javax.swing.JTextField txtTen;
     private javax.swing.JTextField txtTenSP;
+    private javax.swing.JTextField txt_productname;
     private javax.swing.JTextArea txtaMoTa;
     // End of variables declaration//GEN-END:variables
 }
