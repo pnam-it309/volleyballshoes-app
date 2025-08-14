@@ -124,7 +124,7 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
     @Override
     public ProductVariant update(ProductVariant entity) {
         String sql = "UPDATE ProductVariant SET product_id = ?, size_id = ?, color_id = ?, "
-                + "sole_id = ?, variant_sku = ?, variant_orig_price = ?, variant_img_url = ?,variant_quantity=? "
+                + "sole_id = ?, variant_sku = ?, variant_orig_price = ?, variant_img_url = ?, variant_quantity = ? "
                 + "OUTPUT INSERTED.* WHERE variant_id = ?";
 
         return XJdbc.queryForObject(sql, this::mapResultSetToProductVariant,
@@ -135,8 +135,8 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
                 entity.getVariantSku(),
                 entity.getVariantOrigPrice(),
                 entity.getVariantImgUrl(),
-                entity.getVariantId(),
-                entity.getQuantity()
+                entity.getQuantity(),
+                entity.getVariantId()
         );
     }
 
