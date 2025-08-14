@@ -2367,9 +2367,20 @@ public class ViewSanPham extends javax.swing.JPanel {
 
                     // Tạo header row
                     org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
-                    String[] headers = {"Mã SKU", "Tên biến thể", "ID Sản phẩm", "ID Màu sắc",
-                        "ID Kích thước", "ID Loại đế", "Giá gốc", "Giá khuyến mãi",
-                        "Số lượng tồn", "Trạng thái (1: Hoạt động, 0: Ngừng bán)"};
+                    String[] headers = {
+                        // Product
+                        "Mã sản phẩm (product_code)",
+                        "Tên sản phẩm (product_name)",
+                        "ID thương hiệu (brand_id, nhập số)",
+                        "ID danh mục (category_id, nhập số)",
+                        // ProductVariant
+                        "Mã SKU (variant_sku)",
+                        "ID Kích thước (size_id, nhập số)",
+                        "ID Màu sắc (color_id, nhập số)",
+                        "ID Loại đế (sole_id, nhập số)",
+                        "Giá gốc (variant_orig_price)",
+                        "Số lượng tồn (variant_quantity)"
+                    };
 
                     for (int i = 0; i < headers.length; i++) {
                         org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
@@ -2379,16 +2390,18 @@ public class ViewSanPham extends javax.swing.JPanel {
 
                     // Tạo dòng hướng dẫn
                     org.apache.poi.ss.usermodel.Row instructionRow1 = sheet.createRow(1);
-                    instructionRow1.createCell(0).setCellValue("VD: SP001");
-                    instructionRow1.createCell(1).setCellValue("VD: Giày bóng chuyền đen 42");
-                    instructionRow1.createCell(2).setCellValue("1");
-                    instructionRow1.createCell(3).setCellValue("1");
-                    instructionRow1.createCell(4).setCellValue("1");
-                    instructionRow1.createCell(5).setCellValue("1");
-                    instructionRow1.createCell(6).setCellValue("500000");
-                    instructionRow1.createCell(7).setCellValue("450000");
-                    instructionRow1.createCell(8).setCellValue("50");
-                    instructionRow1.createCell(9).setCellValue("1");
+// Product mẫu
+instructionRow1.createCell(0).setCellValue("SP001"); // product_code
+instructionRow1.createCell(1).setCellValue("Giày bóng chuyền Mizuno"); // product_name
+instructionRow1.createCell(2).setCellValue("1"); // brand_id (nhập số, sẽ map sang tên)
+instructionRow1.createCell(3).setCellValue("2"); // category_id (nhập số, sẽ map sang tên)
+// ProductVariant mẫu
+instructionRow1.createCell(4).setCellValue("SP001-BLACK-42"); // variant_sku
+instructionRow1.createCell(5).setCellValue("3"); // size_id (nhập số, sẽ map sang tên)
+instructionRow1.createCell(6).setCellValue("5"); // color_id (nhập số, sẽ map sang tên)
+instructionRow1.createCell(7).setCellValue("2"); // sole_id (nhập số, sẽ map sang tên)
+instructionRow1.createCell(8).setCellValue("650000"); // variant_orig_price
+instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
 
                     // Tự động điều chỉnh độ rộng cột
                     for (int i = 0; i < headers.length; i++) {

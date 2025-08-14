@@ -48,9 +48,6 @@ public class ViewKhachHang extends javax.swing.JPanel {
             List<Customer> customers = customerController.getAllCustomers();
 
             if (customers == null || customers.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                    "Không có dữ liệu khách hàng.",
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
 

@@ -17,6 +17,12 @@ import org.jfree.data.category.DefaultCategoryDataset;
 
 public class ViewThongKe extends javax.swing.JPanel {
 
+    public ViewThongKe() {
+        System.out.println("DEBUG: Đã khởi tạo ViewThongKe");
+        initComponents();
+    }
+
+
 //    ThongKeDao rp = new ThongKeDaoImpl();
 //    StatisticController statisticController = new StatisticController(ThongKeDao thongkeDao);
 //
