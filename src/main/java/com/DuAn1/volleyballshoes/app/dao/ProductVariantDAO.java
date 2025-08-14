@@ -5,6 +5,14 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductVariantDAO extends CrudDAO<ProductVariant, Integer> {
+    /**
+     * Tìm kiếm biến thể sản phẩm theo nhiều điều kiện (SKU, tên sản phẩm, giá)
+     * @param sku SKU của biến thể (null hoặc rỗng nếu không lọc)
+     * @param productName Tên sản phẩm (null hoặc rỗng nếu không lọc)
+     * @param price Giá (null nếu không lọc)
+     * @return Danh sách biến thể phù hợp
+     */
+    List<ProductVariant> searchVariants(String sku, String productName, java.math.BigDecimal price);
     List<ProductVariant> findAll();
     List<ProductVariant> findByProductId(int productId);
     List<ProductVariant> findWithPagination(int page, int pageSize, String filter);

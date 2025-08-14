@@ -10,6 +10,24 @@ import java.util.List;
 import java.util.Optional;
 
 public class ProductVariantDAOImpl implements ProductVariantDAO {
+    @Override
+    public List<ProductVariant> searchVariants(String sku, String productName, java.math.BigDecimal price) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM ProductVariant WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+        if (sku != null && !sku.trim().isEmpty()) {
+            sql.append(" AND variant_sku LIKE ?");
+            params.add("%" + sku.trim() + "%");
+        }
+        if (productName != null && !productName.trim().isEmpty()) {
+            sql.append(" AND product_id IN (SELECT product_id FROM Product WHERE product_name LIKE ?)");
+            params.add("%" + productName.trim() + "%");
+        }
+        if (price != null) {
+            sql.append(" AND variant_orig_price = ?");
+            params.add(price);
+        }
+        return XJdbc.query(sql.toString(), this::mapResultSetToProductVariant, params.toArray());
+    }
 
     private ProductVariant mapResultSetToProductVariant(ResultSet rs) throws SQLException {
         ProductVariant variant = new ProductVariant();
