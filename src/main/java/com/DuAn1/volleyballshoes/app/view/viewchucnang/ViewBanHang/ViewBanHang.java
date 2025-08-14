@@ -3,6 +3,7 @@ package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang;
 import com.DuAn1.volleyballshoes.app.dao.*;
 import com.DuAn1.volleyballshoes.app.dao.impl.*;
 import com.DuAn1.volleyballshoes.app.entity.*;
+import com.DuAn1.volleyballshoes.app.entity.Promotion;
 import java.util.Optional;
 import com.DuAn1.volleyballshoes.app.entity.Staff;
 import com.DuAn1.volleyballshoes.app.dao.StaffDAO;
@@ -44,6 +45,7 @@ public class ViewBanHang extends javax.swing.JPanel {
     private final SizeDAO sizeDAO = new SizeDAOImpl();
     private final ColorDAO colorDAO = new ColorDAOImpl();
     private final SoleTypeDAO soleTypeDAO = new SoleTypeDAOImpl();
+    private final PromotionDAO promotionDAO = new PromotionDAOImpl();
 
     private void initCartTable() {
         DefaultTableModel model = new DefaultTableModel() {
@@ -115,27 +117,65 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     // Update cart summary (total, discount, etc.)
     private void updateCartSummary() {
+        if (tblGioHang == null || tblGioHang.getModel() == null) {
+            return; // Exit if table is not initialized
+        }
+        
         DefaultTableModel model = (DefaultTableModel) tblGioHang.getModel();
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal totalDiscount = BigDecimal.ZERO;
+        BigDecimal promotionDiscount = BigDecimal.ZERO;
 
-        // Calculate subtotal and total discount
+        // Calculate subtotal and total discount from items
         for (int i = 0; i < model.getRowCount(); i++) {
-            BigDecimal rowTotal = (BigDecimal) model.getValueAt(i, 6);
-            BigDecimal rowPrice = (BigDecimal) model.getValueAt(i, 4);
-            int quantity = (int) model.getValueAt(i, 3);
-            BigDecimal rowSubtotal = rowPrice.multiply(BigDecimal.valueOf(quantity));
+            try {
+                Object rowTotalObj = model.getValueAt(i, 6);
+                Object rowPriceObj = model.getValueAt(i, 4);
+                Object quantityObj = model.getValueAt(i, 3);
+                
+                if (rowTotalObj == null || rowPriceObj == null || quantityObj == null) {
+                    continue; // Skip invalid rows
+                }
+                
+                BigDecimal rowTotal = (BigDecimal) rowTotalObj;
+                BigDecimal rowPrice = (BigDecimal) rowPriceObj;
+                int quantity = ((Number) quantityObj).intValue();
+                
+                BigDecimal rowSubtotal = rowPrice.multiply(BigDecimal.valueOf(quantity));
+                subtotal = subtotal.add(rowSubtotal);
+                totalDiscount = totalDiscount.add(rowSubtotal.subtract(rowTotal));
+            } catch (Exception e) {
+                // Skip any rows that cause errors
+                continue;
+            }
+        }
 
-            subtotal = subtotal.add(rowSubtotal);
-            totalDiscount = totalDiscount.add(rowSubtotal.subtract(rowTotal));
+        // Apply promotion discount if selected
+        int selectedPromoIndex = cbbPhieuGiamGia.getSelectedIndex();
+        if (selectedPromoIndex > 0) { // If a promotion is selected (not "Không áp dụng")
+            try {
+                List<Promotion> activePromotions = promotionDAO.findActivePromotions();
+                if (selectedPromoIndex - 1 < activePromotions.size()) {
+                    Promotion selectedPromo = activePromotions.get(selectedPromoIndex - 1);
+                    // Calculate promotion discount as a percentage of subtotal
+                    promotionDiscount = subtotal.multiply(selectedPromo.getPromoDiscountValue())
+                                             .divide(new BigDecimal(100), 2, RoundingMode.HALF_UP);
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, 
+                    "Lỗi khi áp dụng khuyến mãi: " + e.getMessage(), 
+                    "Lỗi", 
+                    JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
         }
 
         // Update summary labels
         lbTongTien.setText(formatCurrency(subtotal));
-        lbGiamGiaTot.setText(formatCurrency(totalDiscount));
+        lbGiamGiaTot.setText(formatCurrency(totalDiscount.add(promotionDiscount)));
 
-        // Calculate and update total after discount
-        BigDecimal total = subtotal.subtract(totalDiscount);
+        // Calculate and update total after all discounts
+        BigDecimal total = subtotal.subtract(totalDiscount).subtract(promotionDiscount);
         lbTong.setText(formatCurrency(total));
     }
 
@@ -147,10 +187,57 @@ public class ViewBanHang extends javax.swing.JPanel {
         return String.format("%,d đ", amount.longValue());
     }
 
+    private void loadActivePromotions() {
+        try {
+            // Temporarily remove action listener to prevent triggering updates during initialization
+            java.awt.event.ActionListener[] actionListeners = cbbPhieuGiamGia.getActionListeners();
+            for (java.awt.event.ActionListener listener : actionListeners) {
+                cbbPhieuGiamGia.removeActionListener(listener);
+            }
+            
+            // Clear existing items
+            cbbPhieuGiamGia.removeAllItems();
+            
+            // Add default "Không áp dụng" option
+            cbbPhieuGiamGia.addItem("Không áp dụng");
+            
+            // Get active promotions
+            List<Promotion> activePromotions = promotionDAO.findActivePromotions();
+            
+            // Add each promotion to the combobox
+            for (Promotion promotion : activePromotions) {
+                cbbPhieuGiamGia.addItem(String.format("%s - Giảm %s%%", 
+                    promotion.getPromoName(), 
+                    promotion.getPromoDiscountValue()));
+            }
+            
+            // Set default selection without triggering events
+            cbbPhieuGiamGia.setSelectedIndex(0);
+            
+            // Restore action listeners
+            for (java.awt.event.ActionListener listener : actionListeners) {
+                cbbPhieuGiamGia.addActionListener(listener);
+            }
+            
+        } catch (Exception e) {
+            // Don't show error dialog during initialization to avoid popups
+            if (this.isVisible()) {
+                JOptionPane.showMessageDialog(this, 
+                    "Lỗi khi tải danh sách khuyến mãi: " + e.getMessage(), 
+                    "Lỗi", 
+                    JOptionPane.ERROR_MESSAGE);
+            }
+            e.printStackTrace();
+        }
+    }
+    
     public ViewBanHang() {
         initComponents();
         // Set this as the active instance
         setActiveInstance(this);
+        
+        // Load active promotions
+        loadActivePromotions();
 
         // Clear the empty rows from tblHoaDon
         DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
@@ -433,7 +520,7 @@ public class ViewBanHang extends javax.swing.JPanel {
         jLabel6 = new javax.swing.JLabel();
         txtMaKhachhang = new javax.swing.JTextField();
         btn_Them4 = new javax.swing.JButton();
-        btn_khachvanglai1 = new javax.swing.JButton();
+        btn_khachvanglai = new javax.swing.JButton();
         pnl_thongtinhoadon = new javax.swing.JPanel();
         jLabel7 = new javax.swing.JLabel();
         jLabel8 = new javax.swing.JLabel();
@@ -677,11 +764,11 @@ public class ViewBanHang extends javax.swing.JPanel {
             }
         });
 
-        btn_khachvanglai1.setForeground(new java.awt.Color(51, 102, 255));
-        btn_khachvanglai1.setText("Khách vãng lai");
-        btn_khachvanglai1.addActionListener(new java.awt.event.ActionListener() {
+        btn_khachvanglai.setForeground(new java.awt.Color(51, 102, 255));
+        btn_khachvanglai.setText("Khách vãng lai");
+        btn_khachvanglai.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_khachvanglai1ActionPerformed(evt);
+                btn_khachvanglaiActionPerformed(evt);
             }
         });
 
@@ -692,13 +779,13 @@ public class ViewBanHang extends javax.swing.JPanel {
             .addGroup(jPanel8Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(btn_khachvanglai1)
+                    .addComponent(btn_khachvanglai)
                     .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(jLabel6)
                         .addComponent(txtMaKhachhang, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btn_Them4, javax.swing.GroupLayout.PREFERRED_SIZE, 60, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(btn_Them4, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel8Layout.setVerticalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -709,9 +796,9 @@ public class ViewBanHang extends javax.swing.JPanel {
                 .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txtMaKhachhang, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btn_Them4))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(btn_khachvanglai1)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addComponent(btn_khachvanglai)
+                .addContainerGap(10, Short.MAX_VALUE))
         );
 
         pnl_thongtinhoadon.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
@@ -1018,16 +1105,12 @@ public class ViewBanHang extends javax.swing.JPanel {
                                 .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, 0, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(272, 272, 272))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(pnl_thongtinhoadon, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pnl_thongtinhoadon, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 65, Short.MAX_VALUE)
+                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, 0, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(272, 272, 272))
             .addGroup(layout.createSequentialGroup()
                 .addGap(537, 537, 537)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1079,37 +1162,29 @@ public class ViewBanHang extends javax.swing.JPanel {
             String customerCode = txtMaKhachhang.getText().trim();
             Customer customer = null;
 
-            // Only validate customer if a code is provided
-            if (!customerCode.isEmpty()) {
-                // Check if this is a temporary customer (starts with TEMP_)
-                if (customerCode.startsWith("TEMP_")) {
-                    if (currentTemporaryCustomer != null && currentTemporaryCustomer.getCustomerCode().equals(customerCode)) {
-                        customer = currentTemporaryCustomer;
-                        System.out.println("[DEBUG] Sử dụng khách hàng tạm thời: " + customerCode);
-                    } else {
-                        JOptionPane.showMessageDialog(this,
-                                "Không tìm thấy thông tin khách hàng tạm thời. Vui lòng chọn lại khách hàng.",
-                                "Lỗi khách hàng tạm thời",
-                                JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                } else if (!customerCode.equals("CUS0000")) {
-                    // Only try to find customer if it's not the guest customer code
-                    customer = customerDAO.findByCode(customerCode);
-                    if (customer == null) {
-                        JOptionPane.showMessageDialog(this,
-                                "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
-                                "Không tìm thấy khách hàng",
-                                JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                } else {
-                    // This is a guest customer (CUS0000)
-                    System.out.println("[DEBUG] Sử dụng tài khoản khách vãng lai");
+            // Check if we have a temporary customer from the guest button
+            if (currentTemporaryCustomer != null && currentTemporaryCustomer.getCustomerId() != null) {
+                customer = currentTemporaryCustomer;
+                System.out.println("[DEBUG] Using currentTemporaryCustomer: " + customer.getCustomerCode());
+            }
+            // If no temporary customer, try to find by code
+            else if (!customerCode.isEmpty()) {
+                customer = customerDAO.findByCode(customerCode);
+                if (customer == null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
+                            "Không tìm thấy khách hàng",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
+                System.out.println("[DEBUG] Sử dụng khách hàng từ mã: " + customerCode);
             } else {
-                // No customer selected - this is allowed for walk-in customers
-                System.out.println("[DEBUG] Không có khách hàng được chọn - tạo đơn hàng không cần khách hàng");
+                // No customer selected - show error
+                JOptionPane.showMessageDialog(this,
+                        "Vui lòng chọn khách hàng hoặc nhấn 'Khách vãng lai' để tạo mới.",
+                        "Chưa chọn khách hàng",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
             }
 
             // Get staff info from session
@@ -1162,90 +1237,16 @@ public class ViewBanHang extends javax.swing.JPanel {
                 if (guestCustomer != null) {
                     newOrder.setCustomerId(guestCustomer.getCustomerId());
                     System.out.println("[DEBUG] Using guest customer ID: " + guestCustomer.getCustomerId());
+                    
+                    // Update the customer display
+                    setCustomerToForm(guestCustomer);
                 } else {
-                    // 3. If no guest customer exists, create a temporary one
-                    System.out.println("Không tìm thấy khách hàng mặc định, thử tìm bất kỳ khách vãng lai nào");
-
-                    // Try to find any temporary customer by searching with TEMP_ prefix
-                    List<Customer> tempCustomers = null;
-                    Customer tempCustomer = null;
-
-                    try {
-                        tempCustomers = customerDAO.searchByKeyword("TEMP_");
-                        if (tempCustomers != null && !tempCustomers.isEmpty()) {
-                            tempCustomer = tempCustomers.get(0);
-                            if (tempCustomer != null && tempCustomer.getCustomerCode() != null) {
-                                System.out.println("Sử dụng khách vãng lai có sẵn: " + tempCustomer.getCustomerCode());
-                            } else {
-                                System.out.println("Tìm thấy khách vãng lai nhưng thông tin không hợp lệ");
-                                tempCustomer = null;
-                            }
-                        } else {
-                            System.out.println("Không tìm thấy khách vãng lai nào, tạo mới tạm thời");
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Lỗi khi tìm kiếm khách vãng lai: " + e.getMessage());
-                        tempCustomer = null;
-                    }
-
-                    // If we still don't have a temp customer, try to create one
-                    if (tempCustomer == null || tempCustomer.getCustomerCode() == null) {
-                        try {
-                            System.out.println("Tạo mới khách hàng tạm thời...");
-                            tempCustomer = new Customer();
-                            String tempCode = "TEMP_" + System.currentTimeMillis();
-                            tempCustomer.setCustomerCode(tempCode);
-                            tempCustomer.setCustomerFullName("Khách vãng lai (" + tempCode + ")");
-                            tempCustomer.setCustomerPhone(tempCode);
-
-                            // Save the temporary customer
-                            tempCustomer = customerDAO.create(tempCustomer);
-                            System.out.println("Đã lưu khách hàng tạm thời: " + tempCode);
-                        } catch (Exception e) {
-                            System.err.println("Lỗi khi tạo khách hàng tạm thời: " + e.getMessage());
-                            tempCustomer = null;
-
-                            // Show error to user
-                            JOptionPane.showMessageDialog(this,
-                                    "Không thể tạo khách hàng tạm thời. Vui lòng thử lại hoặc liên hệ quản trị viên.",
-                                    "Lỗi tạo khách hàng",
-                                    JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-                    }
-
-                    if (tempCustomer != null && tempCustomer.getCustomerId() != null) {
-                        newOrder.setCustomerId(tempCustomer.getCustomerId());
-                        System.out.println("Sử dụng khách hàng tạm thời: " + tempCustomer.getCustomerCode());
-
-                        // Update the customer display
-                        setCustomerToForm(tempCustomer);
-                    } else {
-                        // As a last resort, try to find any customer
-                        List<Customer> allCustomers = customerDAO.findAll();
-                        if (allCustomers != null && !allCustomers.isEmpty()) {
-                            Customer anyCustomer = allCustomers.get(0);
-                            if (anyCustomer != null && anyCustomer.getCustomerId() != null) {
-                                newOrder.setCustomerId(anyCustomer.getCustomerId());
-                                System.out.println("Sử dụng khách hàng bất kỳ: " + anyCustomer.getCustomerCode());
-                                setCustomerToForm(anyCustomer);
-                            } else {
-                                // If we can't find any valid customer, show an error and return
-                                JOptionPane.showMessageDialog(this,
-                                        "Không thể tạo đơn hàng: Không tìm thấy thông tin khách hàng hợp lệ.\nVui lòng thử lại hoặc liên hệ quản trị viên.",
-                                        "Lỗi khách hàng",
-                                        JOptionPane.ERROR_MESSAGE);
-                                return;
-                            }
-                        } else {
-                            // If we still don't have a customer, show error and return
-                            JOptionPane.showMessageDialog(this,
-                                    "Không thể tạo đơn hàng: Không tìm thấy thông tin khách hàng.\nVui lòng thêm ít nhất một khách hàng trước khi tạo đơn hàng mới.",
-                                    "Lỗi khách hàng",
-                                    JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-                    }
+                    // If no guest customer exists, show error
+                    JOptionPane.showMessageDialog(this,
+                            "Không tìm thấy tài khoản khách vãng lai mặc định (CUS0000).\nVui lòng liên hệ quản trị viên.",
+                            "Lỗi khách hàng",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
             }
 
@@ -1743,30 +1744,33 @@ public class ViewBanHang extends javax.swing.JPanel {
             // Generate a new order code
             String orderCode = "HD" + System.currentTimeMillis();
             
-            // Create a new order
-            Order order = Order.builder()
-                .orderCode(orderCode)
-                .orderStatus("Chưa thanh toán")
-                .orderCreatedAt(java.time.LocalDateTime.now())
-                .customerId(Integer.parseInt(txtMaKhachhang.getText().trim()))
-                .build();
-            
-            // Get current staff
-            Staff staff = SessionManager.getInstance().getCurrentStaff();
-            if (staff != null) {
-                order.setStaffId(staff.getStaffId());
+            // Get customer ID from the current temporary customer or find by code
+            int customerId;
+            if (currentTemporaryCustomer != null && currentTemporaryCustomer.getCustomerId() != null) {
+                customerId = currentTemporaryCustomer.getCustomerId();
+                System.out.println("[DEBUG] Using customer ID from currentTemporaryCustomer: " + customerId);
+            } else {
+                String customerCode = txtMaKhachhang.getText().trim();
+                Customer customer = customerDAO.findByCode(customerCode);
+                if (customer == null) {
+                    throw new Exception("Không tìm thấy thông tin khách hàng");
+                }
+                customerId = customer.getCustomerId();
+                System.out.println("[DEBUG] Found customer by code " + customerCode + ", ID: " + customerId);
             }
             
-            // Get cart model and calculate total amount
+            // Get cart model and calculate total amount first
             DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
-            BigDecimal totalAmount = BigDecimal.ZERO;
-            
+            if (cartModel.getRowCount() == 0) {
+                throw new Exception("Không thể thanh toán với giỏ hàng trống");
+            }
+
             // Calculate total amount from cart
+            BigDecimal totalAmount = BigDecimal.ZERO;
             for (int i = 0; i < cartModel.getRowCount(); i++) {
                 BigDecimal rowTotal = (BigDecimal) cartModel.getValueAt(i, 6);
                 totalAmount = totalAmount.add(rowTotal);
             }
-            order.setOrderFinalAmount(totalAmount);
 
             // Get payment method
             String paymentMethod = cbbHinhThucThanhToan.getSelectedItem() != null
@@ -1784,6 +1788,80 @@ public class ViewBanHang extends javax.swing.JPanel {
                 return;
             }
 
+            // Create and save the order first
+            Order order = Order.builder()
+                .orderCode(orderCode)
+                .orderStatus("Chưa thanh toán")
+                .orderCreatedAt(java.time.LocalDateTime.now())
+                .customerId(customerId)
+                .orderFinalAmount(totalAmount)
+                .orderPaymentMethod(paymentMethod)
+                .build();
+            
+            // Get current staff
+            Staff staff = SessionManager.getInstance().getCurrentStaff();
+            if (staff != null) {
+                order.setStaffId(staff.getStaffId());
+            }
+
+            // Save the order first
+            Order savedOrder = orderDAO.save(order);
+            if (savedOrder == null || savedOrder.getOrderId() <= 0) {
+                throw new Exception("Không thể tạo đơn hàng. Vui lòng thử lại.");
+            }
+            
+            // Save order details
+            for (int i = 0; i < cartModel.getRowCount(); i++) {
+                String sku = cartModel.getValueAt(i, 1).toString();
+                int quantity = Integer.parseInt(cartModel.getValueAt(i, 3).toString());
+                BigDecimal price = (BigDecimal) cartModel.getValueAt(i, 5);
+                
+                // Get variant ID by SKU
+                Optional<ProductVariant> variantOpt = productVariantDAO.findBySku(sku);
+                if (!variantOpt.isPresent()) {
+                    throw new Exception("Không tìm thấy thông tin sản phẩm: " + sku);
+                }
+                int variantId = variantOpt.get().getVariantId();
+                
+                // Create order detail
+                OrderDetail detail = new OrderDetail();
+                detail.setOrderId(savedOrder.getOrderId());
+                detail.setVariantId(variantId);
+                detail.setDetailQuantity(quantity);
+                detail.setDetailUnitPrice(price);
+                detail.setDetailDiscountPercent(BigDecimal.ZERO); // No discount by default
+                detail.setDetailTotal(price.multiply(BigDecimal.valueOf(quantity)));
+                
+                OrderDetail savedDetail = orderDetailDAO.save(detail);
+                if (savedDetail == null) {
+                    throw new Exception("Không thể thêm chi tiết đơn hàng cho sản phẩm: " + sku);
+                }
+            }
+            
+            // Clear the cart after successful order
+            cartModel.setRowCount(0);
+            updateCartSummary();
+            
+            // Show success message
+            JOptionPane.showMessageDialog(this,
+                "Đơn hàng đã được tạo và thanh toán thành công!",
+                "Thành công",
+                JOptionPane.INFORMATION_MESSAGE);
+                
+            // Update order status to 'Đã thanh toán'
+            savedOrder.setOrderStatus("Đã thanh toán");
+            orderDAO.update(savedOrder);
+            
+            // Update the order in the table
+            DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
+            for (int i = 0; i < model.getRowCount(); i++) {
+                String currentOrderCode = model.getValueAt(i, 0).toString();
+                if (currentOrderCode.equals(savedOrder.getOrderCode())) {
+                    model.setValueAt("Đã thanh toán", i, 3); // Update status column
+                    break;
+                }
+            }
+
             // Get staff information (use existing staff variable from above)
             if (staff == null) {
                 StaffDAO staffDAO = new StaffDAOImpl();
@@ -1798,23 +1876,40 @@ public class ViewBanHang extends javax.swing.JPanel {
             }
 
             // Lấy thông tin khách hàng
-            String customerCode = txtMaKhachhang.getText().trim();
             Customer customer = null;
-            boolean isTemporaryCustomer = customerCode.startsWith("TEMP_");
-            if (!customerCode.isEmpty() && !isTemporaryCustomer) {
-                customer = customerDAO.findByCode(customerCode);
-                if (customer == null) {
-                    try {
-                        Integer customerId = Integer.parseInt(customerCode);
-                        customer = customerDAO.findById(customerId);
-                    } catch (NumberFormatException ignored) {
+            
+            // First, check if we have a current temporary customer
+            if (currentTemporaryCustomer != null && currentTemporaryCustomer.getCustomerId() != null) {
+                customer = currentTemporaryCustomer;
+                System.out.println("[DEBUG] Using current temporary customer: " + customer.getCustomerCode());
+            } 
+            // If no temporary customer, try to find by code
+            else {
+                String customerCode = txtMaKhachhang.getText().trim();
+                if (!customerCode.isEmpty()) {
+                    customer = customerDAO.findByCode(customerCode);
+                    if (customer == null) {
+                        try {
+                            // Try to parse as ID as a fallback
+                            Integer customerIdFromCode = Integer.parseInt(customerCode);
+                            customer = customerDAO.findById(customerIdFromCode);
+                        } catch (NumberFormatException ignored) {
+                            // Ignore parse exception, we'll handle null customer below
+                        }
                     }
-                }
-                if (customer == null && !customerCode.equals("CUS0000")) {
+                    
+                    if (customer == null) {
+                        JOptionPane.showMessageDialog(this,
+                                "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
+                                "Không tìm thấy khách hàng",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                } else {
                     JOptionPane.showMessageDialog(this,
-                            "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
-                            "Không tìm thấy khách hàng",
-                            JOptionPane.ERROR_MESSAGE);
+                            "Vui lòng chọn khách hàng hoặc nhấn 'Khách vãng lai'.",
+                            "Thiếu thông tin",
+                            JOptionPane.WARNING_MESSAGE);
                     return;
                 }
             }
@@ -1829,7 +1924,22 @@ public class ViewBanHang extends javax.swing.JPanel {
                 order.setOrderFinalAmount(totalAmount);
                 order.setOrderPaymentMethod(paymentMethod);
                 order.setOrderStatus("Đã thanh toán");
-                if (orderDAO.update(order) == null) {
+                
+                // First, make sure the order exists in the database
+                Optional<Order> existingOrderOpt = orderDAO.findByCode(order.getOrderCode());
+                if (!existingOrderOpt.isPresent()) {
+                    throw new Exception("Không tìm thấy thông tin hóa đơn để cập nhật.");
+                }
+                
+                // Get the existing order
+                Order existingOrder = existingOrderOpt.get();
+                
+                // Set the ID from the existing order
+                order.setOrderId(existingOrder.getOrderId());
+                
+                // Now update the order
+                Order updatedOrder = orderDAO.update(order);
+                if (updatedOrder == null) {
                     throw new Exception("Không thể cập nhật thông tin thanh toán.");
                 }
 
@@ -1914,91 +2024,175 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     }//GEN-LAST:event_cbbHinhThucThanhToanActionPerformed
 
-    private void cbbPhieuGiamGiaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbbPhieuGiamGiaActionPerformed
-
-    }//GEN-LAST:event_cbbPhieuGiamGiaActionPerformed
-
-    private void btn_khachvanglai1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_khachvanglai1ActionPerformed
-        // TODO add your handling code here:
-        String guestCode = "CUS0000";
-        final String GUEST_NAME = "Khách vãng lai";
-        Customer guestCustomer = null;
-
+    private void btn_khachvanglaiActionPerformed(java.awt.event.ActionEvent evt) {
         try {
-            // Find guest customer by code (case-insensitive search is handled by the DAO)
-            guestCustomer = customerDAO.findByCode(guestCode);
-
-            if (guestCustomer != null) {
-                System.out.println("[DEBUG] Đã tìm thấy khách hàng: " + guestCustomer.getCustomerCode());
+            System.out.println("[DEBUG] === Starting guest customer process ===");
+            
+            // First try to find any existing guest customer
+            List<Customer> allCustomers = customerDAO.findAll();
+            Customer guestCustomer = null;
+            
+            // Look for any existing guest customer by name
+            for (Customer c : allCustomers) {
+                if (c.getCustomerFullName() != null && 
+                    c.getCustomerFullName().startsWith("Khách vãng lai")) {
+                    guestCustomer = c;
+                    System.out.println("[DEBUG] Found existing guest customer: " + c.getCustomerCode());
+                    break;
+                }
             }
-
-            // If still not found, try to create new one
+            
+            // If no existing guest customer, create a new one
             if (guestCustomer == null) {
-                System.out.println("[DEBUG] Không tìm thấy khách hàng mặc định, đang tạo mới...");
-
-                try {
-                    guestCustomer = new Customer();
+                System.out.println("[DEBUG] No existing guest customer found, creating new one");
+                String guestCode = "KH" + System.currentTimeMillis();
+                
+                // Create new customer object
+                guestCustomer = new Customer();
+                guestCustomer.setCustomerCode(guestCode);
+                guestCustomer.setCustomerFullName("Khách vãng lai (" + guestCode + ")");
+                guestCustomer.setCustomerPhone("0000000000");
+                guestCustomer.setCustomerEmail(guestCode + "@guest.com");
+                
+                System.out.println("[DEBUG] Attempting to create new guest customer: " + guestCode);
+                
+                // Try to save to database
+                Customer createdCustomer = customerDAO.create(guestCustomer);
+                
+                if (createdCustomer != null && createdCustomer.getCustomerId() != null) {
+                    guestCustomer = createdCustomer;
+                    System.out.println("[DEBUG] Successfully created guest customer with ID: " + 
+                                     guestCustomer.getCustomerId());
+                } else {
+                    // If creation failed, try one more time with a different code
+                    guestCode = "KH" + (System.currentTimeMillis() + 1);
                     guestCustomer.setCustomerCode(guestCode);
-                    guestCustomer.setCustomerFullName(GUEST_NAME);
-                    guestCustomer.setCustomerPhone("0000000000");
-                    guestCustomer.setCustomerEmail("guest@example.com");
-
-                    // Try to create the customer
-                    Customer createdCustomer = customerDAO.create(guestCustomer);
-                    if (createdCustomer != null && createdCustomer.getCustomerCode() != null) {
+                    guestCustomer.setCustomerFullName("Khách vãng lai (" + guestCode + ")");
+                    guestCustomer.setCustomerEmail(guestCode + "@guest.com");
+                    
+                    System.out.println("[DEBUG] Retrying with new code: " + guestCode);
+                    createdCustomer = customerDAO.create(guestCustomer);
+                    
+                    if (createdCustomer != null && createdCustomer.getCustomerId() != null) {
                         guestCustomer = createdCustomer;
-                        System.out.println("[DEBUG] Đã tạo mới khách hàng mặc định: " + guestCustomer.getCustomerCode());
+                        System.out.println("[DEBUG] Successfully created guest customer on second attempt: " + 
+                                         guestCustomer.getCustomerId());
                     } else {
-                        throw new Exception("Không thể tạo tài khoản khách vãng lai");
-                    }
-                } catch (Exception createEx) {
-                    // If we get a unique constraint violation, it means the customer exists but we couldn't find it
-                    if (createEx.getMessage() != null && (createEx.getMessage().contains("Violation of UNIQUE KEY")
-                            || createEx.getMessage().contains("duplicate key"))) {
-                        System.out.println("[DEBUG] Phát hiện khách hàng đã tồn tại, thử tìm lại...");
-                        // Try one more time to find the customer with direct SQL
-                        String sql = "SELECT * FROM Customer WHERE UPPER(customer_code) = UPPER(?)";
-                        Connection conn = XJdbc.openConnection();
-                        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                            stmt.setString(1, guestCode);
-                            try (ResultSet rs = stmt.executeQuery()) {
-                                if (rs.next()) {
-                                    guestCustomer = new Customer();
-                                    guestCustomer.setCustomerCode(rs.getString("customer_code"));
-                                    guestCustomer.setCustomerFullName(rs.getString("customer_full_name"));
-                                    guestCustomer.setCustomerPhone(rs.getString("customer_phone"));
-                                    guestCustomer.setCustomerEmail(rs.getString("customer_email"));
-                                    System.out.println("[DEBUG] Đã tìm thấy khách hàng sau khi phát hiện trùng lặp: " + guestCustomer.getCustomerCode());
-                                } else {
-                                    throw new Exception("Khách hàng đã tồn tại nhưng không thể tìm thấy");
-                                }
-                            }
-                        } catch (SQLException e) {
-                            throw new Exception("Không thể tìm thấy hoặc tạo khách hàng: " + e.getMessage());
-                        }
-                    } else {
-                        throw createEx;
+                        throw new Exception("Không thể tạo tài khoản khách vãng lai. Vui lòng thử lại.");
                     }
                 }
             }
-
-            // Update the form with the found or created customer
-            if (guestCustomer != null) {
+            
+            // Update the form with the guest customer
+            if (guestCustomer != null && guestCustomer.getCustomerId() != null) {
                 setCustomerToForm(guestCustomer);
+                currentTemporaryCustomer = guestCustomer;
+                System.out.println("[DEBUG] Using guest customer: " + guestCustomer.getCustomerCode() + 
+                                 " (ID: " + guestCustomer.getCustomerId() + ")");
             } else {
-                throw new Exception("Không thể tìm hoặc tạo khách hàng mặc định");
+                throw new Exception("Thông tin khách hàng không hợp lệ");
             }
+            
+        } catch (Exception e) {
+            System.err.println("[ERROR] Failed to handle guest customer: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Không thể tạo tài khoản khách vãng lai. Vui lòng thử lại.\n" + e.getMessage(),
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
+                
+            // Clear any invalid customer references
+            currentTemporaryCustomer = null;
+            txtMaKhachhang.setText("");
+        }
+    }
+
+    private void cbbPhieuGiamGiaActionPerformed(java.awt.event.ActionEvent evt) {
+        // Get the selected promotion
+        int selectedIndex = cbbPhieuGiamGia.getSelectedIndex();
+        if (selectedIndex <= 0) {
+            // "Không áp dụng" is selected or no selection
+            updateCartSummary();
+            return;
+        }
+        
+        try {
+            // Get all active promotions
+            List<Promotion> activePromotions = promotionDAO.findActivePromotions();
+            if (selectedIndex - 1 < activePromotions.size()) {
+                // Update the cart summary with the selected promotion
+                updateCartSummary();
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Lỗi khi áp dụng khuyến mãi: " + e.getMessage(), 
+                "Lỗi", 
+                JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }                                               
+
+    private void btn_khachvanglai1ActionPerformed(java.awt.event.ActionEvent evt) {
+        try {
+            System.out.println("[DEBUG] === Starting guest customer search ===");
+            Customer guestCustomer = null;
+            
+            // First, try to find by code CUS0000
+            guestCustomer = customerDAO.findByCode("CUS0000");
+            if (guestCustomer != null) {
+                System.out.println("[DEBUG] Found guest customer by code CUS0000");
+            } else {
+                System.out.println("[DEBUG] No customer found with code CUS0000, searching by name...");
+                // If not found by code, search by name
+                List<Customer> allCustomers = customerDAO.findAll();
+                System.out.println("[DEBUG] Total customers in database: " + allCustomers.size());
+                
+                // Search for guest customer by name
+                for (Customer c : allCustomers) {
+                    System.out.println("[DEBUG] Checking customer: " + c.getCustomerCode() + " - " + c.getCustomerFullName());
+                    if (c.getCustomerFullName() != null && 
+                        c.getCustomerFullName().contains("Khách vãng lai")) {
+                        guestCustomer = c;
+                        System.out.println("[DEBUG] Found guest customer by name: " + c.getCustomerCode());
+                        break;
+                    }
+                }
+            }
+            
+            // If not found, create a new guest customer
+            if (guestCustomer == null) {
+                System.out.println("[DEBUG] No guest customer found, creating a new one");
+                guestCustomer = new Customer();
+                String newCode = "CUS" + System.currentTimeMillis();
+                guestCustomer.setCustomerCode(newCode);
+                guestCustomer.setCustomerFullName("Khách vãng lai (" + newCode + ")");
+                guestCustomer.setCustomerPhone("0000000000");
+                guestCustomer.setCustomerEmail("guest@example.com");
+                
+                try {
+                    customerDAO.create(guestCustomer);
+                    System.out.println("[DEBUG] Created new guest customer: " + newCode);
+                } catch (Exception e) {
+                    System.err.println("[ERROR] Failed to create guest customer: " + e.getMessage());
+                    throw new Exception("Không thể tạo tài khoản khách vãng lai. Vui lòng thử lại.");
+                }
+            }
+
+            // Update the form with the customer
+            setCustomerToForm(guestCustomer);
+            System.out.println("[DEBUG] Using existing guest customer: " + guestCustomer.getCustomerCode());
 
         } catch (Exception e) {
             System.err.println("[DEBUG] Lỗi khi xử lý khách vãng lai: " + e.getMessage());
             e.printStackTrace();
             JOptionPane.showMessageDialog(this,
-                    "Không thể tìm hoặc tạo tài khoản khách vãng lai. Vui lòng thử lại hoặc liên hệ quản trị viên.\n"
+                    "Đã xảy ra lỗi khi tải thông tin khách vãng lai. Vui lòng thử lại hoặc liên hệ quản trị viên.\n"
                     + "Lỗi: " + e.getMessage(),
                     "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
         }
-    }//GEN-LAST:event_btn_khachvanglai1ActionPerformed
+    }// GEN-LAST:event_btn_khachvanglai1ActionPerformed
+
     private void setCustomerToForm(Customer customer) {
         if (customer != null) {
             // Set customer code to the text field
@@ -2168,7 +2362,7 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JButton btn_Them4;
     private javax.swing.JButton btn_Them5;
     private javax.swing.JButton btn_chon_san_pham;
-    private javax.swing.JButton btn_khachvanglai1;
+    private javax.swing.JButton btn_khachvanglai;
     private javax.swing.JComboBox<String> cbbHinhThucThanhToan;
     private javax.swing.JComboBox<String> cbbPhieuGiamGia;
     private javax.swing.JComboBox<String> jComboBox1;
