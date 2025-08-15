@@ -21,6 +21,6 @@ public class OrderDetail {
     private int variantId;
     private int detailQuantity;
     private BigDecimal detailUnitPrice;
-    private BigDecimal DetailDiscountPercent;
-    private BigDecimal DetailTotal;
+    private BigDecimal detailDiscountPercent;
+    private BigDecimal detailTotal;
 }

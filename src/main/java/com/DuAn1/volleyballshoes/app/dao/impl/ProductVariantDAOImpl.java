@@ -39,8 +39,8 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
         variant.setVariantSku(rs.getString("variant_sku"));
         variant.setVariantOrigPrice(rs.getBigDecimal("variant_orig_price"));
         variant.setVariantImgUrl(rs.getString("variant_img_url"));
-        variant.setQuantity(rs.getInt("variant_quantity")); // Add this line to map the quantity field
-        System.out.println("Mapped variant: " + variant.getVariantSku() + " with quantity: " + variant.getQuantity());
+        variant.setVariantquantity(rs.getInt("variant_quantity")); // Add this line to map the quantity field
+        System.out.println("Mapped variant: " + variant.getVariantSku() + " with quantity: " + variant.getVariantquantity());
         return variant;
     }
 
@@ -101,7 +101,7 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
                         ProductVariant variant = mapResultSetToProductVariant(rs);
                         variants.add(variant);
                         System.out.println("Mapped variant: " + variant.getVariantSku() + 
-                                       ", Qty: " + variant.getQuantity() +
+                                       ", Qty: " + variant.getVariantquantity()+
                                        ", SizeID: " + variant.getSizeId() +
                                        ", ColorID: " + variant.getColorId() +
                                        ", SoleID: " + variant.getSoleId());
@@ -135,7 +135,7 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
                 entity.getVariantSku(),
                 entity.getVariantOrigPrice(),
                 entity.getVariantImgUrl(),
-                entity.getQuantity()
+                entity.getVariantquantity()
         );
     }
 
@@ -153,7 +153,7 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
                 entity.getVariantSku(),
                 entity.getVariantOrigPrice(),
                 entity.getVariantImgUrl(),
-                entity.getQuantity(),
+                entity.getVariantquantity(),
                 entity.getVariantId()
         );
     }
@@ -208,10 +208,10 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
     }
     
     @Override
-    public Optional<ProductVariant> findBySku(String sku) {
+    public ProductVariant findBySku(String sku) {
         String sql = "SELECT * FROM ProductVariant WHERE variant_sku = ?";
         List<ProductVariant> list = XJdbc.query(sql, this::mapResultSetToProductVariant, sku);
-        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
+        return list.isEmpty() ? null : list.get(0);
     }
     
     @Override
@@ -222,7 +222,7 @@ public class ProductVariantDAOImpl implements ProductVariantDAO {
             throw new IllegalStateException("Không tìm thấy sản phẩm với ID: " + variantId);
         }
         
-        if (variant.getQuantity() < quantity) {
+        if (variant.getVariantquantity()< quantity) {
             return false;
         }
         

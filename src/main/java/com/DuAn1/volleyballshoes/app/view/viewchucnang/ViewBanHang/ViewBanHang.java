@@ -1,47 +1,55 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang;
 
-import com.DuAn1.volleyballshoes.app.dao.*;
-import com.DuAn1.volleyballshoes.app.dao.impl.*;
-import com.DuAn1.volleyballshoes.app.entity.*;
-
+import com.DuAn1.volleyballshoes.app.controller.OrderController;
 import java.math.BigDecimal;
-import java.time.format.DateTimeFormatter;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import com.DuAn1.volleyballshoes.app.util.SessionManager;
-import com.DuAn1.volleyballshoes.app.utils.XJdbc;
 import java.math.RoundingMode;
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import com.DuAn1.volleyballshoes.app.dao.*;
+import com.DuAn1.volleyballshoes.app.dao.impl.*;
+import com.DuAn1.volleyballshoes.app.dto.request.OrderCreateRequest;
+import com.DuAn1.volleyballshoes.app.dto.request.OrderItemRequest;
+import com.DuAn1.volleyballshoes.app.dto.response.OrderResponse;
+import com.DuAn1.volleyballshoes.app.entity.*;
+import com.DuAn1.volleyballshoes.app.utils.SessionManager;
+import com.DuAn1.volleyballshoes.app.utils.XJdbc;
+import java.util.stream.Collectors;
 
 public class ViewBanHang extends javax.swing.JPanel {
 
-    // Static reference to the active instance
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private static final String CURRENCY_FORMAT = ",d đ";
+    private ViewThemKhachHang.ViewBanHangCallback customerSelectionCallback;
     private static ViewBanHang activeInstance;
 
-    // Method to get the active instance
     public static ViewBanHang getActiveInstance() {
         return activeInstance;
     }
 
-    // Method to update the active instance
     private static void setActiveInstance(ViewBanHang instance) {
         activeInstance = instance;
     }
 
     private final CustomerDAO customerDAO = new CustomerDAOImpl();
     private final OrderDAO orderDAO = new OrderDAOImpl();
-    private final OrderDetailDAO orderDetailDAO = new OrderDetailDAOImpl(); // Chỉ giữ lại 1 khai báo duy nhất
+    private final OrderDetailDAO orderDetailDAO = new OrderDetailDAOImpl();
     private final ProductVariantDAO productVariantDAO = new ProductVariantDAOImpl();
     private final ProductDAO productDAO = new ProductDAOImpl();
     private final SizeDAO sizeDAO = new SizeDAOImpl();
     private final ColorDAO colorDAO = new ColorDAOImpl();
     private final SoleTypeDAO soleTypeDAO = new SoleTypeDAOImpl();
     private final PromotionDAO promotionDAO = new PromotionDAOImpl();
-    private String orderCode; // Biến lưu mã đơn hàng
+
+    private String orderCode;
+    private Customer currentTemporaryCustomer;
+
+    private String generateOrderCode() {
+        return "HD" + System.currentTimeMillis();
+    }
 
     private void initCartTable() {
         DefaultTableModel model = new DefaultTableModel() {
@@ -53,18 +61,16 @@ public class ViewBanHang extends javax.swing.JPanel {
 
             @Override
             public Class<?> getColumnClass(int columnIndex) {
-                switch (columnIndex) {
-                    case 0: // STT
-                        return Integer.class;
-                    case 3: // Số lượng
-                        return Integer.class;
-                    case 4: // Đơn giá
-                    case 5: // Phần trăm giảm
-                    case 6: // Thành tiền
-                        return BigDecimal.class;
-                    default:
-                        return String.class;
-                }
+                return switch (columnIndex) {
+                    case 0 ->
+                        Integer.class;    // STT
+                    case 3 ->
+                        Integer.class;    // Số lượng
+                    case 4, 5, 6 ->
+                        BigDecimal.class; // Đơn giá, Giảm giá (%), Thành tiền
+                    default ->
+                        String.class;    // Other columns
+                };
             }
         };
 
@@ -75,14 +81,19 @@ public class ViewBanHang extends javax.swing.JPanel {
 
         // Add table model listener to update totals when quantity or discount changes
         model.addTableModelListener(e -> {
-            if (e.getType() == javax.swing.event.TableModelEvent.UPDATE && (e.getColumn() == 3 || e.getColumn() == 5)) {
+            if (e.getType() == javax.swing.event.TableModelEvent.UPDATE
+                    && (e.getColumn() == 3 || e.getColumn() == 5)) {
                 updateRowTotal(e.getFirstRow());
                 updateCartSummary();
             }
         });
     }
 
-    // Update total for a specific row
+    /**
+     * Updates the total for a specific row in the cart
+     *
+     * @param row The row index to update
+     */
     private void updateRowTotal(int row) {
         DefaultTableModel model = (DefaultTableModel) tblGioHang.getModel();
         try {
@@ -91,32 +102,36 @@ public class ViewBanHang extends javax.swing.JPanel {
             BigDecimal discountPercent = (BigDecimal) model.getValueAt(row, 5);
 
             // Validate discount percentage (0-100)
-            if (discountPercent.compareTo(BigDecimal.ZERO) < 0) {
-                discountPercent = BigDecimal.ZERO;
-                model.setValueAt(discountPercent, row, 5);
-            } else if (discountPercent.compareTo(new BigDecimal(100)) > 0) {
-                discountPercent = new BigDecimal(100);
+            discountPercent = discountPercent.max(BigDecimal.ZERO).min(new BigDecimal(100));
+            if (!discountPercent.equals(model.getValueAt(row, 5))) {
                 model.setValueAt(discountPercent, row, 5);
             }
 
             // Calculate total with discount
             BigDecimal subtotal = price.multiply(BigDecimal.valueOf(quantity));
-            BigDecimal discountAmount = subtotal.multiply(discountPercent).divide(new BigDecimal(100));
+            BigDecimal discountAmount = subtotal.multiply(discountPercent)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             BigDecimal total = subtotal.subtract(discountAmount);
 
             model.setValueAt(total, row, 6);
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập số lượng và phần trăm giảm giá hợp lệ", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng nhập số lượng và phần trăm giảm giá hợp lệ",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+            // Revert to previous valid value
+            model.fireTableDataChanged();
         }
     }
 
-    // Update cart summary (total, discount, etc.)
+    /**
+     * Updates the cart summary including subtotal, discounts, and grand total
+     */
     private void updateCartSummary() {
         if (tblGioHang == null || tblGioHang.getModel() == null) {
-            return; // Exit if table is not initialized
+            return;
         }
-        
+
         DefaultTableModel model = (DefaultTableModel) tblGioHang.getModel();
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal totalDiscount = BigDecimal.ZERO;
@@ -128,20 +143,21 @@ public class ViewBanHang extends javax.swing.JPanel {
                 Object rowTotalObj = model.getValueAt(i, 6);
                 Object rowPriceObj = model.getValueAt(i, 4);
                 Object quantityObj = model.getValueAt(i, 3);
-                
+
                 if (rowTotalObj == null || rowPriceObj == null || quantityObj == null) {
-                    continue; // Skip invalid rows
+                    continue;
                 }
-                
+
                 BigDecimal rowTotal = (BigDecimal) rowTotalObj;
                 BigDecimal rowPrice = (BigDecimal) rowPriceObj;
                 int quantity = ((Number) quantityObj).intValue();
-                
+
                 BigDecimal rowSubtotal = rowPrice.multiply(BigDecimal.valueOf(quantity));
                 subtotal = subtotal.add(rowSubtotal);
                 totalDiscount = totalDiscount.add(rowSubtotal.subtract(rowTotal));
             } catch (Exception e) {
-                // Skip any rows that cause errors
+                // Log and continue with next row
+                System.err.println("Error calculating row total: " + e.getMessage());
                 continue;
             }
         }
@@ -155,18 +171,18 @@ public class ViewBanHang extends javax.swing.JPanel {
                     Promotion selectedPromo = activePromotions.get(selectedPromoIndex - 1);
                     // Calculate promotion discount as a percentage of subtotal
                     promotionDiscount = subtotal.multiply(selectedPromo.getPromoDiscountValue())
-                                             .divide(new BigDecimal(100), 2, RoundingMode.HALF_UP);
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                 }
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, 
-                    "Lỗi khi áp dụng khuyến mãi: " + e.getMessage(), 
-                    "Lỗi", 
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi áp dụng khuyến mãi: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         }
 
-        // Update summary labels
+        // Update summary labels with formatted values
         lbTongTien.setText(formatCurrency(subtotal));
         lbGiamGiaTot.setText(formatCurrency(totalDiscount.add(promotionDiscount)));
 
@@ -175,14 +191,19 @@ public class ViewBanHang extends javax.swing.JPanel {
         lbTong.setText(formatCurrency(total));
     }
 
-    // Format currency for display
+    /**
+     * Formats a BigDecimal amount as a currency string
+     *
+     * @param amount The amount to format
+     * @return Formatted currency string or empty string for null/zero amount
+     */
     private String formatCurrency(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) == 0) {
-            return ""; // Return empty string for zero or null amounts
-        }
-        return String.format("%,d đ", amount.longValue());
+        return (amount == null || amount.compareTo(BigDecimal.ZERO) == 0)
+                ? ""
+                : String.format("%,d đ", amount.longValue());
     }
 
+    //endregion
     private void loadActivePromotions() {
         try {
             // Temporarily remove action listener to prevent triggering updates during initialization
@@ -190,77 +211,126 @@ public class ViewBanHang extends javax.swing.JPanel {
             for (java.awt.event.ActionListener listener : actionListeners) {
                 cbbPhieuGiamGia.removeActionListener(listener);
             }
-            
+
             // Clear existing items
             cbbPhieuGiamGia.removeAllItems();
-            
+
             // Add default "Không áp dụng" option
             cbbPhieuGiamGia.addItem("Không áp dụng");
-            
+
             // Get active promotions
             List<Promotion> activePromotions = promotionDAO.findActivePromotions();
-            
+
             // Add each promotion to the combobox
             for (Promotion promotion : activePromotions) {
-                cbbPhieuGiamGia.addItem(String.format("%s - Giảm %s%%", 
-                    promotion.getPromoName(), 
-                    promotion.getPromoDiscountValue()));
+                cbbPhieuGiamGia.addItem(String.format("%s - Giảm %s%%",
+                        promotion.getPromoName(),
+                        promotion.getPromoDiscountValue()));
             }
-            
+
             // Set default selection without triggering events
             cbbPhieuGiamGia.setSelectedIndex(0);
-            
+
             // Restore action listeners
             for (java.awt.event.ActionListener listener : actionListeners) {
                 cbbPhieuGiamGia.addActionListener(listener);
             }
-            
+
         } catch (Exception e) {
             // Don't show error dialog during initialization to avoid popups
             if (this.isVisible()) {
-                JOptionPane.showMessageDialog(this, 
-                    "Lỗi khi tải danh sách khuyến mãi: " + e.getMessage(), 
-                    "Lỗi", 
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi tải danh sách khuyến mãi: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
             }
             e.printStackTrace();
         }
     }
-    
+
     public ViewBanHang() {
         initComponents();
-        // Set this as the active instance
         setActiveInstance(this);
-        
-        // Load active promotions
         loadActivePromotions();
-
-        // Clear the empty rows from tblHoaDon
         DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
         while (model.getRowCount() > 0) {
             model.removeRow(0);
         }
-
         loadProductVariants();
         initCartTable();
-
-        // Hide invoice information by default
-        // Hide value labels but keep static labels always visible
-        lbMaHD.setVisible(false); // Hide the invoice code value
-        jLabel8.setVisible(true); // Keep the "Mã Hóa Đơn" label always visible
-        lbMaNV.setVisible(false);  // Hide the staff code value
-        jLabel14.setVisible(true); // Keep the "Nhân Viên" label always visible
-        lbNgayTao.setVisible(false); // Hide the creation date value
-        jLabel15.setVisible(true);   // Keep the "Ngày Tạo" label always visible
+        lbMaHD.setVisible(false);
+        lbl_odder_code.setVisible(true);
+        lbMaNV.setVisible(false);
+        lbl_payment_method.setVisible(true);
+        lbNgayTao.setVisible(false);
+        lbltienkhachdua.setVisible(true);
     }
 
+    /**
+     * Loads or refreshes the orders in the tblHoaDon table
+     */
+    private void loadOrders() {
+        try {
+            DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
+            model.setRowCount(0); // Clear existing rows
+
+            // Get all orders
+            OrderDAO orderDAO = new OrderDAOImpl();
+            List<Order> orders = orderDAO.findAll();
+
+            // Sort orders by creation date (newest first)
+            orders.sort((o1, o2) -> o2.getOrderCreatedAt().compareTo(o1.getOrderCreatedAt()));
+
+            // Add orders to table
+            for (Order order : orders) {
+                // Format the date
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+                String formattedDate = order.getOrderCreatedAt().format(formatter);
+
+                // Get staff code
+                String staffCode = "";
+                StaffDAO staffDAO = new StaffDAOImpl();
+                Staff staff = staffDAO.findById(order.getStaffId());
+                if (staff != null) {
+                    staffCode = staff.getStaffCode();
+                }
+
+                // Add row to table
+                model.addRow(new Object[]{
+                    order.getOrderCode(),
+                    staffCode,
+                    order.getOrderStatus(),
+                    formattedDate
+                });
+            }
+
+            // Auto-resize columns
+            for (int i = 0; i < tblHoaDon.getColumnCount(); i++) {
+                tblHoaDon.getColumnModel().getColumn(i).setPreferredWidth(150);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tải danh sách đơn hàng: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    //region Product Management
+    /**
+     * Refreshes the product variants list in the UI
+     */
     public void refreshProductVariants() {
         loadProductVariants();
     }
 
+    /**
+     * Loads product variants into the products table with related information
+     */
     private void loadProductVariants() {
         try {
-            // Get the table model
             DefaultTableModel model = (DefaultTableModel) tblSanPham.getModel();
             model.setRowCount(0); // Clear existing data
 
@@ -268,10 +338,10 @@ public class ViewBanHang extends javax.swing.JPanel {
             String[] columnNames = {"Mã SP", "Tên SP", "Size", "Màu sắc", "Đế giày", "Số lượng", "Giá", "Hình ảnh"};
             model.setColumnIdentifiers(columnNames);
 
-            // Fetch all variants using the class field DAO
+            // Fetch all variants with error handling
             List<ProductVariant> variants = productVariantDAO.findAll();
 
-            // Create caches to avoid repeated database queries
+            // Initialize caches for related entities
             Map<Integer, Product> productCache = new HashMap<>();
             Map<Integer, Size> sizeCache = new HashMap<>();
             Map<Integer, Color> colorCache = new HashMap<>();
@@ -279,214 +349,129 @@ public class ViewBanHang extends javax.swing.JPanel {
 
             // Process each variant
             for (ProductVariant variant : variants) {
-                // Get or fetch product
-                Product product = productCache.computeIfAbsent(
-                        variant.getProductId(),
-                        id -> productDAO.findById(id)
-                );
+                try {
+                    // Get or fetch related entities with null checks
+                    Product product = getOrFetchProduct(variant.getProductId(), productCache);
+                    Size size = getOrFetchSize(variant.getSizeId(), sizeCache);
+                    Color color = getOrFetchColor(variant.getColorId(), colorCache);
+                    SoleType soleType = getOrFetchSoleType(variant.getSoleId(), soleTypeCache);
 
-                // Get or fetch size
-                Size size = sizeCache.computeIfAbsent(
-                        variant.getSizeId(),
-                        id -> sizeDAO.findById(id)
-                );
-
-                // Get or fetch color
-                Color color = colorCache.computeIfAbsent(
-                        variant.getColorId(),
-                        id -> colorDAO.findById(id)
-                );
-
-                // Get or fetch sole type
-                SoleType soleType = soleTypeCache.computeIfAbsent(
-                        variant.getSoleId(),
-                        id -> soleTypeDAO.findById(id)
-                );
-
-                // Add row with actual names
-                model.addRow(new Object[]{
-                    variant.getVariantSku(),
-                    product != null ? product.getProductName() : "N/A",
-                    size != null ? size.getSizeValue() : "N/A",
-                    color != null ? color.getColorName() : "N/A",
-                    soleType != null ? soleType.getSoleName() : "N/A",
-                    variant.getQuantity(),
-                    formatCurrency(variant.getVariantOrigPrice()),
-                    variant.getVariantImgUrl()
-                });
-            }
-
-            // Resize columns to fit content
-            for (int i = 0; i < tblSanPham.getColumnCount(); i++) {
-                tblSanPham.getColumnModel().getColumn(i).setPreferredWidth(100);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tải danh sách sản phẩm: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    public void getMaQR(String ma) {
-        try {
-            // Clean and normalize the QR code content
-            String variantSku = ma.trim();
-            System.out.println("[DEBUG] Raw QR code input: " + variantSku);
-
-            // Extract just the code part if it's in format "SKU: code"
-            if (variantSku.startsWith("SKU:")) {
-                variantSku = variantSku.substring(4).trim();
-            }
-
-            System.out.println("[DEBUG] Searching for product variant with SKU: " + variantSku);
-
-            // Create a final copy of variantSku for use in lambda
-            final String searchSku = variantSku.trim();
-
-            // Find the product variant by SKU
-            ProductVariant variant = productVariantDAO.findAll().stream()
-                    .filter(v -> v.getVariantSku() != null && v.getVariantSku().trim().equalsIgnoreCase(searchSku))
-                    .findFirst()
-                    .orElse(null);
-
-            if (variant != null) {
-                System.out.println("[DEBUG] Found product variant: " + variant.getVariantSku());
-
-                // Find the product for this variant
-                Product product = productDAO.findById(variant.getProductId());
-                if (product != null) {
-                    System.out.println("[DEBUG] Found product: " + product.getProductName());
-
-                    // Find the product in the table
-                    DefaultTableModel model = (DefaultTableModel) tblSanPham.getModel();
-                    for (int i = 0; i < model.getRowCount(); i++) {
-                        String productId = model.getValueAt(i, 0).toString().trim();
-                        if (productId.equals(String.valueOf(product.getProductId()))) {
-                            System.out.println("[DEBUG] Found product in table at row: " + i);
-                            handleFoundProduct(model, i);
-                            return;
-                        }
-                    }
-
-                    // If we get here, product was found but not in the table
-                    JOptionPane.showMessageDialog(this,
-                            "Sản phẩm không có sẵn trong danh sách hiển thị.",
-                            "Thông báo",
-                            JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    System.err.println("[ERROR] Product not found for variant: " + variant.getVariantSku());
-                    JOptionPane.showMessageDialog(this,
-                            "Không tìm thấy thông tin sản phẩm.",
-                            "Lỗi",
-                            JOptionPane.ERROR_MESSAGE);
+                    // Add row with actual names
+                    model.addRow(createProductRow(variant, product, size, color, soleType));
+                } catch (Exception e) {
+                    System.err.println("Error loading variant " + variant.getVariantSku() + ": " + e.getMessage());
                 }
-            } else {
-                System.err.println("[ERROR] Product variant not found with SKU: " + variantSku);
-                JOptionPane.showMessageDialog(this,
-                        "Không tìm thấy sản phẩm với mã: " + variantSku,
-                        "Thông báo",
-                        JOptionPane.INFORMATION_MESSAGE);
             }
-            // Error handling is already done above
-            // No need for additional checks here
+
+            // Auto-resize columns to fit content
+            autoResizeTableColumns(tblSanPham);
+
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Có lỗi xảy ra khi xử lý mã QR: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+            handleException("Lỗi khi tải danh sách sản phẩm", e);
         }
     }
 
-    private void handleFoundProduct(DefaultTableModel model, int rowIndex) {
-        try {
-            // Get product details
-            String sku = model.getValueAt(rowIndex, 0).toString();
-            String productName = model.getValueAt(rowIndex, 1).toString();
-            BigDecimal price = new BigDecimal(model.getValueAt(rowIndex, 6).toString());
-
-            // Prompt for quantity
-            String quantityStr = JOptionPane.showInputDialog(this,
-                    "Nhập số lượng cho sản phẩm: " + productName + " (Mã: " + sku + ")",
-                    "Nhập số lượng",
-                    JOptionPane.QUESTION_MESSAGE);
-
-            if (quantityStr == null || quantityStr.trim().isEmpty()) {
-                return; // User cancelled
-            }
-
+    /**
+     * Gets a product from cache or fetches it from the database
+     */
+    private Product getOrFetchProduct(int productId, Map<Integer, Product> cache) {
+        return cache.computeIfAbsent(productId, id -> {
             try {
-                int quantity = Integer.parseInt(quantityStr.trim());
-                if (quantity <= 0) {
-                    JOptionPane.showMessageDialog(this,
-                            "Số lượng phải lớn hơn 0",
-                            "Lỗi",
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                // Add to cart
-                DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
-                boolean productExists = false;
-
-                // Check if product already exists in cart
-                for (int j = 0; j < cartModel.getRowCount(); j++) {
-                    String cartSku = cartModel.getValueAt(j, 1).toString();
-                    if (cartSku.equals(sku)) {
-                        // Update existing product quantity
-                        int currentQty = Integer.parseInt(cartModel.getValueAt(j, 3).toString());
-                        cartModel.setValueAt(currentQty + quantity, j, 3);
-                        updateRowTotal(j);
-                        productExists = true;
-                        break;
-                    }
-                }
-
-                // If product doesn't exist in cart, add new row
-                if (!productExists) {
-                    BigDecimal lineTotal = price.multiply(new BigDecimal(quantity));
-                    Object[] rowData = {
-                        "", // Empty for checkbox
-                        sku,
-                        productName,
-                        quantity,
-                        price,
-                        0, // discount percentage
-                        lineTotal // total
-                    };
-                    cartModel.addRow(rowData);
-                }
-
-                // Update cart summary
-                updateCartSummary();
-
-                // Select and scroll to the product in the table
-                tblSanPham.setRowSelectionInterval(rowIndex, rowIndex);
-                tblSanPham.scrollRectToVisible(tblSanPham.getCellRect(rowIndex, 0, true));
-
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this,
-                        "Vui lòng nhập số lượng hợp lệ (số nguyên dương)",
-                        "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
+                return productDAO.findById(id);
             } catch (Exception e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this,
-                        "Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng: " + e.getMessage(),
-                        "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
+                System.err.println("Error fetching product " + id + ": " + e.getMessage());
+                return null;
             }
+        });
+    }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Có lỗi xảy ra khi xử lý sản phẩm: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
+    /**
+     * Gets a size from cache or fetches it from the database
+     */
+    private Size getOrFetchSize(int sizeId, Map<Integer, Size> cache) {
+        return cache.computeIfAbsent(sizeId, id -> {
+            try {
+                return sizeDAO.findById(id);
+            } catch (Exception e) {
+                System.err.println("Error fetching size " + id + ": " + e.getMessage());
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Gets a color from cache or fetches it from the database
+     */
+    private Color getOrFetchColor(int colorId, Map<Integer, Color> cache) {
+        return cache.computeIfAbsent(colorId, id -> {
+            try {
+                return colorDAO.findById(id);
+            } catch (Exception e) {
+                System.err.println("Error fetching color " + id + ": " + e.getMessage());
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Gets a sole type from cache or fetches it from the database
+     */
+    private SoleType getOrFetchSoleType(int soleId, Map<Integer, SoleType> cache) {
+        return cache.computeIfAbsent(soleId, id -> {
+            try {
+                return soleTypeDAO.findById(id);
+            } catch (Exception e) {
+                System.err.println("Error fetching sole type " + id + ": " + e.getMessage());
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Creates a table row for a product variant with related information
+     */
+    private Object[] createProductRow(ProductVariant variant, Product product,
+            Size size, Color color, SoleType soleType) {
+        return new Object[]{
+            variant.getVariantSku(),
+            product != null ? product.getProductName() : "N/A",
+            size != null ? size.getSizeValue() : "N/A",
+            color != null ? color.getColorName() : "N/A",
+            soleType != null ? soleType.getSoleName() : "N/A",
+            variant.getVariantquantity(),
+            formatCurrency(variant.getVariantOrigPrice()),
+            variant.getVariantImgUrl()
+        };
+    }
+
+    /**
+     * Auto-resizes table columns to fit content
+     */
+    private void autoResizeTableColumns(JTable table) {
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setPreferredWidth(100);
         }
+    }
+
+    /**
+     * Handles exceptions by showing an error dialog
+     */
+    private void handleException(String message, Exception e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this,
+                message + ": " + e.getMessage(),
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
+    }
+
+    /**
+     * Finds a product variant by its SKU
+     */
+    private ProductVariant findProductVariantBySku(String sku) {
+        return productVariantDAO.findAll().stream()
+                .filter(v -> v.getVariantSku() != null && v.getVariantSku().trim().equalsIgnoreCase(sku))
+                .findFirst()
+                .orElse(null);
     }
 
     @SuppressWarnings("unchecked")
@@ -495,12 +480,12 @@ public class ViewBanHang extends javax.swing.JPanel {
 
         jLabel1 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
-        jScrollPane3 = new javax.swing.JScrollPane();
-        tblHoaDon = new javax.swing.JTable();
         btn_Them1 = new javax.swing.JButton();
+        btn_QuetQR = new javax.swing.JButton();
         btnTheHoaDon = new javax.swing.JButton();
-        btn_Them3 = new javax.swing.JButton();
-        btn_Them5 = new javax.swing.JButton();
+        btn_HuyHD = new javax.swing.JButton();
+        jScrollPane4 = new javax.swing.JScrollPane();
+        tblHoaDon = new javax.swing.JTable();
         jPanel4 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
@@ -515,34 +500,34 @@ public class ViewBanHang extends javax.swing.JPanel {
         jPanel8 = new javax.swing.JPanel();
         jLabel6 = new javax.swing.JLabel();
         txtMaKhachhang = new javax.swing.JTextField();
-        btn_Them4 = new javax.swing.JButton();
         btn_khachvanglai = new javax.swing.JButton();
+        btn_Chon = new javax.swing.JButton();
         pnl_thongtinhoadon = new javax.swing.JPanel();
         jLabel7 = new javax.swing.JLabel();
-        jLabel8 = new javax.swing.JLabel();
-        jLabel9 = new javax.swing.JLabel();
-        jLabel10 = new javax.swing.JLabel();
-        jLabel11 = new javax.swing.JLabel();
-        jLabel12 = new javax.swing.JLabel();
-        jLabel13 = new javax.swing.JLabel();
-        jLabel14 = new javax.swing.JLabel();
-        jLabel15 = new javax.swing.JLabel();
-        jLabel16 = new javax.swing.JLabel();
-        jLabel17 = new javax.swing.JLabel();
-        jLabel18 = new javax.swing.JLabel();
+        lbl_odder_code = new javax.swing.JLabel();
+        lbl_oder_create_at = new javax.swing.JLabel();
+        lbl_staff_code = new javax.swing.JLabel();
+        lbl_customer_name = new javax.swing.JLabel();
+        lbl_tongtien = new javax.swing.JLabel();
+        lbl_promotion = new javax.swing.JLabel();
+        lbl_payment_method = new javax.swing.JLabel();
+        lbltienkhachdua = new javax.swing.JLabel();
+        lbl_tienkhachck = new javax.swing.JLabel();
+        lbl_tienthua = new javax.swing.JLabel();
+        lbl_tong = new javax.swing.JLabel();
         lbMaHD = new javax.swing.JLabel();
         lbNgayTao = new javax.swing.JLabel();
         lbMaNV = new javax.swing.JLabel();
         lbTenKhachHang = new javax.swing.JLabel();
         lbTongTien = new javax.swing.JLabel();
-        cbbPhieuGiamGia = new javax.swing.JComboBox<>();
         cbbHinhThucThanhToan = new javax.swing.JComboBox<>();
         txtTienKhachDua = new javax.swing.JTextField();
-        txtTienKhachCK = new javax.swing.JTextField();
         lbTienThua = new javax.swing.JLabel();
         lbTong = new javax.swing.JLabel();
-        btnThanhToan = new javax.swing.JButton();
         lbGiamGiaTot = new javax.swing.JLabel();
+        btnThanhToan = new javax.swing.JButton();
+        txtTienKhachCK = new javax.swing.JTextField();
+        cbbPhieuGiamGia = new javax.swing.JComboBox<>();
         jPanel7 = new javax.swing.JPanel();
         jScrollPane5 = new javax.swing.JScrollPane();
         tblSanPham = new javax.swing.JTable();
@@ -559,6 +544,46 @@ public class ViewBanHang extends javax.swing.JPanel {
 
         jPanel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         jPanel2.setForeground(new java.awt.Color(255, 255, 255));
+
+        btn_Them1.setBackground(new java.awt.Color(0, 102, 255));
+        btn_Them1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btn_Them1.setForeground(new java.awt.Color(255, 255, 255));
+        btn_Them1.setText("Làm Mới");
+        btn_Them1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_Them1btn_ThemActionPerformed(evt);
+            }
+        });
+
+        btn_QuetQR.setBackground(new java.awt.Color(0, 102, 255));
+        btn_QuetQR.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btn_QuetQR.setForeground(new java.awt.Color(255, 255, 255));
+        btn_QuetQR.setText("Quét Mã QR");
+        btn_QuetQR.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_QuetQRbtn_ThemActionPerformed(evt);
+            }
+        });
+
+        btnTheHoaDon.setBackground(new java.awt.Color(0, 102, 255));
+        btnTheHoaDon.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnTheHoaDon.setForeground(new java.awt.Color(255, 255, 255));
+        btnTheHoaDon.setText("Tạo Mới Hóa Đơn");
+        btnTheHoaDon.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnTheHoaDonbtn_ThemActionPerformed(evt);
+            }
+        });
+
+        btn_HuyHD.setBackground(new java.awt.Color(0, 102, 255));
+        btn_HuyHD.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btn_HuyHD.setForeground(new java.awt.Color(255, 255, 255));
+        btn_HuyHD.setText("hủy HD");
+        btn_HuyHD.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_HuyHDbtn_ThemActionPerformed(evt);
+            }
+        });
 
         tblHoaDon.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -579,78 +604,37 @@ public class ViewBanHang extends javax.swing.JPanel {
                 tblHoaDonMouseEntered(evt);
             }
         });
-        jScrollPane3.setViewportView(tblHoaDon);
-
-        btn_Them1.setBackground(new java.awt.Color(0, 102, 255));
-        btn_Them1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btn_Them1.setForeground(new java.awt.Color(255, 255, 255));
-        btn_Them1.setText("Làm Mới");
-        btn_Them1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_Them1btn_ThemActionPerformed(evt);
-            }
-        });
-
-        btnTheHoaDon.setBackground(new java.awt.Color(0, 102, 255));
-        btnTheHoaDon.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnTheHoaDon.setForeground(new java.awt.Color(255, 255, 255));
-        btnTheHoaDon.setText("Tạo Mới Hóa Đơn");
-        btnTheHoaDon.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnTheHoaDonbtn_ThemActionPerformed(evt);
-            }
-        });
-
-        btn_Them3.setBackground(new java.awt.Color(0, 102, 255));
-        btn_Them3.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btn_Them3.setForeground(new java.awt.Color(255, 255, 255));
-        btn_Them3.setText("Quét Mã QR");
-        btn_Them3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_Them3btn_ThemActionPerformed(evt);
-            }
-        });
-
-        btn_Them5.setBackground(new java.awt.Color(0, 102, 255));
-        btn_Them5.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        btn_Them5.setForeground(new java.awt.Color(255, 255, 255));
-        btn_Them5.setText("hủy HD");
-        btn_Them5.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_Them5btn_ThemActionPerformed(evt);
-            }
-        });
+        jScrollPane4.setViewportView(tblHoaDon);
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(10, 10, 10)
-                .addComponent(btn_Them3)
-                .addGap(28, 28, 28)
+                .addGap(20, 20, 20)
+                .addComponent(btn_QuetQR)
+                .addGap(27, 27, 27)
                 .addComponent(btnTheHoaDon)
-                .addGap(119, 119, 119)
-                .addComponent(btn_Them5)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(104, 104, 104)
+                .addComponent(btn_HuyHD)
+                .addGap(18, 18, 18)
                 .addComponent(btn_Them1)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(184, Short.MAX_VALUE))
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 758, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 758, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addGap(9, 9, 9)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btn_Them3)
-                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(btnTheHoaDon)
-                        .addComponent(btn_Them1)
-                        .addComponent(btn_Them5, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btn_Them1)
+                    .addComponent(btn_QuetQR)
+                    .addComponent(btnTheHoaDon)
+                    .addComponent(btn_HuyHD, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 153, Short.MAX_VALUE))
+                .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 153, Short.MAX_VALUE))
         );
 
         jPanel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
@@ -750,16 +734,6 @@ public class ViewBanHang extends javax.swing.JPanel {
             }
         });
 
-        btn_Them4.setBackground(new java.awt.Color(0, 102, 255));
-        btn_Them4.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        btn_Them4.setForeground(new java.awt.Color(255, 255, 255));
-        btn_Them4.setText("Chọn");
-        btn_Them4.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_Them4btn_ThemActionPerformed(evt);
-            }
-        });
-
         btn_khachvanglai.setForeground(new java.awt.Color(51, 102, 255));
         btn_khachvanglai.setText("Khách vãng lai");
         btn_khachvanglai.addActionListener(new java.awt.event.ActionListener() {
@@ -768,71 +742,45 @@ public class ViewBanHang extends javax.swing.JPanel {
             }
         });
 
-        javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
-        jPanel8.setLayout(jPanel8Layout);
-        jPanel8Layout.setHorizontalGroup(
-            jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel8Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(btn_khachvanglai)
-                    .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(jLabel6)
-                        .addComponent(txtMaKhachhang, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btn_Them4, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        jPanel8Layout.setVerticalGroup(
-            jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel8Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel6)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txtMaKhachhang, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btn_Them4))
-                .addGap(18, 18, 18)
-                .addComponent(btn_khachvanglai)
-                .addContainerGap(10, Short.MAX_VALUE))
-        );
+        btn_Chon.setBackground(new java.awt.Color(0, 102, 255));
+        btn_Chon.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btn_Chon.setForeground(new java.awt.Color(255, 255, 255));
+        btn_Chon.setText("Chọn");
+        btn_Chon.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_Chonbtn_ThemActionPerformed(evt);
+            }
+        });
 
         pnl_thongtinhoadon.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
 
         jLabel7.setText("Thông tin hóa đơn");
 
-        jLabel8.setText("Mã Hòa đơn :");
+        lbl_odder_code.setText("Mã Hòa đơn :");
 
-        jLabel9.setText("Ngày Tạo :");
+        lbl_oder_create_at.setText("Ngày Tạo :");
 
-        jLabel10.setText("Mã Nhân Viên :");
+        lbl_staff_code.setText("Mã Nhân Viên :");
 
-        jLabel11.setText("Tên Khách Hàng :");
+        lbl_customer_name.setText("Tên Khách Hàng :");
 
-        jLabel12.setText("Tổng tiền :");
+        lbl_tongtien.setText("Tổng tiền :");
 
-        jLabel13.setText("Phiếu giảm giá :");
+        lbl_promotion.setText("Phiếu giảm giá :");
 
-        jLabel14.setText("Hình Thức TT :");
+        lbl_payment_method.setText("Hình Thức TT :");
 
-        jLabel15.setText("Tiền Khách đưa :");
+        lbltienkhachdua.setText("Tiền Khách đưa :");
 
-        jLabel16.setText("Tiền Khách CK :");
+        lbl_tienkhachck.setText("Tiền Khách CK :");
 
-        jLabel17.setText("Tiền Thừa :");
+        lbl_tienthua.setText("Tiền Thừa :");
 
-        jLabel18.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel18.setForeground(new java.awt.Color(255, 51, 51));
-        jLabel18.setText("Tổng :");
+        lbl_tong.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        lbl_tong.setForeground(new java.awt.Color(255, 51, 51));
+        lbl_tong.setText("Tổng :");
 
         lbNgayTao.setToolTipText("");
-
-        cbbPhieuGiamGia.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { " " }));
-        cbbPhieuGiamGia.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbbPhieuGiamGiaActionPerformed(evt);
-            }
-        });
 
         cbbHinhThucThanhToan.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Tiền mặt", "Chuyển khoản", " ", " ", " " }));
         cbbHinhThucThanhToan.addActionListener(new java.awt.event.ActionListener() {
@@ -853,6 +801,22 @@ public class ViewBanHang extends javax.swing.JPanel {
             }
         });
 
+        lbTong.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        lbTong.setForeground(new java.awt.Color(255, 0, 51));
+
+        lbGiamGiaTot.setFont(new java.awt.Font("Segoe UI", 2, 10)); // NOI18N
+        lbGiamGiaTot.setForeground(new java.awt.Color(255, 0, 51));
+
+        btnThanhToan.setBackground(new java.awt.Color(0, 102, 255));
+        btnThanhToan.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnThanhToan.setForeground(new java.awt.Color(255, 255, 255));
+        btnThanhToan.setText("thanh toán");
+        btnThanhToan.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnThanhToanbtn_ThemActionPerformed(evt);
+            }
+        });
+
         txtTienKhachCK.setText("0");
         txtTienKhachCK.addCaretListener(new javax.swing.event.CaretListener() {
             public void caretUpdate(javax.swing.event.CaretEvent evt) {
@@ -865,21 +829,12 @@ public class ViewBanHang extends javax.swing.JPanel {
             }
         });
 
-        lbTong.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        lbTong.setForeground(new java.awt.Color(255, 0, 51));
-
-        btnThanhToan.setBackground(new java.awt.Color(0, 102, 255));
-        btnThanhToan.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        btnThanhToan.setForeground(new java.awt.Color(255, 255, 255));
-        btnThanhToan.setText("thanh toán");
-        btnThanhToan.addActionListener(new java.awt.event.ActionListener() {
+        cbbPhieuGiamGia.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { " " }));
+        cbbPhieuGiamGia.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnThanhToanbtn_ThemActionPerformed(evt);
+                cbbPhieuGiamGiaActionPerformed(evt);
             }
         });
-
-        lbGiamGiaTot.setFont(new java.awt.Font("Segoe UI", 2, 10)); // NOI18N
-        lbGiamGiaTot.setForeground(new java.awt.Color(255, 0, 51));
 
         javax.swing.GroupLayout pnl_thongtinhoadonLayout = new javax.swing.GroupLayout(pnl_thongtinhoadon);
         pnl_thongtinhoadon.setLayout(pnl_thongtinhoadonLayout);
@@ -892,13 +847,13 @@ public class ViewBanHang extends javax.swing.JPanel {
                         .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel8)
-                                    .addComponent(jLabel9)
+                                    .addComponent(lbl_odder_code)
+                                    .addComponent(lbl_oder_create_at)
                                     .addComponent(jLabel7)
-                                    .addComponent(jLabel11)
-                                    .addComponent(jLabel12)
-                                    .addComponent(jLabel16)
-                                    .addComponent(jLabel10))
+                                    .addComponent(lbl_customer_name)
+                                    .addComponent(lbl_tongtien)
+                                    .addComponent(lbl_tienkhachck)
+                                    .addComponent(lbl_staff_code))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addComponent(lbNgayTao, javax.swing.GroupLayout.DEFAULT_SIZE, 122, Short.MAX_VALUE)
@@ -907,27 +862,25 @@ public class ViewBanHang extends javax.swing.JPanel {
                                     .addComponent(lbTenKhachHang, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(lbTongTien, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                             .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
-                                .addComponent(jLabel18)
+                                .addComponent(lbl_tong)
                                 .addGap(24, 24, 24)
                                 .addComponent(lbTong, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                             .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
-                                .addComponent(jLabel17)
+                                .addComponent(lbl_tienthua)
                                 .addGap(67, 67, 67)
                                 .addComponent(lbTienThua, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                             .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
                                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                        .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
-                                            .addComponent(jLabel14)
-                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                            .addComponent(cbbHinhThucThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addGap(1, 1, 1))
-                                        .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
-                                            .addComponent(jLabel13)
-                                            .addGap(18, 18, 18)
-                                            .addComponent(cbbPhieuGiamGia, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))
                                     .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
-                                        .addComponent(jLabel15)
+                                        .addComponent(lbl_payment_method)
+                                        .addGap(27, 27, 27)
+                                        .addComponent(cbbHinhThucThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
+                                        .addComponent(lbl_promotion)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(cbbPhieuGiamGia, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
+                                        .addComponent(lbltienkhachdua)
                                         .addGap(18, 18, 18)
                                         .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(txtTienKhachCK, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -938,7 +891,7 @@ public class ViewBanHang extends javax.swing.JPanel {
                         .addComponent(lbGiamGiaTot, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
             .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
-                .addGap(60, 60, 60)
+                .addGap(51, 51, 51)
                 .addComponent(btnThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -949,54 +902,90 @@ public class ViewBanHang extends javax.swing.JPanel {
                 .addComponent(jLabel7)
                 .addGap(18, 18, 18)
                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel8)
+                    .addComponent(lbl_odder_code)
                     .addComponent(lbMaHD))
                 .addGap(18, 18, 18)
                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel9)
+                    .addComponent(lbl_oder_create_at)
                     .addComponent(lbNgayTao))
                 .addGap(18, 18, 18)
                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel10)
+                    .addComponent(lbl_staff_code)
                     .addComponent(lbMaNV))
                 .addGap(18, 18, 18)
                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel11)
+                    .addComponent(lbl_customer_name)
                     .addComponent(lbTenKhachHang))
                 .addGap(18, 18, 18)
                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel12)
+                    .addComponent(lbl_tongtien)
                     .addComponent(lbTongTien))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(cbbPhieuGiamGia, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel13))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lbl_promotion)
+                    .addComponent(cbbPhieuGiamGia, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(15, 15, 15)
                 .addComponent(lbGiamGiaTot)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel14)
+                    .addComponent(lbl_payment_method)
                     .addComponent(cbbHinhThucThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel15)
+                    .addComponent(lbltienkhachdua)
                     .addComponent(txtTienKhachDua, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel16)
+                    .addComponent(lbl_tienkhachck)
                     .addComponent(txtTienKhachCK, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(pnl_thongtinhoadonLayout.createSequentialGroup()
-                        .addComponent(jLabel17)
+                        .addComponent(lbl_tienthua)
                         .addGap(18, 18, 18)
                         .addGroup(pnl_thongtinhoadonLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel18)
+                            .addComponent(lbl_tong)
                             .addComponent(lbTong)))
                     .addComponent(lbTienThua, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnThanhToan, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                .addContainerGap(12, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
+        jPanel8.setLayout(jPanel8Layout);
+        jPanel8Layout.setHorizontalGroup(
+            jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel8Layout.createSequentialGroup()
+                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel8Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel6)
+                            .addComponent(txtMaKhachhang, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btn_Chon, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel8Layout.createSequentialGroup()
+                        .addGap(62, 62, 62)
+                        .addComponent(btn_khachvanglai)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel8Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(pnl_thongtinhoadon, javax.swing.GroupLayout.PREFERRED_SIZE, 237, javax.swing.GroupLayout.PREFERRED_SIZE))
+        );
+        jPanel8Layout.setVerticalGroup(
+            jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel8Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel6)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txtMaKhachhang, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btn_Chon))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(btn_khachvanglai)
+                .addGap(18, 18, 18)
+                .addComponent(pnl_thongtinhoadon, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         jPanel7.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
@@ -1092,21 +1081,18 @@ public class ViewBanHang extends javax.swing.JPanel {
                                     .addGap(6, 6, 6)
                                     .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, javax.swing.GroupLayout.PREFERRED_SIZE)))
                             .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(707, 707, 707))
+                        .addGap(708, 708, 708))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addContainerGap()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 761, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 761, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(pnl_thongtinhoadon, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 65, Short.MAX_VALUE)
+                .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 62, Short.MAX_VALUE)
                 .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, 0, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(272, 272, 272))
+                .addGap(266, 266, 266))
             .addGroup(layout.createSequentialGroup()
                 .addGap(537, 537, 537)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1127,21 +1113,18 @@ public class ViewBanHang extends javax.swing.JPanel {
                         .addGap(6, 6, 6)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(pnl_thongtinhoadon, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createSequentialGroup()
                                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(jLabel3)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 152, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(77, 77, 77)
-                        .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(196, Short.MAX_VALUE))
+                                .addGap(18, 18, 18)
+                                .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(9, 9, 9)
+                                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addContainerGap(495, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -1149,369 +1132,6 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     }//GEN-LAST:event_btn_Them1btn_ThemActionPerformed
 
-    // Field to store temporary customer
-    private Customer currentTemporaryCustomer = null;
-    
-    // Khai báo callback interface
-    public interface CustomerSelectionCallback {
-        void onCustomerSelected(Customer customer);
-    }
-    
-    // Khởi tạo callback
-    private final CustomerSelectionCallback customerSelectionCallback = new CustomerSelectionCallback() {
-        @Override
-        public void onCustomerSelected(Customer customer) {
-            setCustomerToForm(customer);
-        }
-    };
-
-    private void btnTheHoaDonbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {
-        try {
-            // Get customer code from form
-            String customerCode = txtMaKhachhang.getText().trim();
-            Customer customer = null;
-
-            // Check if we have a temporary customer from the guest button
-            if (currentTemporaryCustomer != null && currentTemporaryCustomer.getCustomerId() != null) {
-                customer = currentTemporaryCustomer;
-                System.out.println("[DEBUG] Using currentTemporaryCustomer: " + customer.getCustomerCode());
-            }
-            // If no temporary customer, try to find by code
-            else if (!customerCode.isEmpty()) {
-                customer = customerDAO.findByCode(customerCode);
-                if (customer == null) {
-                    JOptionPane.showMessageDialog(this,
-                            "Không tìm thấy thông tin khách hàng. Vui lòng chọn lại khách hàng.",
-                            "Không tìm thấy khách hàng",
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                System.out.println("[DEBUG] Sử dụng khách hàng từ mã: " + customerCode);
-            } else {
-                // No customer selected - show error
-                JOptionPane.showMessageDialog(this,
-                        "Vui lòng chọn khách hàng hoặc nhấn 'Khách vãng lai' để tạo mới.",
-                        "Chưa chọn khách hàng",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            // Get staff info from session
-            Staff staff = SessionManager.getInstance().getCurrentStaff();
-            if (staff == null) {
-                // If no staff in session, try to get a default staff (fallback)
-                StaffDAO staffDAO = new StaffDAOImpl();
-                staff = staffDAO.findByStaffCode("NV01");
-
-                if (staff == null) {
-                    // If still no staff, get the first active staff
-                    List<Staff> staffList = staffDAO.findAll();
-                    if (staffList != null && !staffList.isEmpty()) {
-                        staff = staffList.get(0);
-                    } else {
-                        throw new Exception("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
-                    }
-                }
-
-                // Log the fallback for debugging
-                System.out.println("Using fallback staff: " + staff.getStaffCode());
-            }
-
-            // Generate a new order code (HD + timestamp)
-            String orderCode = "HD" + System.currentTimeMillis();
-
-            // Get current date/time
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-            String formattedDate = now.format(formatter);
-
-            // Create new order object with all required fields
-            Order newOrder = new Order();
-            newOrder.setStaffId(staff.getStaffId());
-            newOrder.setOrderCode(orderCode);
-            newOrder.setOrderStatus("Chưa thanh toán");
-            newOrder.setOrderCreatedAt(now);
-            // Set default values for required fields
-            newOrder.setOrderFinalAmount(BigDecimal.ZERO); // Default to 0
-            newOrder.setOrderPaymentMethod("Tiền mặt"); // Default payment method
-
-            // Ensure we have a valid customer for the order
-            if (customer != null && customer.getCustomerId() != null) {
-                // 1. Use the selected customer if available
-                newOrder.setCustomerId(customer.getCustomerId());
-                System.out.println("[DEBUG] Using selected customer ID: " + customer.getCustomerId());
-            } else {
-
-                
-                // 2. Try to find the default guest customer (CUS0000)
-                Customer guestCustomer = customerDAO.findByCode("CUS0000");
-                if (guestCustomer != null) {
-                    newOrder.setCustomerId(guestCustomer.getCustomerId());
-                    System.out.println("[DEBUG] Using guest customer ID: " + guestCustomer.getCustomerId());
-                    
-                    // Update the customer display
-                    setCustomerToForm(guestCustomer);
-                } else {
-                    // If no guest customer exists, show error
-                    JOptionPane.showMessageDialog(this,
-                            "Không tìm thấy tài khoản khách vãng lai mặc định (CUS0000).\nVui lòng liên hệ quản trị viên.",
-                            "Lỗi khách hàng",
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            }
-
-            // Save order to database
-            try {
-                OrderDAO orderDAO = new OrderDAOImpl();
-                System.out.println("[DEBUG] Saving order with data: " + newOrder);
-
-                // Save the order
-                Order savedOrder = orderDAO.save(newOrder);
-
-                if (savedOrder == null || savedOrder.getOrderId() <= 0) {
-                    throw new Exception("Không thể lưu hóa đơn vào cơ sở dữ liệu: Invalid order ID");
-                }
-                System.out.println("[DEBUG] Order saved successfully with ID: " + savedOrder.getOrderId());
-
-                // Save order details from cart
-                DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
-                List<OrderDetail> orderDetails = new ArrayList<>();
-
-                for (int i = 0; i < cartModel.getRowCount(); i++) {
-                    try {
-                        String variantSku = (String) cartModel.getValueAt(i, 1);
-                        int quantity = (int) cartModel.getValueAt(i, 3);
-                        BigDecimal price = (BigDecimal) cartModel.getValueAt(i, 4);
-                        BigDecimal discountPercent = (BigDecimal) cartModel.getValueAt(i, 5);
-
-                        // Find variant by SKU
-                        // First try to find by SKU directly
-                        ProductVariant variant = null;
-                        try {
-                            // If variantSku is numeric, try to find by ID
-                            int variantId = Integer.parseInt(variantSku);
-                            variant = productVariantDAO.findById(variantId);
-                        } catch (NumberFormatException e) {
-                            // If not numeric, try to find by SKU
-                            List<ProductVariant> variants = productVariantDAO.findAll();
-                            for (ProductVariant v : variants) {
-                                if (variantSku.equals(v.getVariantSku())) {
-                                    variant = v;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (variant == null) {
-                            System.err.println("Variant not found for SKU/ID: " + variantSku);
-                            continue;
-                        }
-
-                        // Create order detail
-                        OrderDetail detail = new OrderDetail();
-                        detail.setOrderId(savedOrder.getOrderId());
-                        detail.setVariantId(variant.getVariantId());
-                        detail.setDetailQuantity(quantity);
-                        detail.setDetailUnitPrice(price);
-                        detail.setDetailDiscountPercent(discountPercent);
-
-                        orderDetails.add(detail);
-
-                    } catch (Exception e) {
-                        System.err.println("Error processing cart row " + i + ": " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                }
-
-                // Save all order details
-                if (!orderDetails.isEmpty()) {
-                    orderDetailDAO.saveAll(orderDetails);
-                    System.out.println("Saved " + orderDetails.size() + " order details for order ID: " + savedOrder.getOrderId());
-                } else {
-                    System.out.println("No order details to save for order ID: " + savedOrder.getOrderId());
-                }
-            } catch (Exception e) {
-                System.err.println("[ERROR] Error saving order: " + e.getMessage());
-                e.printStackTrace();
-                throw e;
-            }
-
-            // Get or initialize the table model
-            DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
-
-            // Initialize columns if table is empty
-            if (model.getColumnCount() == 0) {
-                String[] columnNames = {"Mã hóa đơn", "Mã nhân viên", "Trạng thái", "Ngày tạo"};
-                for (String columnName : columnNames) {
-                    model.addColumn(columnName);
-                }
-            }
-
-            // Add the new order to the table
-            Object[] rowData = new Object[]{
-                orderCode, // Mã hóa đơn
-                staff.getStaffCode(), // Mã nhân viên
-                "Chưa thanh toán", // Start as unpaid
-                formattedDate // Ngày tạo
-            };
-
-            model.addRow(rowData);
-
-            // Auto-resize columns
-            for (int i = 0; i < tblHoaDon.getColumnCount(); i++) {
-                tblHoaDon.getColumnModel().getColumn(i).setPreferredWidth(150);
-            }
-
-            // Select the newly created order
-            tblHoaDon.setRowSelectionInterval(model.getRowCount() - 1, model.getRowCount() - 1);
-
-            // Show and update the invoice information
-            // Static labels (jLabel8, jLabel14, jLabel15) remain always visible
-            // Only update the value labels
-            lbMaHD.setVisible(true);
-            lbMaHD.setText(orderCode);
-
-            // Update staff code
-            lbMaNV.setVisible(true);
-            lbMaNV.setText(staff.getStaffCode());
-
-            // Show and update creation date
-            lbNgayTao.setVisible(true);
-            jLabel15.setVisible(true);
-            lbNgayTao.setText(formattedDate);
-
-            // Show success message
-            JOptionPane.showMessageDialog(this,
-                    "Đã tạo hóa đơn mới: " + orderCode,
-                    "Thành công",
-                    JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tạo hóa đơn mới: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }//GEN-LAST:event_btnTheHoaDonbtn_ThemActionPerformed
-
-    private void btn_Them3btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {
-        QuetQRBanHang banHang = new QuetQRBanHang(this);
-        banHang.setVisible(true);
-    }
-    
-    private void btn_Them5btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO: Add your handling code here
-    }
-
-    private void tblHoaDonMouseClicked(java.awt.event.MouseEvent evt) {
-        // Lấy model của bảng giỏ hàng
-        DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
-        
-        try {
-            // Lấy dòng được chọn
-            int selectedRow = tblHoaDon.getSelectedRow();
-            if (selectedRow == -1) {
-                return;
-            }
-
-            // Lấy mã hóa đơn
-            Object orderCodeObj = tblHoaDon.getValueAt(selectedRow, 0);
-            if (orderCodeObj == null) {
-                JOptionPane.showMessageDialog(this, "Không tìm thấy mã hóa đơn", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            String orderCode = orderCodeObj.toString();
-
-            // Cập nhật thông tin hóa đơn
-            lbMaHD.setVisible(true);
-            lbMaHD.setText(orderCode);
-            
-            // Lấy thông tin nhân viên và ngày tạo
-            String staffCode = tblHoaDon.getValueAt(selectedRow, 1) != null ? 
-                             tblHoaDon.getValueAt(selectedRow, 1).toString() : "N/A";
-            String createDate = tblHoaDon.getValueAt(selectedRow, 3) != null ? 
-                              tblHoaDon.getValueAt(selectedRow, 3).toString() : "N/A";
-            
-            lbMaNV.setText(staffCode);
-            lbMaNV.setVisible(true);
-            lbNgayTao.setText(createDate);
-            lbNgayTao.setVisible(true);
-
-            // Xóa dữ liệu cũ trong giỏ hàng
-            cartModel.setRowCount(0);
-
-            // Lấy thông tin đơn hàng từ database
-            Optional<Order> orderOpt = orderDAO.findByCode(orderCode);
-            if (!orderOpt.isPresent()) {
-                throw new Exception("Không tìm thấy thông tin đơn hàng");
-            }
-
-            Order order = orderOpt.get();
-            
-            // Lấy danh sách sản phẩm trong đơn hàng
-            List<OrderDetail> orderDetails = orderDetailDAO.findByOrderId(order.getOrderId());
-            
-            // Thêm sản phẩm vào giỏ hàng
-            for (OrderDetail detail : orderDetails) {
-                if (detail == null) continue;
-                
-                ProductVariant variant = productVariantDAO.findById(detail.getVariantId());
-                if (variant == null) continue;
-                
-                Product product = productDAO.findById(variant.getProductId());
-                if (product == null) continue;
-                
-                // Lấy thông tin màu sắc và kích thước
-                Color color = colorDAO.findById(variant.getColorId());
-                Size size = sizeDAO.findById(variant.getSizeId());
-                
-                // Tạo tên sản phẩm đầy đủ
-                String productName = product.getProductName();
-                if (color != null) productName += " - " + color.getColorName();
-                if (size != null) productName += " - " + size.getSizeCode();
-                
-                // Tính toán thành tiền
-                int quantity = detail.getDetailQuantity();
-                BigDecimal price = detail.getDetailUnitPrice();
-                BigDecimal discount = detail.getDetailDiscountPercent() != null ? 
-                                   detail.getDetailDiscountPercent() : BigDecimal.ZERO;
-                BigDecimal total = price.multiply(BigDecimal.valueOf(quantity))
-                                     .multiply(BigDecimal.ONE.subtract(discount.divide(new BigDecimal(100))));
-                
-                // Thêm vào giỏ hàng
-                cartModel.addRow(new Object[]{
-                    cartModel.getRowCount() + 1,  // STT
-                    variant.getVariantSku(),      // Mã SP
-                    productName,                  // Tên SP + Màu + Size
-                    quantity,                     // Số lượng
-                    price,                        // Đơn giá
-                    discount,                     // Giảm giá (%)
-                    total,                        // Thành tiền
-                    variant.getVariantId()        // ID biến thể để thao tác sau này
-                });
-            }
-            
-            // Cập nhật tổng tiền
-            updateCartSummary();
-            
-            // Làm mới giao diện
-            tblGioHang.revalidate();
-            tblGioHang.repaint();
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, 
-                "Lỗi khi tải chi tiết hóa đơn: " + e.getMessage(), 
-                "Lỗi", 
-                JOptionPane.ERROR_MESSAGE);
-        }
-    }//GEN-LAST:event_tblHoaDonMouseClicked
-
-    private void tblHoaDonMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblHoaDonMouseEntered
-        // TODO add your handling code here:
-    }//GEN-LAST:event_tblHoaDonMouseEntered
 
     private void tblGioHangMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblGioHangMouseClicked
 
@@ -1625,315 +1245,11 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     }//GEN-LAST:event_tblSanPhamMouseClicked
 
-    // Callback implementation for customer selection
-    private final ViewThemKhachHang.ViewBanHangCallback customerSelectionCallback = new ViewThemKhachHang.ViewBanHangCallback() {
-        @Override
-        public void onCustomerSelected(String tenKH, String sdt, String email) {
-            // Update the customer information in the form
-            txtMaKhachhang.setText(sdt); // Using phone number as customer ID
-            lbTenKhachHang.setText(tenKH);
-
-            // Enable the create invoice button if it was disabled
-            btnTheHoaDon.setEnabled(true);
-        }
-    };
-
-    private void btn_Them4btn_ThemActionPerformed(java.awt.event.ActionEvent evt) {
-        java.awt.EventQueue.invokeLater(() -> {
-            ViewThemKhachHang viewThemKhachHang = new ViewThemKhachHang();
-            viewThemKhachHang.setViewBanHangCallback(customerSelectionCallback);
-            viewThemKhachHang.setLocationRelativeTo(null);
-            viewThemKhachHang.setVisible(true);
-        });
-    }
 
     private void txtMaKhachhangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtMaKhachhangActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_txtMaKhachhangActionPerformed
 
-    private void btnThanhToanbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {
-        Connection conn = null;
-        try {
-            // Check if cart is empty
-            if (tblGioHang.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this,
-                        "Giỏ hàng đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.",
-                        "Giỏ hàng trống",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            
-            // Khai báo cartModel và tính totalAmount dùng cho toàn bộ hàm
-            DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
-            BigDecimal totalAmount = BigDecimal.ZERO;
-            for (int i = 0; i < cartModel.getRowCount(); i++) {
-                BigDecimal rowTotal = (BigDecimal) cartModel.getValueAt(i, 6);
-                totalAmount = totalAmount.add(rowTotal);
-            }
-
-            // Check if customer is selected
-            if (txtMaKhachhang.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Vui lòng chọn khách hàng trước khi thanh toán.",
-                        "Chưa chọn khách hàng",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            // Get customer ID from the current temporary customer or find by code
-            int customerId;
-            if (currentTemporaryCustomer != null && currentTemporaryCustomer.getCustomerId() != null) {
-                customerId = currentTemporaryCustomer.getCustomerId();
-                System.out.println("[DEBUG] Using customer ID from currentTemporaryCustomer: " + customerId);
-            } else {
-                String customerCode = txtMaKhachhang.getText().trim();
-                Customer customer = customerDAO.findByCode(customerCode);
-                if (customer == null) {
-                    JOptionPane.showMessageDialog(this, 
-                        "Không tìm thấy thông tin khách hàng", 
-                        "Lỗi", 
-                        JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                customerId = customer.getCustomerId();
-                System.out.println("[DEBUG] Found customer by code " + customerCode + ", ID: " + customerId);
-            }
-
-            // Get payment method
-            String paymentMethod = cbbHinhThucThanhToan.getSelectedItem() != null
-                    ? cbbHinhThucThanhToan.getSelectedItem().toString()
-                    : "Tiền mặt";
-
-            // Kiểm tra số tiền thanh toán
-            BigDecimal paidAmount = BigDecimal.ZERO;
-            if (paymentMethod.equals("Tiền mặt")) {
-                try {
-                    String tienKhachDuaText = txtTienKhachDua.getText().trim().replaceAll("\\.|,\\s*", "");
-                    if (tienKhachDuaText.isEmpty()) {
-                        JOptionPane.showMessageDialog(this,
-                            "Vui lòng nhập số tiền khách đưa",
-                            "Thiếu thông tin",
-                            JOptionPane.WARNING_MESSAGE);
-                        txtTienKhachDua.requestFocus();
-                        return;
-                    }
-                    paidAmount = new BigDecimal(tienKhachDuaText);
-                    if (paidAmount.compareTo(totalAmount) < 0) {
-                        JOptionPane.showMessageDialog(this,
-                            "Số tiền thanh toán không đủ. Cần thêm: " + formatCurrency(totalAmount.subtract(paidAmount)),
-                            "Số tiền không đủ",
-                            JOptionPane.WARNING_MESSAGE);
-                        txtTienKhachDua.requestFocus();
-                        return;
-                    }
-                } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(this,
-                        "Số tiền không hợp lệ. Vui lòng nhập lại",
-                        "Lỗi định dạng",
-                        JOptionPane.ERROR_MESSAGE);
-                    txtTienKhachDua.requestFocus();
-                    return;
-                }
-            } else if (paymentMethod.equals("Chuyển khoản")) {
-                try {
-                    String tienChuyenKhoanText = txtTienKhachCK.getText().trim().replaceAll("\\.|,\\s*", "");
-                    if (tienChuyenKhoanText.isEmpty()) {
-                        JOptionPane.showMessageDialog(this,
-                            "Vui lòng nhập số tiền chuyển khoản",
-                            "Thiếu thông tin",
-                            JOptionPane.WARNING_MESSAGE);
-                        txtTienKhachCK.requestFocus();
-                        return;
-                    }
-                    paidAmount = new BigDecimal(tienChuyenKhoanText);
-                    if (paidAmount.compareTo(totalAmount) < 0) {
-                        JOptionPane.showMessageDialog(this,
-                            "Số tiền chuyển khoản không đủ. Cần thêm: " + formatCurrency(totalAmount.subtract(paidAmount)),
-                            "Số tiền không đủ",
-                            JOptionPane.WARNING_MESSAGE);
-                        txtTienKhachCK.requestFocus();
-                        return;
-                    }
-                } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(this,
-                        "Số tiền không hợp lệ. Vui lòng nhập lại",
-                        "Lỗi định dạng",
-                        JOptionPane.ERROR_MESSAGE);
-                    txtTienKhachCK.requestFocus();
-                    return;
-                }
-            }
-
-            // Xác nhận thanh toán
-            String confirmMessage = "Xác nhận thanh toán đơn hàng với tổng tiền: " + formatCurrency(totalAmount) + "\n"
-                + "Hình thức thanh toán: " + paymentMethod + "\n";
-            
-            if (paymentMethod.equals("Tiền mặt") && paidAmount.compareTo(totalAmount) > 0) {
-                confirmMessage += "Tiền thừa: " + formatCurrency(paidAmount.subtract(totalAmount)) + "\n";
-            }
-            
-            confirmMessage += "Bạn có chắc chắn muốn thanh toán?";
-            
-            int confirm = JOptionPane.showConfirmDialog(this,
-                confirmMessage,
-                "Xác nhận thanh toán",
-                JOptionPane.YES_NO_OPTION);
-
-            if (confirm != JOptionPane.YES_OPTION) {
-                return;
-            }
-
-            // Tạo mã đơn hàng mới
-            String orderCode = generateOrderCode();
-            
-            // Tạo đối tượng đơn hàng
-            Order order = Order.builder()
-                .orderCode(orderCode)
-                .orderStatus("Chưa thanh toán")
-                .orderCreatedAt(java.time.LocalDateTime.now())
-                .customerId(customerId)
-                .orderFinalAmount(totalAmount)
-                .orderPaymentMethod(paymentMethod)
-                .build();
-            
-            // Lấy thông tin nhân viên
-            Staff staff = SessionManager.getInstance().getCurrentStaff();
-            if (staff != null) {
-                order.setStaffId(staff.getStaffId());
-            } else {
-                StaffDAO staffDAO = new StaffDAOImpl();
-                staff = staffDAO.findByStaffCode("NV01");
-                if (staff != null) {
-                    order.setStaffId(staff.getStaffId());
-                } else {
-                    List<Staff> staffList = staffDAO.findAll();
-                    if (!staffList.isEmpty()) {
-                        order.setStaffId(staffList.get(0).getStaffId());
-                    } else {
-                        JOptionPane.showMessageDialog(this,
-                            "Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.",
-                            "Lỗi",
-                            JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                }
-            }
-
-            // Bắt đầu transaction
-            conn = XJdbc.openConnection();
-            conn.setAutoCommit(false);
-            
-            try {
-                // Lưu đơn hàng
-                Order savedOrder = orderDAO.save(order);
-                if (savedOrder == null) {
-                    throw new Exception("Không thể tạo đơn hàng. Vui lòng thử lại.");
-                }
-
-                // Lưu chi tiết đơn hàng và cập nhật tồn kho
-                for (int i = 0; i < cartModel.getRowCount(); i++) {
-                    String sku = cartModel.getValueAt(i, 1).toString();
-                    int quantity = Integer.parseInt(cartModel.getValueAt(i, 3).toString());
-                    BigDecimal price = (BigDecimal) cartModel.getValueAt(i, 4);
-                    
-                    // Lấy thông tin sản phẩm
-                    Optional<ProductVariant> variantOpt = productVariantDAO.findBySku(sku);
-                    if (!variantOpt.isPresent()) {
-                        throw new Exception("Không tìm thấy thông tin sản phẩm: " + sku);
-                    }
-                    ProductVariant variant = variantOpt.get();
-                    
-                    // Kiểm tra tồn kho
-                    if (variant.getQuantity() < quantity) {
-                        throw new Exception("Không đủ hàng tồn kho cho sản phẩm: " + sku);
-                    }
-                    
-                    // Tạo chi tiết đơn hàng
-                    OrderDetail orderDetail = new OrderDetail();
-                    orderDetail.setOrderId(savedOrder.getOrderId());
-                    orderDetail.setVariantId(variant.getVariantId());
-                    orderDetail.setDetailQuantity(quantity);
-                    orderDetail.setDetailUnitPrice(price);
-                    orderDetail.setDetailDiscountPercent(BigDecimal.ZERO);
-                    orderDetail.setDetailTotal(price.multiply(BigDecimal.valueOf(quantity)));
-                    
-                    // Lưu chi tiết đơn hàng
-                    orderDetailDAO.save(orderDetail);
-                    
-                    // Cập nhật số lượng tồn kho
-                    variant.setQuantity(variant.getQuantity() - quantity);
-                    productVariantDAO.update(variant);
-                }
-                
-                // Cập nhật trạng thái đơn hàng thành đã thanh toán
-                savedOrder.setOrderStatus("Đã thanh toán");
-                orderDAO.update(savedOrder);
-                
-                // Commit transaction
-                conn.commit();
-                
-                // Thông báo thành công
-                JOptionPane.showMessageDialog(this,
-                    "Thanh toán thành công! Mã đơn hàng: " + orderCode,
-                    "Thành công",
-                    JOptionPane.INFORMATION_MESSAGE);
-                
-                // Xóa giỏ hàng
-                cartModel.setRowCount(0);
-                updateCartSummary();
-                
-            } catch (Exception e) {
-                if (conn != null) {
-                    try {
-                        conn.rollback();
-                    } catch (SQLException ex) {
-                        ex.printStackTrace();
-                    }
-                }
-                throw e;
-            } finally {
-                if (conn != null) {
-                    try {
-                        conn.setAutoCommit(true);
-                    } catch (SQLException ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                "Có lỗi xảy ra: " + e.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
-        } finally {
-            if (conn != null) {
-                try {
-                    if (!conn.isClosed()) {
-                        conn.close();
-                    }
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }
-        }
-
-    private void txtTienKhachCKCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_txtTienKhachCKCaretUpdate
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtTienKhachCKCaretUpdate
-
-    private void txtTienKhachCKActionPerformed(java.awt.event.ActionEvent evt) {
-        // Tự động chuyển focus sang nút thanh toán khi nhấn Enter
-        btnThanhToan.requestFocusInWindow();
-    }
-
-    // Phương thức tạo mã đơn hàng tự động
-    private String generateOrderCode() {
-        // Tạo mã đơn hàng dựa trên thời gian hiện tại (đảm bảo độc nhất)
-        return "HD" + System.currentTimeMillis();
-    }
 
     private void txtTienKhachDuaKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtTienKhachDuaKeyReleased
 
@@ -1947,98 +1263,226 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     }//GEN-LAST:event_cbbHinhThucThanhToanActionPerformed
 
-    private void btn_khachvanglaiActionPerformed(java.awt.event.ActionEvent evt) {
+    private void btnThanhToanbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThanhToanbtn_ThemActionPerformed
+        // TODO add your handling code here:
         try {
-            System.out.println("[DEBUG] === Starting guest customer process ===");
-            
-            // First try to find any existing guest customer
-            List<Customer> allCustomers = customerDAO.findAll();
-            Customer guestCustomer = null;
-            
-            // Look for any existing guest customer by name
-            for (Customer c : allCustomers) {
-                if (c.getCustomerFullName() != null && 
-                    c.getCustomerFullName().startsWith("Khách vãng lai")) {
-                    guestCustomer = c;
-                    System.out.println("[DEBUG] Found existing guest customer: " + c.getCustomerCode());
-                    break;
-                }
+            if (orderCode == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng tạo hóa đơn trước khi thanh toán", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
             }
-            
-            // If no existing guest customer, create a new one
-            if (guestCustomer == null) {
-                System.out.println("[DEBUG] No existing guest customer found, creating new one");
-                String guestCode = "KH" + System.currentTimeMillis();
-                
-                // Create new customer object
-                guestCustomer = new Customer();
-                guestCustomer.setCustomerCode(guestCode);
-                guestCustomer.setCustomerFullName("Khách vãng lai (" + guestCode + ")");
-                guestCustomer.setCustomerPhone("0000000000");
-                guestCustomer.setCustomerEmail(guestCode + "@guest.com");
-                
-                System.out.println("[DEBUG] Attempting to create new guest customer: " + guestCode);
-                
-                // Try to save to database
-                Customer createdCustomer = customerDAO.create(guestCustomer);
-                
-                if (createdCustomer != null && createdCustomer.getCustomerId() != null) {
-                    guestCustomer = createdCustomer;
-                    System.out.println("[DEBUG] Successfully created guest customer with ID: " + 
-                                     guestCustomer.getCustomerId());
-                } else {
-                    // If creation failed, try one more time with a different code
-                    guestCode = "KH" + (System.currentTimeMillis() + 1);
-                    guestCustomer.setCustomerCode(guestCode);
-                    guestCustomer.setCustomerFullName("Khách vãng lai (" + guestCode + ")");
-                    guestCustomer.setCustomerEmail(guestCode + "@guest.com");
-                    
-                    System.out.println("[DEBUG] Retrying with new code: " + guestCode);
-                    createdCustomer = customerDAO.create(guestCustomer);
-                    
-                    if (createdCustomer != null && createdCustomer.getCustomerId() != null) {
-                        guestCustomer = createdCustomer;
-                        System.out.println("[DEBUG] Successfully created guest customer on second attempt: " + 
-                                         guestCustomer.getCustomerId());
-                    } else {
-                        throw new Exception("Không thể tạo tài khoản khách vãng lai. Vui lòng thử lại.");
-                    }
-                }
-            }
-            
-            // Update the form with the guest customer
-            if (guestCustomer != null && guestCustomer.getCustomerId() != null) {
-                setCustomerToForm(guestCustomer);
-                currentTemporaryCustomer = guestCustomer;
-                System.out.println("[DEBUG] Using guest customer: " + guestCustomer.getCustomerCode() + 
-                                 " (ID: " + guestCustomer.getCustomerId() + ")");
-            } else {
-                throw new Exception("Thông tin khách hàng không hợp lệ");
-            }
-            
-        } catch (Exception e) {
-            System.err.println("[ERROR] Failed to handle guest customer: " + e.getMessage());
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                "Không thể tạo tài khoản khách vãng lai. Vui lòng thử lại.\n" + e.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
-                
-            // Clear any invalid customer references
-            currentTemporaryCustomer = null;
-            txtMaKhachhang.setText("");
-        }
-    }
 
-    private void cbbPhieuGiamGiaActionPerformed(java.awt.event.ActionEvent evt) {
-        // Get the selected promotion
+            DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+            if (cartModel.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "Giỏ hàng trống", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            SessionManager session = SessionManager.getInstance();
+            Integer customerId = currentTemporaryCustomer != null ? currentTemporaryCustomer.getCustomerId() : null;
+            Integer staffId = session.getStaffId();
+            String paymentMethod = (String) cbbHinhThucThanhToan.getSelectedItem();
+
+            // Lấy danh sách items từ giỏ hàng
+            List<OrderItemRequest> items = new ArrayList<>();
+            for (int i = 0; i < cartModel.getRowCount(); i++) {
+                String sku = (String) cartModel.getValueAt(i, 1); // Mã SP
+                ProductVariant variant = productVariantDAO.findBySku(sku);
+                if (variant == null) {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy sản phẩm: " + sku, "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if ((int) cartModel.getValueAt(i, 3) > variant.getVariantquantity()) {
+                    JOptionPane.showMessageDialog(this, "Sản phẩm " + sku + " không đủ tồn kho", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                OrderItemRequest item = OrderItemRequest.builder()
+                        .variantId(variant.getVariantId())
+                        .quantity((int) cartModel.getValueAt(i, 3))
+                        .unitPrice((BigDecimal) cartModel.getValueAt(i, 4))
+                        .build();
+                items.add(item);
+            }
+
+            // Tính tổng tiền từ lbTong
+            String totalText = lbTong.getText().replaceAll("[^0-9]", "");
+            BigDecimal finalAmount = new BigDecimal(totalText);
+
+            // Cập nhật Order
+            OrderController controller = new OrderController();
+            OrderResponse currentOrder = controller.getOrderByQRCodeOrId(orderCode);
+            if (currentOrder == null) {
+                JOptionPane.showMessageDialog(this, "Hóa đơn không tồn tại", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Order updatedOrder = Order.builder()
+                    .orderId(currentOrder.getOrderId())
+                    .customerId(customerId)
+                    .staffId(staffId)
+                    .orderFinalAmount(finalAmount)
+                    .orderPaymentMethod(paymentMethod)
+                    .orderStatus("COMPLETED")
+                    .orderCode(orderCode)
+                    .orderCreatedAt(currentOrder.getCreatedAt())
+                    .build();
+
+            // Lưu chi tiết hóa đơn và giảm tồn kho
+            OrderDAOImpl orderDAO = new OrderDAOImpl();
+            updatedOrder = orderDAO.processPayment(updatedOrder, items.stream()
+                    .collect(Collectors.toMap(OrderItemRequest::getVariantId, OrderItemRequest::getQuantity)));
+
+            // Cập nhật giao diện
+            cartModel.setRowCount(0);
+            updateCartSummary();
+            loadOrders();
+
+            orderCode = null;
+            lbMaHD.setText("");
+            lbMaHD.setVisible(false);
+            lbl_odder_code.setVisible(true);
+            lbMaNV.setText("");
+            lbMaNV.setVisible(false);
+            lbl_payment_method.setVisible(true);
+            lbNgayTao.setText("");
+            lbNgayTao.setVisible(false);
+            lbltienkhachdua.setVisible(true);
+            lbTenKhachHang.setText("");
+            txtMaKhachhang.setText("");
+            currentTemporaryCustomer = null;
+
+            JOptionPane.showMessageDialog(this, "Thanh toán thành công cho hóa đơn: " + orderCode, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi thanh toán: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }//GEN-LAST:event_btnThanhToanbtn_ThemActionPerformed
+
+    private void btn_khachvanglaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_khachvanglaiActionPerformed
+        // TODO add your handling code here:
+        currentTemporaryCustomer = null;
+        lbTenKhachHang.setText("Khách vãng lai");
+        txtMaKhachhang.setText("");
+    }//GEN-LAST:event_btn_khachvanglaiActionPerformed
+
+    private void txtTienKhachCKCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_txtTienKhachCKCaretUpdate
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtTienKhachCKCaretUpdate
+
+    private void txtTienKhachCKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtTienKhachCKActionPerformed
+        // TODO add your handling code here:
+        btnThanhToan.requestFocusInWindow();
+    }//GEN-LAST:event_txtTienKhachCKActionPerformed
+
+    private void btn_Chonbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_Chonbtn_ThemActionPerformed
+        // TODO add your handling code here:
+        ViewThemKhachHang hang = new ViewThemKhachHang();
+        hang.setVisible(true);
+    }//GEN-LAST:event_btn_Chonbtn_ThemActionPerformed
+
+    private void btn_QuetQRbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_QuetQRbtn_ThemActionPerformed
+        // TODO add your handling code here:
+        QuetQRBanHang banHang = new QuetQRBanHang(this);
+        banHang.setVisible(true);
+    }//GEN-LAST:event_btn_QuetQRbtn_ThemActionPerformed
+
+    private void btnTheHoaDonbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTheHoaDonbtn_ThemActionPerformed
+        // TODO add your handling code here:
+        try {
+            SessionManager session = SessionManager.getInstance();
+            if (!session.isLoggedIn()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng đăng nhập để tạo hóa đơn", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Integer customerId = currentTemporaryCustomer != null ? currentTemporaryCustomer.getCustomerId() : null;
+            Integer staffId = session.getStaffId();
+            String staffCode = session.getStaffCode();
+
+            OrderCreateRequest request = OrderCreateRequest.builder()
+                    .customerId(customerId)
+                    .staffId(staffId)
+                    .paymentMethod("CASH")
+                    .items(new ArrayList<>())
+                    .build();
+
+            OrderController controller = new OrderController();
+            OrderResponse newOrder = controller.createOrder(request);
+
+            if (newOrder != null) {
+                orderCode = newOrder.getOrderCode();
+                lbMaHD.setText(orderCode);
+                lbMaHD.setVisible(true);
+                lbl_odder_code.setVisible(false);
+                lbMaNV.setText(staffCode);
+                lbMaNV.setVisible(true);
+                lbl_payment_method.setVisible(false);
+                lbNgayTao.setText(DATE_FORMATTER.format(newOrder.getCreatedAt()));
+                lbNgayTao.setVisible(true);
+                lbltienkhachdua.setVisible(false);
+
+                DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
+                Object[] row = {newOrder.getOrderId(), newOrder.getOrderCode(), DATE_FORMATTER.format(newOrder.getCreatedAt()), "PENDING"};
+                model.addRow(row);
+
+                JOptionPane.showMessageDialog(this, "Tạo hóa đơn mới thành công: " + orderCode, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Không thể tạo hóa đơn", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tạo hóa đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }//GEN-LAST:event_btnTheHoaDonbtn_ThemActionPerformed
+
+    private void btn_HuyHDbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_HuyHDbtn_ThemActionPerformed
+        // TODO add your handling code here:
+        try {
+            if (orderCode == null) {
+                JOptionPane.showMessageDialog(this, "Không có hóa đơn để hủy", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            OrderController controller = new OrderController();
+            OrderResponse order = controller.getOrderByQRCodeOrId(orderCode);
+            if (order != null && controller.cancelOrder(order.getOrderId())) {
+                // Xóa giỏ hàng
+                DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+                cartModel.setRowCount(0);
+                updateCartSummary();
+
+                // Reset giao diện
+                orderCode = null;
+                lbMaHD.setText("");
+                lbMaHD.setVisible(false);
+                lbl_odder_code.setVisible(true);
+                lbMaNV.setText("");
+                lbMaNV.setVisible(false);
+                lbl_payment_method.setVisible(true);
+                lbNgayTao.setText("");
+                lbNgayTao.setVisible(false);
+                lbltienkhachdua.setVisible(true);
+
+                // Tải lại bảng hóa đơn
+                loadOrders();
+
+                JOptionPane.showMessageDialog(this, "Hủy hóa đơn thành công", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi hủy hóa đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }//GEN-LAST:event_btn_HuyHDbtn_ThemActionPerformed
+
+    private void cbbPhieuGiamGiaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbbPhieuGiamGiaActionPerformed
+        // TODO add your handling code here:
         int selectedIndex = cbbPhieuGiamGia.getSelectedIndex();
         if (selectedIndex <= 0) {
             // "Không áp dụng" is selected or no selection
             updateCartSummary();
             return;
         }
-        
+
         try {
             // Get all active promotions
             List<Promotion> activePromotions = promotionDAO.findActivePromotions();
@@ -2047,201 +1491,22 @@ public class ViewBanHang extends javax.swing.JPanel {
                 updateCartSummary();
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, 
-                "Lỗi khi áp dụng khuyến mãi: " + e.getMessage(), 
-                "Lỗi", 
-                JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
-        }
-    }                                               
-
-    private void btn_khachvanglai1ActionPerformed(java.awt.event.ActionEvent evt) {
-        try {
-            System.out.println("[DEBUG] === Starting guest customer search ===");
-            Customer guestCustomer = null;
-            
-            if (guestCustomer != null) {
-                System.out.println("[DEBUG] Found guest customer by code CUS0000");
-            } else {
-                System.out.println("[DEBUG] No customer found with code CUS0000, searching by name...");
-                // If not found by code, search by name
-                List<Customer> allCustomers = customerDAO.findAll();
-                System.out.println("[DEBUG] Total customers in database: " + allCustomers.size());
-                
-                // Search for guest customer by name
-                for (Customer c : allCustomers) {
-                    System.out.println("[DEBUG] Checking customer: " + c.getCustomerCode() + " - " + c.getCustomerFullName());
-                    if (c.getCustomerFullName() != null && 
-                        c.getCustomerFullName().contains("Khách vãng lai")) {
-                        guestCustomer = c;
-                        System.out.println("[DEBUG] Found guest customer by name: " + c.getCustomerCode());
-                        break;
-                    }
-                }
-            }
-            
-            // If not found, create a new guest customer
-            if (guestCustomer == null) {
-                System.out.println("[DEBUG] No guest customer found, creating a new one");
-                guestCustomer = new Customer();
-                String newCode = "CUS" + System.currentTimeMillis();
-                guestCustomer.setCustomerCode(newCode);
-                guestCustomer.setCustomerFullName("Khách vãng lai (" + newCode + ")");
-                guestCustomer.setCustomerPhone("0000000000");
-                guestCustomer.setCustomerEmail("guest@example.com");
-                
-                try {
-                    customerDAO.create(guestCustomer);
-                    System.out.println("[DEBUG] Created new guest customer: " + newCode);
-                } catch (Exception e) {
-                    System.err.println("[ERROR] Failed to create guest customer: " + e.getMessage());
-                    throw new Exception("Không thể tạo tài khoản khách vãng lai. Vui lòng thử lại.");
-                }
-            }
-
-            // Update the form with the customer
-            setCustomerToForm(guestCustomer);
-            System.out.println("[DEBUG] Using existing guest customer: " + guestCustomer.getCustomerCode());
-
-        } catch (Exception e) {
-            System.err.println("[DEBUG] Lỗi khi xử lý khách vãng lai: " + e.getMessage());
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this,
-                    "Đã xảy ra lỗi khi tải thông tin khách vãng lai. Vui lòng thử lại hoặc liên hệ quản trị viên.\n"
-                    + "Lỗi: " + e.getMessage(),
+                    "Lỗi khi áp dụng khuyến mãi: " + e.getMessage(),
                     "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
-        }
-    }// GEN-LAST:event_btn_khachvanglai1ActionPerformed
-
-    private void setCustomerToForm(Customer customer) {
-        if (customer != null) {
-            // Set customer code to the text field
-            txtMaKhachhang.setText(customer.getCustomerCode() != null ? customer.getCustomerCode() : "");
-
-            // Set customer name to the label
-            lbTenKhachHang.setText(customer.getCustomerFullName() != null ? customer.getCustomerFullName() : "");
-
-            // If this is a temporary customer, store it in the field
-            if (customer.getCustomerCode() != null && customer.getCustomerCode().startsWith("TEMP_")) {
-                currentTemporaryCustomer = customer;
-                System.out.println("[DEBUG] Đã lưu khách hàng tạm thời: " + customer.getCustomerCode());
-            } else {
-                currentTemporaryCustomer = null;
-            }
-
-            // Enable the create invoice button
-            btnTheHoaDon.setEnabled(true);
-        } else {
-            // Clear the form if customer is null
-            txtMaKhachhang.setText("");
-            lbTenKhachHang.setText("");
-            currentTemporaryCustomer = null;
-            System.out.println("[DEBUG] Đã xóa thông tin khách hàng");
-        }
-    }
-    // Helper method to generate random customer code
-
-    private String generateRandomCustomerCode() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        String nums = "0123456789";
-        Random random = new Random();
-
-        // Format: CUS + 3 random letters + 3 random numbers
-        StringBuilder sb = new StringBuilder("CUS");
-
-        // Add 3 random letters
-        for (int i = 0; i < 3; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-
-        // Add 3 random numbers
-        for (int i = 0; i < 3; i++) {
-            sb.append(nums.charAt(random.nextInt(nums.length())));
-        }
-
-        return sb.toString();
-    }
-
-    /**
-     * Updates the status of an order in the tblHoaDon table
-     *
-     * @param orderCode The order code to update
-     * @param newStatus The new status to set (e.g., "Đã thanh toán" or "Chưa
-     * thanh toán")
-     */
-    private void updateOrderStatusInTable(String orderCode, String newStatus) {
-        DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
-
-        // Find the row with the matching order code
-        for (int i = 0; i < model.getRowCount(); i++) {
-            Object orderCodeObj = model.getValueAt(i, 0);
-            if (orderCodeObj != null && orderCodeObj.toString().equals(orderCode)) {
-                // Update the status column (index 2)
-                model.setValueAt(newStatus, i, 2);
-
-                // Force the table to repaint
-                tblHoaDon.repaint();
-
-                System.out.println("[DEBUG] Updated order " + orderCode + " status to: " + newStatus);
-                return;
-            }
-        }
-
-        System.out.println("[WARNING] Order not found in table: " + orderCode);
-    }
-
-    /**
-     * Loads or refreshes the orders in the tblHoaDon table
-     */
-    private void loadOrders() {
-        try {
-            DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
-            model.setRowCount(0); // Clear existing rows
-
-            // Get all orders
-            OrderDAO orderDAO = new OrderDAOImpl();
-            List<Order> orders = orderDAO.findAll();
-
-            // Sort orders by creation date (newest first)
-            orders.sort((o1, o2) -> o2.getOrderCreatedAt().compareTo(o1.getOrderCreatedAt()));
-
-            // Add orders to table
-            for (Order order : orders) {
-                // Format the date
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-                String formattedDate = order.getOrderCreatedAt().format(formatter);
-
-                // Get staff code
-                String staffCode = "";
-                StaffDAO staffDAO = new StaffDAOImpl();
-                Staff staff = staffDAO.findById(order.getStaffId());
-                if (staff != null) {
-                    staffCode = staff.getStaffCode();
-                }
-
-                // Add row to table
-                model.addRow(new Object[]{
-                    order.getOrderCode(),
-                    staffCode,
-                    order.getOrderStatus(),
-                    formattedDate
-                });
-            }
-
-            // Auto-resize columns
-            for (int i = 0; i < tblHoaDon.getColumnCount(); i++) {
-                tblHoaDon.getColumnModel().getColumn(i).setPreferredWidth(150);
-            }
-
-        } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tải danh sách đơn hàng: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
         }
-    }
+    }//GEN-LAST:event_cbbPhieuGiamGiaActionPerformed
+
+    private void tblHoaDonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblHoaDonMouseClicked
+        // TODO add your handling code here:
+
+    }//GEN-LAST:event_tblHoaDonMouseClicked
+
+    private void tblHoaDonMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblHoaDonMouseEntered
+        // TODO add your handling code here:
+    }//GEN-LAST:event_tblHoaDonMouseEntered
 
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
@@ -2254,16 +1519,24 @@ public class ViewBanHang extends javax.swing.JPanel {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
+
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(ViewBanHang.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ViewBanHang.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(ViewBanHang.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ViewBanHang.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(ViewBanHang.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ViewBanHang.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(ViewBanHang.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ViewBanHang.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
         //</editor-fold>
@@ -2278,10 +1551,10 @@ public class ViewBanHang extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnThanhToan;
     private javax.swing.JButton btnTheHoaDon;
+    private javax.swing.JButton btn_Chon;
+    private javax.swing.JButton btn_HuyHD;
+    private javax.swing.JButton btn_QuetQR;
     private javax.swing.JButton btn_Them1;
-    private javax.swing.JButton btn_Them3;
-    private javax.swing.JButton btn_Them4;
-    private javax.swing.JButton btn_Them5;
     private javax.swing.JButton btn_chon_san_pham;
     private javax.swing.JButton btn_khachvanglai;
     private javax.swing.JComboBox<String> cbbHinhThucThanhToan;
@@ -2291,22 +1564,11 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JComboBox<String> jComboBox3;
     private javax.swing.JComboBox<String> jComboBox4;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel12;
-    private javax.swing.JLabel jLabel13;
-    private javax.swing.JLabel jLabel14;
-    private javax.swing.JLabel jLabel15;
-    private javax.swing.JLabel jLabel16;
-    private javax.swing.JLabel jLabel17;
-    private javax.swing.JLabel jLabel18;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel4;
@@ -2315,7 +1577,7 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel8;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTable jTable1;
     private javax.swing.JLabel lbGiamGiaTot;
@@ -2326,6 +1588,17 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JLabel lbTienThua;
     private javax.swing.JLabel lbTong;
     private javax.swing.JLabel lbTongTien;
+    private javax.swing.JLabel lbl_customer_name;
+    private javax.swing.JLabel lbl_odder_code;
+    private javax.swing.JLabel lbl_oder_create_at;
+    private javax.swing.JLabel lbl_payment_method;
+    private javax.swing.JLabel lbl_promotion;
+    private javax.swing.JLabel lbl_staff_code;
+    private javax.swing.JLabel lbl_tienkhachck;
+    private javax.swing.JLabel lbl_tienthua;
+    private javax.swing.JLabel lbl_tong;
+    private javax.swing.JLabel lbl_tongtien;
+    private javax.swing.JLabel lbltienkhachdua;
     private javax.swing.JPanel pnl_thongtinhoadon;
     private javax.swing.JTable tblGioHang;
     private javax.swing.JTable tblHoaDon;
@@ -2334,4 +1607,8 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JTextField txtTienKhachCK;
     private javax.swing.JTextField txtTienKhachDua;
     // End of variables declaration//GEN-END:variables
+
+    void getMaQR(String qrText) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
 }

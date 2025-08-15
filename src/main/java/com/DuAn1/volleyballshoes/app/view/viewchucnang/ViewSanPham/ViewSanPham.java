@@ -38,13 +38,14 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumnModel;
 
-public class ViewSanPham extends javax.swing.JPanel {
+public final class ViewSanPham extends javax.swing.JPanel {
 
     private int currentPage = 1;
     private int pageSize = 10;
@@ -66,6 +67,7 @@ public class ViewSanPham extends javax.swing.JPanel {
     private long lastEditClickTime = 0;
     private long lastDeleteClickTime = 0;
     private static final int DOUBLE_CLICK_DELAY = 300;
+    private static ViewSanPham activeInstance;
 
     private void processQRCodeData(String data) {
         // TODO: Thực hiện xử lý dữ liệu QR code ở đây
@@ -108,6 +110,11 @@ public class ViewSanPham extends javax.swing.JPanel {
             tblSanPham.setRowSelectionInterval(0, 0);
             loadSelectedProductVariants();
         }
+        activeInstance = this;
+    }
+
+    public static ViewSanPham getActiveInstance() {
+        return activeInstance;
     }
 
     private void setupTable() {
@@ -356,7 +363,7 @@ public class ViewSanPham extends javax.swing.JPanel {
             for (int i = 0; i < variants.size(); i++) {
                 ProductVariant v = variants.get(i);
                 System.out.println(String.format("[%d] ID: %d, SKU: %s, Qty: %d, Price: %s, SizeID: %d, ColorID: %d, SoleID: %d",
-                        i, v.getVariantId(), v.getVariantSku(), v.getQuantity(),
+                        i, v.getVariantId(), v.getVariantSku(), v.getVariantquantity(),
                         v.getVariantOrigPrice(), v.getSizeId(), v.getColorId(), v.getSoleId()));
             }
             System.out.println("----------------------------");
@@ -398,7 +405,7 @@ public class ViewSanPham extends javax.swing.JPanel {
                 System.out.println("\nProcessing variant " + rowCount + " of " + variants.size());
                 System.out.println("Variant ID: " + variant.getVariantId());
                 System.out.println("Variant SKU: " + variant.getVariantSku());
-                System.out.println("Quantity from variant object: " + variant.getQuantity());
+                System.out.println("Quantity from variant object: " + variant.getVariantquantity());
                 System.out.println("Price from variant object: " + variant.getVariantOrigPrice());
 
                 // Look up related data with null checks
@@ -427,7 +434,7 @@ public class ViewSanPham extends javax.swing.JPanel {
                     color != null ? color.getColorHexCode() : "N/A",
                     soleType != null ? soleType.getSoleCode() : "N/A",
                     formatCurrency(variant.getVariantOrigPrice()),
-                    variant.getQuantity() // Quantity from variant
+                    variant.getVariantquantity()
                 };
 
                 // Debug: Print the row data before adding
@@ -487,11 +494,11 @@ public class ViewSanPham extends javax.swing.JPanel {
         TableColumnModel columnModel = tblSanPhamCon.getColumnModel();
         columnModel.getColumn(0).setPreferredWidth(300); // Wider column for product name
         columnModel.getColumn(1).setPreferredWidth(100); // SKU
-        columnModel.getColumn(2).setPreferredWidth(80);  // Size
+        columnModel.getColumn(2).setPreferredWidth(100);  // Size
         columnModel.getColumn(3).setPreferredWidth(100); // Color
         columnModel.getColumn(4).setPreferredWidth(100); // Sole type
-        columnModel.getColumn(5).setPreferredWidth(100); // Price
-        columnModel.getColumn(6).setPreferredWidth(80);  // Quantity
+        columnModel.getColumn(5).setPreferredWidth(210); // Price
+        columnModel.getColumn(6).setPreferredWidth(100);  // Quantity
 
         // Enable text wrapping for the first column
         tblSanPhamCon.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
@@ -545,7 +552,7 @@ public class ViewSanPham extends javax.swing.JPanel {
                     System.out.println(String.format("Variant ID: %d, SKU: %s, Qty: %d, Price: %s, SizeID: %d, ColorID: %d, SoleID: %d",
                             v.getVariantId(),
                             v.getVariantSku(),
-                            v.getQuantity(),
+                            v.getVariantquantity(),
                             v.getVariantOrigPrice(),
                             v.getSizeId(),
                             v.getColorId(),
@@ -676,11 +683,42 @@ public class ViewSanPham extends javax.swing.JPanel {
         }
     }
 
-    private void loadProductVariants() {
+    public void loadProductVariants() {
+        System.out.println("\n=== loadProductVariants() called ===");
+        System.out.println("Selected Product: " + (selectedProduct != null ? 
+            "ID: " + selectedProduct.getProductId() + ", Name: " + selectedProduct.getProductName() : "null"));
+            
         if (selectedProduct != null) {
-            List<ProductVariant> variants = productVariantDAO.findByProductId(selectedProduct.getProductId());
-            updateVariantTableModel(variants);
+            try {
+                // Debug: Print product ID being queried
+                System.out.println("Querying variants for product ID: " + selectedProduct.getProductId());
+                
+                // Get variants from DAO
+                List<ProductVariant> variants = productVariantDAO.findByProductId(selectedProduct.getProductId());
+                
+                // Debug: Print number of variants found
+                System.out.println("Number of variants found: " + (variants != null ? variants.size() : "null"));
+                
+                if (variants != null && !variants.isEmpty()) {
+                    System.out.println("First variant SKU: " + variants.get(0).getVariantSku());
+                }
+                
+                // Update the table model
+                updateVariantTableModel(variants);
+                
+                // Debug: Verify table model was updated
+                System.out.println("Table model row count after update: " + tblSanPhamCon.getModel().getRowCount());
+                
+            } catch (Exception e) {
+                System.err.println("Error in loadProductVariants():");
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, 
+                    "Lỗi khi tải biến thể sản phẩm: " + e.getMessage(),
+                    "Lỗi", 
+                    JOptionPane.ERROR_MESSAGE);
+            }
         } else {
+            System.out.println("No product selected, clearing variant table");
             DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
             model.setRowCount(0);
         }
@@ -722,6 +760,90 @@ public class ViewSanPham extends javax.swing.JPanel {
                     break;
             }
             model.addRow(row);
+        }
+    }
+
+    private void generateQRCodeForRow(int rowIndex) {
+        try {
+            String sku = tblSanPhamCon.getValueAt(rowIndex, 1).toString(); // Assuming SKU is in column 1
+            String productName = tblSanPhamCon.getValueAt(rowIndex, 0).toString();
+
+            // Create QR code content with product info
+            String qrContent = String.format("SKU: %s\nProduct: %s", sku, productName);
+
+            // Create and show QR code dialog
+            JDialog qrDialog = new JDialog();
+            qrDialog.setTitle("QR Code - " + productName);
+
+            // Generate QR code
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+            BitMatrix bitMatrix = qrCodeWriter.encode(qrContent, BarcodeFormat.QR_CODE, 300, 300);
+
+            // Convert to BufferedImage
+            BufferedImage qrImage = new BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB);
+            for (int x = 0; x < 300; x++) {
+                for (int y = 0; y < 300; y++) {
+                    qrImage.setRGB(x, y, bitMatrix.get(x, y) ? 0x000000 : 0xFFFFFF);
+                }
+            }
+
+            // Display QR code
+            JLabel qrLabel = new JLabel(new ImageIcon(qrImage));
+            qrDialog.add(qrLabel);
+            qrDialog.pack();
+            qrDialog.setLocationRelativeTo(this);
+            qrDialog.setVisible(true);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tạo mã QR: " + ex.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void handleEditAction() {
+        int selectedRow = tblSanPhamCon.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần sửa");
+            return;
+        }
+
+        // Tạo JDialog mới
+        JDialog dialog = new JDialog();
+        dialog.setTitle("Sửa Sản phẩm");
+
+        // Thêm panel vào dialog
+        ViewThemSanPhamm themSanPhamPanel = new ViewThemSanPhamm();
+        dialog.add(themSanPhamPanel);
+
+        // Đặt kích thước dialog
+        dialog.pack();
+
+        // Căn giữa màn hình
+        dialog.setLocationRelativeTo(null);
+
+        // Hiển thị dialog
+        dialog.setModal(true);
+        dialog.setVisible(true);
+    }
+
+    private void handleDeleteAction() {
+        int selectedRow = tblSanPhamCon.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần xóa");
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc chắn muốn xóa sản phẩm này?",
+                "Xác nhận xóa",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            // TODO: Implement delete logic here
+            // Get product ID from the selected row and delete it
+            JOptionPane.showMessageDialog(this, "Đã xóa sản phẩm thành công!");
         }
     }
 
@@ -797,11 +919,9 @@ public class ViewSanPham extends javax.swing.JPanel {
         jTabbedPane1 = new javax.swing.JTabbedPane();
         pnl_product = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        tblSanPham = new javax.swing.JTable();
         jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
+        lbl_product_id = new javax.swing.JLabel();
+        lbl_product_name = new javax.swing.JLabel();
         txtMaSP = new javax.swing.JTextField();
         txtTenSP = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
@@ -818,13 +938,15 @@ public class ViewSanPham extends javax.swing.JPanel {
         lon = new javax.swing.JButton();
         lonNhat = new javax.swing.JButton();
         lbl_brand = new javax.swing.JLabel();
-        jLabel6 = new javax.swing.JLabel();
+        lbl_category = new javax.swing.JLabel();
         cbo_brand = new javax.swing.JComboBox<>();
         cbo_category = new javax.swing.JComboBox<>();
+        jScrollPane4 = new javax.swing.JScrollPane();
+        tblSanPham = new javax.swing.JTable();
         pnl_thuộc_tính = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
-        jLabel7 = new javax.swing.JLabel();
-        jLabel8 = new javax.swing.JLabel();
+        lbl_ma = new javax.swing.JLabel();
+        lbl_ten = new javax.swing.JLabel();
         txtMa = new javax.swing.JTextField();
         txtTen = new javax.swing.JTextField();
         jLabel9 = new javax.swing.JLabel();
@@ -833,17 +955,15 @@ public class ViewSanPham extends javax.swing.JPanel {
         rb_brand = new javax.swing.JRadioButton();
         rb_category = new javax.swing.JRadioButton();
         rb_sole = new javax.swing.JRadioButton();
-        btnThem1 = new javax.swing.JButton();
-        btnsua1 = new javax.swing.JButton();
-        btnXoa1 = new javax.swing.JButton();
+        btnThemThuocTinh = new javax.swing.JButton();
+        btnsuathuoctinh = new javax.swing.JButton();
+        btnXoaThuocTinh = new javax.swing.JButton();
         jScrollPane3 = new javax.swing.JScrollPane();
         tblThuocTinh = new javax.swing.JTable();
         pbl_productvariant = new javax.swing.JPanel();
-        jScrollPane4 = new javax.swing.JScrollPane();
-        tblSanPhamCon = new javax.swing.JTable();
         jPanel8 = new javax.swing.JPanel();
         jPanel9 = new javax.swing.JPanel();
-        jLabel14 = new javax.swing.JLabel();
+        lbl_sku = new javax.swing.JLabel();
         cbo_product_variant_sku = new javax.swing.JComboBox<>();
         jPanel10 = new javax.swing.JPanel();
         jLabel17 = new javax.swing.JLabel();
@@ -861,39 +981,23 @@ public class ViewSanPham extends javax.swing.JPanel {
         btnLonNhat = new javax.swing.JButton();
         jLabel10 = new javax.swing.JLabel();
         btnQuetQR = new javax.swing.JButton();
-        btnThem2 = new javax.swing.JButton();
+        btnThembienthe = new javax.swing.JButton();
         btnLamMoi1 = new javax.swing.JButton();
         btnTaiQR = new javax.swing.JButton();
         btn_dowload_template = new javax.swing.JButton();
         btn_import_file_excel = new javax.swing.JButton();
         btnSua_productvariant = new javax.swing.JButton();
-        btnXoa_productvariant1 = new javax.swing.JButton();
-
-        tblSanPham.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {},
-                {},
-                {},
-                {}
-            },
-            new String [] {
-
-            }
-        ));
-        tblSanPham.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                tblSanPhamMouseClicked(evt);
-            }
-        });
-        jScrollPane2.setViewportView(tblSanPham);
+        btnXoa_productvariant = new javax.swing.JButton();
+        jScrollPane5 = new javax.swing.JScrollPane();
+        tblSanPhamCon = new javax.swing.JTable();
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(0, 0, 255));
         jLabel1.setText("Thông Tin Sản Phẩm");
 
-        jLabel2.setText("Mã Sản Phẩm");
+        lbl_product_id.setText("Mã Sản Phẩm");
 
-        jLabel3.setText("Tên Sản Phẩm");
+        lbl_product_name.setText("Tên Sản Phẩm");
 
         jLabel4.setText("Mô Tả");
 
@@ -1000,11 +1104,29 @@ public class ViewSanPham extends javax.swing.JPanel {
 
         lbl_brand.setText("Thương Hiệu");
 
-        jLabel6.setText("Loại");
+        lbl_category.setText("Danh mục");
 
         cbo_brand.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
         cbo_category.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+
+        tblSanPham.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {},
+                {},
+                {},
+                {}
+            },
+            new String [] {
+
+            }
+        ));
+        tblSanPham.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tblSanPhamMouseClicked(evt);
+            }
+        });
+        jScrollPane4.setViewportView(tblSanPham);
 
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
@@ -1015,35 +1137,33 @@ public class ViewSanPham extends javax.swing.JPanel {
                     .addGroup(jPanel4Layout.createSequentialGroup()
                         .addGap(19, 19, 19)
                         .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txtTenSP, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGroup(jPanel4Layout.createSequentialGroup()
                                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(jPanel4Layout.createSequentialGroup()
-                                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jLabel2)
-                                            .addComponent(txtMaSP, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addGap(26, 26, 26)
-                                        .addComponent(lbl_brand))
-                                    .addGroup(jPanel4Layout.createSequentialGroup()
-                                        .addComponent(jLabel3)
-                                        .addGap(179, 179, 179)
-                                        .addComponent(jLabel6)))
-                                .addGap(18, 18, 18)
+                                    .addComponent(lbl_product_id)
+                                    .addComponent(txtMaSP, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(26, 26, 26)
                                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(cbo_category, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(lbl_brand)
+                                    .addComponent(cbo_brand, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addGroup(jPanel4Layout.createSequentialGroup()
+                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(lbl_product_name)
+                                    .addComponent(txtTenSP, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(40, 40, 40)
+                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addGroup(jPanel4Layout.createSequentialGroup()
-                                        .addComponent(cbo_brand, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addGap(63, 63, 63)
-                                        .addComponent(jLabel4))))
-                            .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 173, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(cbo_category, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(102, 102, 102))
+                                    .addGroup(jPanel4Layout.createSequentialGroup()
+                                        .addComponent(lbl_category, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addGap(116, 116, 116)))
+                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 173, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel4)))))
                     .addGroup(jPanel4Layout.createSequentialGroup()
                         .addGap(438, 438, 438)
                         .addComponent(jLabel1))
-                    .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 904, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel4Layout.createSequentialGroup()
                         .addGap(328, 328, 328)
                         .addComponent(nhoNhat)
@@ -1054,7 +1174,10 @@ public class ViewSanPham extends javax.swing.JPanel {
                         .addGap(18, 18, 18)
                         .addComponent(lon)
                         .addGap(29, 29, 29)
-                        .addComponent(lonNhat)))
+                        .addComponent(lonNhat))
+                    .addGroup(jPanel4Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 904, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(236, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
@@ -1062,43 +1185,38 @@ public class ViewSanPham extends javax.swing.JPanel {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
                 .addGap(16, 16, 16)
                 .addComponent(jLabel1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lbl_brand)
+                    .addComponent(jLabel4)
+                    .addComponent(lbl_product_id))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel4Layout.createSequentialGroup()
-                                .addGap(28, 28, 28)
-                                .addComponent(jLabel2)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtMaSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(cbo_brand, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(lbl_brand)
-                                    .addComponent(jLabel4))
-                                .addGap(64, 64, 64)))
                         .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel3)
-                            .addComponent(jLabel6)
-                            .addComponent(cbo_category, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(txtMaSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(cbo_brand, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(39, 39, 39)
+                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(lbl_product_name)
+                            .addComponent(lbl_category))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtTenSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(txtTenSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(cbo_category, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(27, 27, 27)
                         .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addGap(33, 33, 33)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(12, 12, 12)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(nhoNhat)
                     .addComponent(nho)
                     .addComponent(jlabel5)
                     .addComponent(lon)
                     .addComponent(lonNhat))
-                .addContainerGap(146, Short.MAX_VALUE))
+                .addContainerGap(155, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout pnl_productLayout = new javax.swing.GroupLayout(pnl_product);
@@ -1126,9 +1244,9 @@ public class ViewSanPham extends javax.swing.JPanel {
 
         jPanel7.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(102, 102, 102)));
 
-        jLabel7.setText("Mã ");
+        lbl_ma.setText("Mã ");
 
-        jLabel8.setText("Tên");
+        lbl_ten.setText("Tên");
 
         javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
         jPanel7.setLayout(jPanel7Layout);
@@ -1137,24 +1255,24 @@ public class ViewSanPham extends javax.swing.JPanel {
             .addGroup(jPanel7Layout.createSequentialGroup()
                 .addGap(12, 12, 12)
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel8)
+                    .addComponent(lbl_ten)
                     .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                         .addComponent(txtMa)
                         .addComponent(txtTen, javax.swing.GroupLayout.DEFAULT_SIZE, 243, Short.MAX_VALUE)
                         .addGroup(jPanel7Layout.createSequentialGroup()
                             .addGap(8, 8, 8)
-                            .addComponent(jLabel7))))
+                            .addComponent(lbl_ma))))
                 .addContainerGap(16, Short.MAX_VALUE))
         );
         jPanel7Layout.setVerticalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel7Layout.createSequentialGroup()
                 .addGap(19, 19, 19)
-                .addComponent(jLabel7)
+                .addComponent(lbl_ma)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(txtMa, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(39, 39, 39)
-                .addComponent(jLabel8)
+                .addComponent(lbl_ten)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(txtTen, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(33, Short.MAX_VALUE))
@@ -1204,33 +1322,33 @@ public class ViewSanPham extends javax.swing.JPanel {
             }
         });
 
-        btnThem1.setBackground(new java.awt.Color(0, 51, 255));
-        btnThem1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnThem1.setForeground(new java.awt.Color(255, 255, 255));
-        btnThem1.setText("Thêm");
-        btnThem1.addActionListener(new java.awt.event.ActionListener() {
+        btnThemThuocTinh.setBackground(new java.awt.Color(0, 51, 255));
+        btnThemThuocTinh.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnThemThuocTinh.setForeground(new java.awt.Color(255, 255, 255));
+        btnThemThuocTinh.setText("Thêm");
+        btnThemThuocTinh.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnThem1ActionPerformed(evt);
+                btnThemThuocTinhActionPerformed(evt);
             }
         });
 
-        btnsua1.setBackground(new java.awt.Color(0, 51, 255));
-        btnsua1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnsua1.setForeground(new java.awt.Color(255, 255, 255));
-        btnsua1.setText("Sửa");
-        btnsua1.addActionListener(new java.awt.event.ActionListener() {
+        btnsuathuoctinh.setBackground(new java.awt.Color(0, 51, 255));
+        btnsuathuoctinh.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnsuathuoctinh.setForeground(new java.awt.Color(255, 255, 255));
+        btnsuathuoctinh.setText("Sửa");
+        btnsuathuoctinh.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnsua1ActionPerformed(evt);
+                btnsuathuoctinhActionPerformed(evt);
             }
         });
 
-        btnXoa1.setBackground(new java.awt.Color(0, 51, 255));
-        btnXoa1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnXoa1.setForeground(new java.awt.Color(255, 255, 255));
-        btnXoa1.setText("Xóa");
-        btnXoa1.addActionListener(new java.awt.event.ActionListener() {
+        btnXoaThuocTinh.setBackground(new java.awt.Color(0, 51, 255));
+        btnXoaThuocTinh.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnXoaThuocTinh.setForeground(new java.awt.Color(255, 255, 255));
+        btnXoaThuocTinh.setText("Xóa");
+        btnXoaThuocTinh.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnXoa1ActionPerformed(evt);
+                btnXoaThuocTinhActionPerformed(evt);
             }
         });
 
@@ -1260,11 +1378,11 @@ public class ViewSanPham extends javax.swing.JPanel {
                 .addGroup(pnl_thuộc_tínhLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(pnl_thuộc_tínhLayout.createSequentialGroup()
                         .addGap(120, 120, 120)
-                        .addComponent(btnThem1)
+                        .addComponent(btnThemThuocTinh)
                         .addGap(158, 158, 158)
-                        .addComponent(btnsua1)
+                        .addComponent(btnsuathuoctinh)
                         .addGap(121, 121, 121)
-                        .addComponent(btnXoa1))
+                        .addComponent(btnXoaThuocTinh))
                     .addGroup(pnl_thuộc_tínhLayout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1308,9 +1426,9 @@ public class ViewSanPham extends javax.swing.JPanel {
                             .addComponent(rb_sole))))
                 .addGap(81, 81, 81)
                 .addGroup(pnl_thuộc_tínhLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnThem1)
-                    .addComponent(btnsua1)
-                    .addComponent(btnXoa1))
+                    .addComponent(btnThemThuocTinh)
+                    .addComponent(btnsuathuoctinh)
+                    .addComponent(btnXoaThuocTinh))
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 290, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(39, Short.MAX_VALUE))
@@ -1318,29 +1436,11 @@ public class ViewSanPham extends javax.swing.JPanel {
 
         jTabbedPane1.addTab("thuộc tính", pnl_thuộc_tính);
 
-        tblSanPhamCon.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {},
-                {},
-                {},
-                {}
-            },
-            new String [] {
-
-            }
-        ));
-        tblSanPhamCon.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                tblSanPhamConMouseClicked(evt);
-            }
-        });
-        jScrollPane4.setViewportView(tblSanPhamCon);
-
         jPanel8.setBorder(javax.swing.BorderFactory.createTitledBorder("Lọc Sản Phẩm"));
 
         jPanel9.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(102, 102, 102)));
 
-        jLabel14.setText("Ma San pham");
+        lbl_sku.setText("Ma San pham");
 
         cbo_product_variant_sku.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
         cbo_product_variant_sku.addActionListener(new java.awt.event.ActionListener() {
@@ -1357,14 +1457,14 @@ public class ViewSanPham extends javax.swing.JPanel {
                 .addContainerGap(65, Short.MAX_VALUE)
                 .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(cbo_product_variant_sku, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel14))
+                    .addComponent(lbl_sku))
                 .addGap(35, 35, 35))
         );
         jPanel9Layout.setVerticalGroup(
             jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel9Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabel14)
+                .addComponent(lbl_sku)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(cbo_product_variant_sku, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(27, Short.MAX_VALUE))
@@ -1460,16 +1560,12 @@ public class ViewSanPham extends javax.swing.JPanel {
                 .addComponent(jPanel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(37, 37, 37)
                 .addComponent(jPanel11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(30, 30, 30)
                 .addComponent(btn_search)
-                .addGap(124, 124, 124))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel8Layout.setVerticalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel8Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btn_search)
-                .addGap(45, 45, 45))
             .addGroup(jPanel8Layout.createSequentialGroup()
                 .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanel8Layout.createSequentialGroup()
@@ -1481,6 +1577,10 @@ public class ViewSanPham extends javax.swing.JPanel {
                             .addComponent(jPanel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap(23, Short.MAX_VALUE))
+            .addGroup(jPanel8Layout.createSequentialGroup()
+                .addGap(42, 42, 42)
+                .addComponent(btn_search)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         btnNho.setText("<");
@@ -1527,13 +1627,13 @@ public class ViewSanPham extends javax.swing.JPanel {
             }
         });
 
-        btnThem2.setBackground(new java.awt.Color(0, 102, 255));
-        btnThem2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnThem2.setForeground(new java.awt.Color(255, 255, 255));
-        btnThem2.setText("Thêm");
-        btnThem2.addActionListener(new java.awt.event.ActionListener() {
+        btnThembienthe.setBackground(new java.awt.Color(0, 102, 255));
+        btnThembienthe.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnThembienthe.setForeground(new java.awt.Color(255, 255, 255));
+        btnThembienthe.setText("Thêm");
+        btnThembienthe.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnThem2ActionPerformed(evt);
+                btnThembientheActionPerformed(evt);
             }
         });
 
@@ -1587,15 +1687,33 @@ public class ViewSanPham extends javax.swing.JPanel {
             }
         });
 
-        btnXoa_productvariant1.setBackground(new java.awt.Color(0, 102, 255));
-        btnXoa_productvariant1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnXoa_productvariant1.setForeground(new java.awt.Color(255, 255, 255));
-        btnXoa_productvariant1.setText("Xóa");
-        btnXoa_productvariant1.addActionListener(new java.awt.event.ActionListener() {
+        btnXoa_productvariant.setBackground(new java.awt.Color(0, 102, 255));
+        btnXoa_productvariant.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnXoa_productvariant.setForeground(new java.awt.Color(255, 255, 255));
+        btnXoa_productvariant.setText("Xóa");
+        btnXoa_productvariant.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnXoa_productvariant1ActionPerformed(evt);
+                btnXoa_productvariantActionPerformed(evt);
             }
         });
+
+        tblSanPhamCon.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {},
+                {},
+                {},
+                {}
+            },
+            new String [] {
+
+            }
+        ));
+        tblSanPhamCon.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tblSanPhamConMouseClicked(evt);
+            }
+        });
+        jScrollPane5.setViewportView(tblSanPhamCon);
 
         javax.swing.GroupLayout pbl_productvariantLayout = new javax.swing.GroupLayout(pbl_productvariant);
         pbl_productvariant.setLayout(pbl_productvariantLayout);
@@ -1604,30 +1722,10 @@ public class ViewSanPham extends javax.swing.JPanel {
             .addGroup(pbl_productvariantLayout.createSequentialGroup()
                 .addGroup(pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(pbl_productvariantLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jPanel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(pbl_productvariantLayout.createSequentialGroup()
                         .addGroup(pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(pbl_productvariantLayout.createSequentialGroup()
                                 .addGap(369, 369, 369)
                                 .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 246, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(pbl_productvariantLayout.createSequentialGroup()
-                                .addGap(47, 47, 47)
-                                .addComponent(btn_dowload_template)
-                                .addGap(31, 31, 31)
-                                .addComponent(btn_import_file_excel)
-                                .addGap(64, 64, 64)
-                                .addComponent(btnThem2)
-                                .addGap(18, 18, 18)
-                                .addComponent(btnSua_productvariant)
-                                .addGap(26, 26, 26)
-                                .addComponent(btnXoa_productvariant1)
-                                .addGap(57, 57, 57)
-                                .addComponent(btnQuetQR)
-                                .addGap(46, 46, 46)
-                                .addComponent(btnTaiQR)
-                                .addGap(42, 42, 42)
-                                .addComponent(btnLamMoi1))
                             .addGroup(pbl_productvariantLayout.createSequentialGroup()
                                 .addGap(298, 298, 298)
                                 .addComponent(btnNhoNhat, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1638,13 +1736,33 @@ public class ViewSanPham extends javax.swing.JPanel {
                                 .addGap(27, 27, 27)
                                 .addComponent(btnLon)
                                 .addGap(18, 18, 18)
-                                .addComponent(btnLonNhat, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                                .addComponent(btnLonNhat, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(pbl_productvariantLayout.createSequentialGroup()
+                                .addGap(47, 47, 47)
+                                .addComponent(btn_dowload_template)
+                                .addGap(31, 31, 31)
+                                .addComponent(btn_import_file_excel)
+                                .addGap(64, 64, 64)
+                                .addComponent(btnThembienthe)
+                                .addGap(18, 18, 18)
+                                .addComponent(btnSua_productvariant)
+                                .addGap(26, 26, 26)
+                                .addComponent(btnXoa_productvariant)
+                                .addGap(57, 57, 57)
+                                .addComponent(btnQuetQR)
+                                .addGap(46, 46, 46)
+                                .addComponent(btnTaiQR)
+                                .addGap(42, 42, 42)
+                                .addComponent(btnLamMoi1)))
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(pbl_productvariantLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jPanel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
             .addGroup(pbl_productvariantLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane4)
-                .addGap(46, 46, 46))
+                .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 965, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         pbl_productvariantLayout.setVerticalGroup(
             pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1656,16 +1774,16 @@ public class ViewSanPham extends javax.swing.JPanel {
                 .addGap(18, 18, 18)
                 .addGroup(pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnQuetQR)
-                    .addComponent(btnThem2)
+                    .addComponent(btnThembienthe)
                     .addComponent(btnLamMoi1)
                     .addComponent(btnTaiQR)
                     .addComponent(btn_dowload_template)
                     .addComponent(btn_import_file_excel)
                     .addComponent(btnSua_productvariant)
-                    .addComponent(btnXoa_productvariant1))
-                .addGap(18, 18, 18)
-                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 189, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 22, Short.MAX_VALUE)
+                    .addComponent(btnXoa_productvariant))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 189, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 34, Short.MAX_VALUE)
                 .addGroup(pbl_productvariantLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnNhoNhat, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnNho)
@@ -1689,67 +1807,6 @@ public class ViewSanPham extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void tblSanPhamMouseClicked(java.awt.event.MouseEvent evt) {
-        System.out.println("\n=== tblSanPhamMouseClicked triggered ===");
-        selectedRow = tblSanPham.getSelectedRow();
-        System.out.println("Selected row index: " + selectedRow);
-
-        if (selectedRow != -1) {
-            try {
-                System.out.println("\n=== Processing row selection ===");
-
-                // Get the product code directly from the selected row in the table
-                String productCode = (String) tblSanPham.getValueAt(selectedRow, 0);
-                System.out.println("Selected product code from table: " + productCode);
-
-                if (productCode == null || productCode.trim().isEmpty()) {
-                    System.out.println("ERROR: Product code is null or empty");
-                    return;
-                }
-
-                // Log the selected row data for debugging
-                System.out.println("\n--- Selected Row Data ---");
-                int colCount = tblSanPham.getColumnCount();
-                for (int i = 0; i < colCount; i++) {
-                    System.out.println(tblSanPham.getColumnName(i) + ": " + tblSanPham.getValueAt(selectedRow, i));
-                }
-
-                // Find the product by code to get its ID
-                System.out.println("\nLooking up product with code: " + productCode);
-                selectedProduct = productController.getProductByCode(productCode);
-
-                if (selectedProduct != null) {
-                    System.out.println("\n--- Found Product Details ---");
-                    System.out.println("Product ID: " + selectedProduct.getProductId());
-                    System.out.println("Name: " + selectedProduct.getProductName());
-                    System.out.println("Code: " + selectedProduct.getProductCode());
-
-                    // Fill the form with product details
-                    System.out.println("Filling product form...");
-                    fillForm(selectedProduct);
-
-                    // Load variants for the selected product
-                    System.out.println("Loading product variants...");
-                    loadSelectedProductVariants();
-                } else {
-                    System.out.println("ERROR: No product found with code: " + productCode);
-                    // Clear the variant table if no product is selected
-                    DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
-                    System.out.println("Clearing variant table (no product found)");
-                    model.setRowCount(0);
-                }
-            } catch (Exception e) {
-                System.err.println("Error in tblSanPhamMouseClicked: " + e.getMessage());
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this,
-                        "Lỗi khi tải thông tin sản phẩm: " + e.getMessage(),
-                        "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            System.out.println("No row selected or invalid selection");
-        }
-    }
 
     private void btnSuaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSuaActionPerformed
         if (selectedProduct == null) {
@@ -1884,7 +1941,7 @@ public class ViewSanPham extends javax.swing.JPanel {
         loadTable();
     }//GEN-LAST:event_rb_soleActionPerformed
 
-    private void btnThem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThem1ActionPerformed
+    private void btnThemThuocTinhActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThemThuocTinhActionPerformed
         String code = txtMa.getText().trim();
         String name = txtTen.getText().trim();
         if (code.isEmpty() || name.isEmpty()) {
@@ -1898,6 +1955,8 @@ public class ViewSanPham extends javax.swing.JPanel {
                 color.setColorName(name);
                 colorDAO.create(color);
                 JOptionPane.showMessageDialog(this, "Thêm màu sắc thành công!");
+                txtMa.setText("");
+                txtTen.setText("");
                 loadTable();
                 refreshComboboxes("color");
                 break;
@@ -1907,6 +1966,8 @@ public class ViewSanPham extends javax.swing.JPanel {
                 size.setSizeValue(name);
                 sizeDAO.create(size);
                 JOptionPane.showMessageDialog(this, "Thêm kích cỡ thành công!");
+                txtMa.setText("");
+                txtTen.setText("");
                 loadTable();
                 refreshComboboxes("size");
                 break;
@@ -1916,6 +1977,8 @@ public class ViewSanPham extends javax.swing.JPanel {
                 brand.setBrandName(name);
                 brandDAO.create(brand);
                 JOptionPane.showMessageDialog(this, "Thêm thương hiệu thành công!");
+                txtMa.setText("");
+                txtTen.setText("");
                 loadTable();
                 refreshComboboxes("brand");
                 break;
@@ -1925,6 +1988,8 @@ public class ViewSanPham extends javax.swing.JPanel {
                 category.setCategoryName(name);
                 categoryDAO.create(category);
                 JOptionPane.showMessageDialog(this, "Thêm danh mục thành công!");
+                txtMa.setText("");
+                txtTen.setText("");
                 loadTable();
                 refreshComboboxes("category");
                 break;
@@ -1934,13 +1999,15 @@ public class ViewSanPham extends javax.swing.JPanel {
                 soleType.setSoleName(name);
                 soleTypeDAO.create(soleType);
                 JOptionPane.showMessageDialog(this, "Thêm loại đế thành công!");
+                txtMa.setText("");
+                txtTen.setText("");
                 loadTable();
                 refreshComboboxes("soleType");
                 break;
         }
-    }//GEN-LAST:event_btnThem1ActionPerformed
+    }//GEN-LAST:event_btnThemThuocTinhActionPerformed
 
-    private void btnsua1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnsua1ActionPerformed
+    private void btnsuathuoctinhActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnsuathuoctinhActionPerformed
         int row = tblThuocTinh.getSelectedRow();
         if (row == -1) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng để sửa!");
@@ -2005,9 +2072,9 @@ public class ViewSanPham extends javax.swing.JPanel {
                 loadTable();
                 break;
         }
-    }//GEN-LAST:event_btnsua1ActionPerformed
+    }//GEN-LAST:event_btnsuathuoctinhActionPerformed
 
-    private void btnXoa1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXoa1ActionPerformed
+    private void btnXoaThuocTinhActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXoaThuocTinhActionPerformed
         int row = tblThuocTinh.getSelectedRow();
         if (row == -1) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng để xoá!");
@@ -2041,7 +2108,7 @@ public class ViewSanPham extends javax.swing.JPanel {
                 loadTable();
                 break;
         }
-    }//GEN-LAST:event_btnXoa1ActionPerformed
+    }//GEN-LAST:event_btnXoaThuocTinhActionPerformed
 
     private void tblThuocTinhMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblThuocTinhMouseClicked
         int row = tblThuocTinh.getSelectedRow();
@@ -2050,166 +2117,6 @@ public class ViewSanPham extends javax.swing.JPanel {
             txtTen.setText(tblThuocTinh.getValueAt(row, 2).toString());
         }
     }//GEN-LAST:event_tblThuocTinhMouseClicked
-
-    private void generateQRCodeForRow(int rowIndex) {
-        try {
-            String sku = tblSanPhamCon.getValueAt(rowIndex, 1).toString(); // Assuming SKU is in column 1
-            String productName = tblSanPhamCon.getValueAt(rowIndex, 0).toString();
-
-            // Create QR code content with product info
-            String qrContent = String.format("SKU: %s\nProduct: %s", sku, productName);
-
-            // Create and show QR code dialog
-            JDialog qrDialog = new JDialog();
-            qrDialog.setTitle("QR Code - " + productName);
-
-            // Generate QR code
-            QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            BitMatrix bitMatrix = qrCodeWriter.encode(qrContent, BarcodeFormat.QR_CODE, 300, 300);
-
-            // Convert to BufferedImage
-            BufferedImage qrImage = new BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB);
-            for (int x = 0; x < 300; x++) {
-                for (int y = 0; y < 300; y++) {
-                    qrImage.setRGB(x, y, bitMatrix.get(x, y) ? 0x000000 : 0xFFFFFF);
-                }
-            }
-
-            // Display QR code
-            JLabel qrLabel = new JLabel(new ImageIcon(qrImage));
-            qrDialog.add(qrLabel);
-            qrDialog.pack();
-            qrDialog.setLocationRelativeTo(this);
-            qrDialog.setVisible(true);
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tạo mã QR: " + ex.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void handleEditAction() {
-        int selectedRow = tblSanPhamCon.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần sửa");
-            return;
-        }
-
-        // Tạo JDialog mới
-        JDialog dialog = new JDialog();
-        dialog.setTitle("Sửa Sản phẩm");
-
-        // Thêm panel vào dialog
-        ViewThemSanPhamm themSanPhamPanel = new ViewThemSanPhamm();
-        dialog.add(themSanPhamPanel);
-
-        // Đặt kích thước dialog
-        dialog.pack();
-
-        // Căn giữa màn hình
-        dialog.setLocationRelativeTo(null);
-
-        // Hiển thị dialog
-        dialog.setModal(true);
-        dialog.setVisible(true);
-    }
-
-    private void handleDeleteAction() {
-        int selectedRow = tblSanPhamCon.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm cần xóa");
-            return;
-        }
-
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Bạn có chắc chắn muốn xóa sản phẩm này?",
-                "Xác nhận xóa",
-                JOptionPane.YES_NO_OPTION);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            // TODO: Implement delete logic here
-            // Get product ID from the selected row and delete it
-            JOptionPane.showMessageDialog(this, "Đã xóa sản phẩm thành công!");
-        }
-    }
-
-    private void tblSanPhamConMouseClicked(java.awt.event.MouseEvent evt) {
-        int selectedRow = tblSanPhamCon.getSelectedRow();
-        if (evt.getClickCount() == 2) {
-            int clickedRow = tblSanPhamCon.rowAtPoint(evt.getPoint());
-            if (clickedRow != -1) {
-                generateQRCodeForRow(clickedRow);
-                return;
-            }
-        }
-        if (selectedRow >= 0) {
-            try {
-                // Lấy dữ liệu từ hàng được chọn
-                String sku = tblSanPhamCon.getValueAt(selectedRow, 0).toString();
-                String size = tblSanPhamCon.getValueAt(selectedRow, 1).toString();
-                String color = tblSanPhamCon.getValueAt(selectedRow, 2).toString();
-                String soleType = tblSanPhamCon.getValueAt(selectedRow, 3).toString();
-                String price = tblSanPhamCon.getValueAt(selectedRow, 4).toString();
-                String quantity = tblSanPhamCon.getValueAt(selectedRow, 5).toString();
-
-                // Ghi log thông tin sản phẩm được chọn
-                System.out.println("Đã chọn sản phẩm:");
-                System.out.println("SKU: " + sku);
-                System.out.println("Kích thước: " + size);
-                System.out.println("Màu sắc: " + color);
-                System.out.println("Loại đế: " + soleType);
-                System.out.println("Giá: " + price);
-                System.out.println("Số lượng: " + quantity);
-
-                // Tạo mã QR cho sản phẩm
-                String qrData = "SKU: " + sku + "\n"
-                        + "Kích thước: " + size + "\n"
-                        + "Màu sắc: " + color + "\n"
-                        + "Loại đế: " + soleType + "\n"
-                        + "Giá: " + price + " VNĐ" + "\n"
-                        + "Số lượng tồn: " + quantity;
-
-                try {
-                    // Hiển thị thông báo thay vì tạo mã QR (vì chưa có thư viện)
-                    javax.swing.JOptionPane.showMessageDialog(this,
-                            "Thông tin sản phẩm đã được chọn.\n"
-                            + "Dữ liệu QR sẽ được tạo sau khi tích hợp thư viện.\n\n"
-                            + qrData,
-                            "Thông tin sản phẩm",
-                            javax.swing.JOptionPane.INFORMATION_MESSAGE);
-
-                    // Ghi log dữ liệu QR
-                    System.out.println("Dữ liệu QR sẽ được tạo:" + qrData);
-
-                    // Lưu ý: Để tạo mã QR thực tế, cần thêm thư viện như ZXing
-                    // Ví dụ:
-                    // String filePath = System.getProperty("java.io.tmpdir") + "qr_code_" + sku + ".png";
-                    // generateQRCode(qrData, 200, 200, filePath);
-                    // showQRCode(filePath);
-                } catch (Exception e) {
-                    // Log lỗi nếu có
-                    System.err.println("Lỗi khi xử lý sự kiện chọn sản phẩm: " + e.getMessage());
-                    e.printStackTrace();
-
-                    // Hiển thị thông báo lỗi cho người dùng
-                    JOptionPane.showMessageDialog(
-                            this,
-                            "Có lỗi xảy ra khi xử lý sản phẩm: " + e.getMessage(),
-                            "Lỗi",
-                            JOptionPane.ERROR_MESSAGE
-                    );
-                }
-
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this,
-                        "Lỗi khi đọc dữ liệu từ bảng: " + e.getMessage(),
-                        "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
 
     private void cbbLTLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbbLTLActionPerformed
 //        currentPage = 1;
@@ -2334,7 +2241,7 @@ public class ViewSanPham extends javax.swing.JPanel {
         qrScanner.setLocationRelativeTo(null);
     }//GEN-LAST:event_btnQuetQRActionPerformed
 
-    private void btnThem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThem2ActionPerformed
+    private void btnThembientheActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThembientheActionPerformed
         // Tạo JDialog mới
         JDialog dialog = new JDialog();
         dialog.setTitle("Thêm sản phẩm mới");
@@ -2352,7 +2259,7 @@ public class ViewSanPham extends javax.swing.JPanel {
         // Hiển thị dialog
         dialog.setModal(true);
         dialog.setVisible(true);
-    }//GEN-LAST:event_btnThem2ActionPerformed
+    }//GEN-LAST:event_btnThembientheActionPerformed
 
     private void btnLamMoi1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLamMoi1ActionPerformed
         // Reset all filter fields
@@ -2471,18 +2378,18 @@ public class ViewSanPham extends javax.swing.JPanel {
 
                     // Tạo dòng hướng dẫn
                     org.apache.poi.ss.usermodel.Row instructionRow1 = sheet.createRow(1);
-// Product mẫu
-instructionRow1.createCell(0).setCellValue("SP001"); // product_code
-instructionRow1.createCell(1).setCellValue("Giày bóng chuyền Mizuno"); // product_name
-instructionRow1.createCell(2).setCellValue("1"); // brand_id (nhập số, sẽ map sang tên)
-instructionRow1.createCell(3).setCellValue("2"); // category_id (nhập số, sẽ map sang tên)
-// ProductVariant mẫu
-instructionRow1.createCell(4).setCellValue("SP001-BLACK-42"); // variant_sku
-instructionRow1.createCell(5).setCellValue("3"); // size_id (nhập số, sẽ map sang tên)
-instructionRow1.createCell(6).setCellValue("5"); // color_id (nhập số, sẽ map sang tên)
-instructionRow1.createCell(7).setCellValue("2"); // sole_id (nhập số, sẽ map sang tên)
-instructionRow1.createCell(8).setCellValue("650000"); // variant_orig_price
-instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
+                    // Product mẫu
+                    instructionRow1.createCell(0).setCellValue("SP001"); // product_code
+                    instructionRow1.createCell(1).setCellValue("Giày bóng chuyền Mizuno"); // product_name
+                    instructionRow1.createCell(2).setCellValue("1"); // brand_id (nhập số, sẽ map sang tên)
+                    instructionRow1.createCell(3).setCellValue("2"); // category_id (nhập số, sẽ map sang tên)
+                    // ProductVariant mẫu
+                    instructionRow1.createCell(4).setCellValue("SP001-BLACK-42"); // variant_sku
+                    instructionRow1.createCell(5).setCellValue("3"); // size_id (nhập số, sẽ map sang tên)
+                    instructionRow1.createCell(6).setCellValue("5"); // color_id (nhập số, sẽ map sang tên)
+                    instructionRow1.createCell(7).setCellValue("2"); // sole_id (nhập số, sẽ map sang tên)
+                    instructionRow1.createCell(8).setCellValue("650000"); // variant_orig_price
+                    instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
 
                     // Tự động điều chỉnh độ rộng cột
                     for (int i = 0; i < headers.length; i++) {
@@ -2634,39 +2541,33 @@ instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
     }//GEN-LAST:event_btn_import_file_excelActionPerformed
 
     private void btnSua_productvariantActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSua_productvariantActionPerformed
-        // TODO add your handling code here:
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastEditClickTime < DOUBLE_CLICK_DELAY) {
-            // Double click - generate QR code
-            int selectedRow = tblSanPhamCon.getSelectedRow();
-            if (selectedRow != -1) {
-                generateQRCodeForRow(selectedRow);
-            }
-        } else {
-            // Single click - edit
-            handleEditAction();
+        int selectedRow = tblSanPhamCon.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một hàng để sửa!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-        lastEditClickTime = currentTime;
-        // Tạo JDialog mới
+
+        // Get the SKU from the second column (index 1)
+        String sku = (String) tblSanPhamCon.getValueAt(selectedRow, 1);
+
+        // Get ProductVariant by SKU - returns Optional<ProductVariant>
+        ProductVariantDAO variantDAO = new ProductVariantDAOImpl();
+        ProductVariant variantOpt = variantDAO.findBySku(sku);
+
         JDialog dialog = new JDialog();
         dialog.setTitle("Sửa Sản phẩm");
-
-        // Thêm panel vào dialog
         ViewThemSanPhamm themSanPhamPanel = new ViewThemSanPhamm();
+        themSanPhamPanel.loadVariantForEdit(variantOpt);
         dialog.add(themSanPhamPanel);
-
-        // Đặt kích thước dialog
         dialog.pack();
-
-        // Căn giữa màn hình
         dialog.setLocationRelativeTo(null);
-
-        // Hiển thị dialog
         dialog.setModal(true);
         dialog.setVisible(true);
+
+        loadProductVariants();
     }//GEN-LAST:event_btnSua_productvariantActionPerformed
 
-    private void btnXoa_productvariant1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXoa_productvariant1ActionPerformed
+    private void btnXoa_productvariantActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXoa_productvariantActionPerformed
         // TODO add your handling code here:
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastDeleteClickTime < DOUBLE_CLICK_DELAY) {
@@ -2680,38 +2581,180 @@ instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
             handleDeleteAction();
         }
         lastDeleteClickTime = currentTime;
-    }//GEN-LAST:event_btnXoa_productvariant1ActionPerformed
+    }//GEN-LAST:event_btnXoa_productvariantActionPerformed
 
     private void btn_searchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_searchActionPerformed
-    try {
-        String sku = (String) cbo_product_variant_sku.getSelectedItem();
-        String priceText = txtLGT.getText().trim();
-        String productName = txt_productname.getText().trim();
-        java.math.BigDecimal price = null;
-        if (!priceText.isEmpty()) {
-            try {
-                price = new java.math.BigDecimal(priceText);
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Giá không hợp lệ! Vui lòng nhập số.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
+        try {
+            String sku = (String) cbo_product_variant_sku.getSelectedItem();
+            String priceText = txtLGT.getText().trim();
+            String productName = txt_productname.getText().trim();
+            java.math.BigDecimal price = null;
+            if (!priceText.isEmpty()) {
+                try {
+                    price = new java.math.BigDecimal(priceText);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Giá không hợp lệ! Vui lòng nhập số.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
+            // Nếu sku là null hoặc "Tất cả", bỏ lọc
+            if (sku != null && (sku.equalsIgnoreCase("Tất cả") || sku.trim().isEmpty())) {
+                sku = null;
+            }
+            if (productName.isEmpty()) {
+                productName = null;
+            }
+            List<ProductVariant> variants = productVariantDAO.searchVariants(sku, productName, price);
+            updateVariantTableModel(variants);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tìm kiếm biến thể: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
-        // Nếu sku là null hoặc "Tất cả", bỏ lọc
-        if (sku != null && (sku.equalsIgnoreCase("Tất cả") || sku.trim().isEmpty())) {
-            sku = null;
-        }
-        if (productName.isEmpty()) productName = null;
-        List<ProductVariant> variants = productVariantDAO.searchVariants(sku, productName, price);
-        updateVariantTableModel(variants);
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(this, "Lỗi khi tìm kiếm biến thể: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        e.printStackTrace();
-    }
 }//GEN-LAST:event_btn_searchActionPerformed
 
     private void cbo_product_variant_skuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbo_product_variant_skuActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_cbo_product_variant_skuActionPerformed
+
+    private void tblSanPhamConMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblSanPhamConMouseClicked
+        // TODO add your handling code here:
+        int selectedRow = tblSanPhamCon.getSelectedRow();
+        if (evt.getClickCount() == 3) {
+            int clickedRow = tblSanPhamCon.rowAtPoint(evt.getPoint());
+            if (clickedRow != -1) {
+                generateQRCodeForRow(clickedRow);
+                return;
+            }
+        }
+        if (selectedRow >= 0) {
+            try {
+                // Lấy dữ liệu từ hàng được chọn
+                String sku = tblSanPhamCon.getValueAt(selectedRow, 0).toString();
+                String size = tblSanPhamCon.getValueAt(selectedRow, 1).toString();
+                String color = tblSanPhamCon.getValueAt(selectedRow, 2).toString();
+                String soleType = tblSanPhamCon.getValueAt(selectedRow, 3).toString();
+                String price = tblSanPhamCon.getValueAt(selectedRow, 4).toString();
+                String quantity = tblSanPhamCon.getValueAt(selectedRow, 5).toString();
+
+                // Ghi log thông tin sản phẩm được chọn
+                System.out.println("Đã chọn sản phẩm:");
+                System.out.println("SKU: " + sku);
+                System.out.println("Kích thước: " + size);
+                System.out.println("Màu sắc: " + color);
+                System.out.println("Loại đế: " + soleType);
+                System.out.println("Giá: " + price);
+                System.out.println("Số lượng: " + quantity);
+
+                // Tạo mã QR cho sản phẩm
+                String qrData = "SKU: " + sku + "\n"
+                        + "Kích thước: " + size + "\n"
+                        + "Màu sắc: " + color + "\n"
+                        + "Loại đế: " + soleType + "\n"
+                        + "Giá: " + price + " VNĐ" + "\n"
+                        + "Số lượng tồn: " + quantity;
+
+                try {
+                    // Hiển thị thông báo thay vì tạo mã QR (vì chưa có thư viện)
+                    javax.swing.JOptionPane.showMessageDialog(this,
+                            "Thông tin sản phẩm đã được chọn.\n"
+                            + "Dữ liệu QR sẽ được tạo sau khi tích hợp thư viện.\n\n"
+                            + qrData,
+                            "Thông tin sản phẩm",
+                            javax.swing.JOptionPane.INFORMATION_MESSAGE);
+
+                    // Ghi log dữ liệu QR
+                    System.out.println("Dữ liệu QR sẽ được tạo:" + qrData);
+
+                    // Lưu ý: Để tạo mã QR thực tế, cần thêm thư viện như ZXing
+                    // Ví dụ:
+                    // String filePath = System.getProperty("java.io.tmpdir") + "qr_code_" + sku + ".png";
+                    // generateQRCode(qrData, 200, 200, filePath);
+                    // showQRCode(filePath);
+                } catch (Exception e) {
+                    // Log lỗi nếu có
+                    System.err.println("Lỗi khi xử lý sự kiện chọn sản phẩm: " + e.getMessage());
+                    e.printStackTrace();
+
+                    // Hiển thị thông báo lỗi cho người dùng
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Có lỗi xảy ra khi xử lý sản phẩm: " + e.getMessage(),
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi đọc dữ liệu từ bảng: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }//GEN-LAST:event_tblSanPhamConMouseClicked
+
+    private void tblSanPhamMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblSanPhamMouseClicked
+        // TODO add your handling code here:
+        System.out.println("\n=== tblSanPhamMouseClicked triggered ===");
+        selectedRow = tblSanPham.getSelectedRow();
+        System.out.println("Selected row index: " + selectedRow);
+
+        if (selectedRow != -1) {
+            try {
+                System.out.println("\n=== Processing row selection ===");
+
+                // Get the product code directly from the selected row in the table
+                String productCode = (String) tblSanPham.getValueAt(selectedRow, 0);
+                System.out.println("Selected product code from table: " + productCode);
+
+                if (productCode == null || productCode.trim().isEmpty()) {
+                    System.out.println("ERROR: Product code is null or empty");
+                    return;
+                }
+
+                // Log the selected row data for debugging
+                System.out.println("\n--- Selected Row Data ---");
+                int colCount = tblSanPham.getColumnCount();
+                for (int i = 0; i < colCount; i++) {
+                    System.out.println(tblSanPham.getColumnName(i) + ": " + tblSanPham.getValueAt(selectedRow, i));
+                }
+
+                // Find the product by code to get its ID
+                System.out.println("\nLooking up product with code: " + productCode);
+                selectedProduct = productController.getProductByCode(productCode);
+
+                if (selectedProduct != null) {
+                    System.out.println("\n--- Found Product Details ---");
+                    System.out.println("Product ID: " + selectedProduct.getProductId());
+                    System.out.println("Name: " + selectedProduct.getProductName());
+                    System.out.println("Code: " + selectedProduct.getProductCode());
+
+                    // Fill the form with product details
+                    System.out.println("Filling product form...");
+                    fillForm(selectedProduct);
+
+                    // Load variants for the selected product
+                    System.out.println("Loading product variants...");
+                    loadSelectedProductVariants();
+                } else {
+                    System.out.println("ERROR: No product found with code: " + productCode);
+                    // Clear the variant table if no product is selected
+                    DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
+                    System.out.println("Clearing variant table (no product found)");
+                    model.setRowCount(0);
+                }
+            } catch (Exception e) {
+                System.err.println("Error in tblSanPhamMouseClicked: " + e.getMessage());
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi tải thông tin sản phẩm: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            System.out.println("No row selected or invalid selection");
+        }
+    }//GEN-LAST:event_tblSanPhamMouseClicked
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLamMoi;
@@ -2725,15 +2768,15 @@ instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
     private javax.swing.JButton btnSua_productvariant;
     private javax.swing.JButton btnTaiQR;
     private javax.swing.JButton btnThem;
-    private javax.swing.JButton btnThem1;
-    private javax.swing.JButton btnThem2;
+    private javax.swing.JButton btnThemThuocTinh;
+    private javax.swing.JButton btnThembienthe;
     private javax.swing.JButton btnXoa;
-    private javax.swing.JButton btnXoa1;
-    private javax.swing.JButton btnXoa_productvariant1;
+    private javax.swing.JButton btnXoaThuocTinh;
+    private javax.swing.JButton btnXoa_productvariant;
     private javax.swing.JButton btn_dowload_template;
     private javax.swing.JButton btn_import_file_excel;
     private javax.swing.JButton btn_search;
-    private javax.swing.JButton btnsua1;
+    private javax.swing.JButton btnsuathuoctinh;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JComboBox<String> cbbKieu;
     private javax.swing.JComboBox<String> cbo_brand;
@@ -2741,16 +2784,10 @@ instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
     private javax.swing.JComboBox<String> cbo_product_variant_sku;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel19;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel11;
@@ -2760,12 +2797,18 @@ instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
+    private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JLabel jlabel5;
     private javax.swing.JLabel lbl_brand;
+    private javax.swing.JLabel lbl_category;
+    private javax.swing.JLabel lbl_ma;
+    private javax.swing.JLabel lbl_product_id;
+    private javax.swing.JLabel lbl_product_name;
+    private javax.swing.JLabel lbl_sku;
+    private javax.swing.JLabel lbl_ten;
     private javax.swing.JButton lon;
     private javax.swing.JButton lonNhat;
     private javax.swing.JButton nho;

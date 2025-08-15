@@ -45,59 +45,52 @@ public class OrderController {
             return null;
         }
 
-        // Validate and process order items
-        if (request.getItems() == null || request.getItems().isEmpty()) {
-            NotificationUtil.showError(parentFrame, "Đơn hàng phải có ít nhất một sản phẩm");
+        // Kiểm tra thông tin cơ bản
+        Integer staffId = request.getStaffId();
+        if (staffId == null) {
+            NotificationUtil.showError(parentFrame, "Thiếu thông tin nhân viên");
             return null;
         }
 
-        // Calculate total amount and validate product variants
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        for (var item : request.getItems()) {
-            ProductVariant variant = productVariantDAO.findById(item.getVariantId());
-            if (variant == null) {
-                NotificationUtil.showError(parentFrame, "Không tìm thấy biến thể sản phẩm với ID: " + item.getVariantId());
-                return null;
-            }
-
-            if (item.getQuantity() <= 0) {
-                NotificationUtil.showError(parentFrame, "Số lượng sản phẩm phải lớn hơn 0");
-                return null;
-            }
-
-            BigDecimal itemTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-            totalAmount = totalAmount.add(itemTotal);
-        }
-
-        // Create order with direct field assignment
+        // Tạo order với finalAmount = 0 nếu không có items
         Order order = Order.builder()
                 .customerId(request.getCustomerId())
-                .staffId(request.getStaffId())
-                .orderFinalAmount(totalAmount)
-                .orderPaymentMethod(request.getPaymentMethod())
-                .orderStatus("PENDING") // Default status
+                .staffId(staffId)
+                .orderFinalAmount(BigDecimal.ZERO)
+                .orderPaymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "CASH")
+                .orderStatus("PENDING")
                 .orderCreatedAt(LocalDateTime.now())
                 .build();
 
-        // Save order to get generated ID
         Order savedOrder = orderDAO.save(order);
 
-        // Save order details and update product quantities
-        for (var item : request.getItems()) {
-            ProductVariant variant = productVariantDAO.findById(item.getVariantId());
+        // Nếu có items, thêm chi tiết hóa đơn và cập nhật total
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            for (var item : request.getItems()) {
+                ProductVariant variant = productVariantDAO.findById(item.getVariantId());
+                if (variant == null) {
+                    NotificationUtil.showError(parentFrame, "Không tìm thấy biến thể sản phẩm với ID: " + item.getVariantId());
+                    return null;
+                }
+                if (item.getQuantity() <= 0) {
+                    NotificationUtil.showError(parentFrame, "Số lượng sản phẩm phải lớn hơn 0");
+                    return null;
+                }
 
-            // Create order detail
-            OrderDetail orderDetail = OrderDetail.builder()
-                    .orderId(savedOrder.getOrderId())
-                    .variantId(item.getVariantId())
-                    .detailQuantity(item.getQuantity())
-                    .detailUnitPrice(item.getUnitPrice())
-                    .build();
+                BigDecimal itemTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+                totalAmount = totalAmount.add(itemTotal);
 
-            orderDetailDAO.save(orderDetail);
-
-            // Update product variant quantity
-            productVariantDAO.update(variant);
+                OrderDetail orderDetail = OrderDetail.builder()
+                        .orderId(savedOrder.getOrderId())
+                        .variantId(item.getVariantId())
+                        .detailQuantity(item.getQuantity())
+                        .detailUnitPrice(item.getUnitPrice())
+                        .build();
+                orderDetailDAO.save(orderDetail);
+            }
+            savedOrder.setOrderFinalAmount(totalAmount);
+            orderDAO.update(savedOrder);
         }
 
         return getOrderResponse(savedOrder);
@@ -317,6 +310,45 @@ public class OrderController {
             return null;
         } catch (Exception e) {
             NotificationUtil.showError(parentFrame, "Lỗi khi tìm đơn hàng: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public OrderResponse updateOrder(Integer orderId, OrderResponse request) {
+        try {
+            Optional<Order> orderOpt = orderDAO.findById(orderId);
+            if (orderOpt.isEmpty()) {
+                NotificationUtil.showError(parentFrame, "Không tìm thấy đơn hàng với ID: " + orderId);
+                return null;
+            }
+
+            Order order = orderOpt.get();
+            order.setCustomerId(request.getCustomerId());
+            order.setStaffId(request.getStaffId());
+            order.setOrderFinalAmount(request.getFinalAmount());
+            order.setOrderPaymentMethod(request.getPaymentMethod());
+            order.setOrderStatus(request.getStatus());
+
+            // Xóa chi tiết cũ
+            orderDetailDAO.deleteByOrderId(orderId);
+
+            // Thêm chi tiết mới
+            for (OrderItemResponse item : request.getItems()) {
+                OrderDetail detail = OrderDetail.builder()
+                        .orderId(orderId)
+                        .variantId(item.getVariantId())
+                        .detailQuantity(item.getQuantity())
+                        .detailUnitPrice(item.getUnitPrice())
+                        .detailDiscountPercent(BigDecimal.ZERO)
+                        .detailTotal(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                        .build();
+                orderDetailDAO.save(detail);
+            }
+
+            orderDAO.update(order);
+            return getOrderResponse(order);
+        } catch (Exception e) {
+            NotificationUtil.showError(parentFrame, "Lỗi khi cập nhật đơn hàng: " + e.getMessage());
             return null;
         }
     }

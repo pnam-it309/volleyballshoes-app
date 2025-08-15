@@ -7,7 +7,7 @@ package com.DuAn1.volleyballshoes.app.view.viewdangnhap.main;
 import com.DuAn1.volleyballshoes.app.dao.StaffDAO;
 import com.DuAn1.volleyballshoes.app.dao.impl.StaffDAOImpl;
 import com.DuAn1.volleyballshoes.app.entity.Staff;
-import com.DuAn1.volleyballshoes.app.util.SessionManager;
+import com.DuAn1.volleyballshoes.app.utils.SessionManager;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
@@ -206,7 +206,7 @@ public class MainDangNhap extends javax.swing.JFrame {
                 // Check if staff exists and password matches
                 if (staff != null && staff.getStaffPassword().equals(password)) {
                     // Check if account is active
-                    if (staff.getStaff_status() == 1) { // Assuming 1 means active
+                    if (staff.getStaff_status() == 0) {
                         // Store staff information in session
                         SessionManager sessionManager = SessionManager.getInstance();
                         sessionManager.setCurrentStaff(staff);

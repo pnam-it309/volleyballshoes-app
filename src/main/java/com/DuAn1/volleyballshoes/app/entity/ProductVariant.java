@@ -17,7 +17,7 @@ public class ProductVariant {
     private int sizeId;
     private int colorId;
     private int soleId;
-    private int quantity;
+    private int variantquantity;
     private String variantSku;
     private BigDecimal variantOrigPrice;
     private String variantImgUrl;

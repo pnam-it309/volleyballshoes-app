@@ -14,6 +14,7 @@ import com.DuAn1.volleyballshoes.app.dao.impl.ProductDAOImpl;
 import com.DuAn1.volleyballshoes.app.dao.impl.ProductVariantDAOImpl;
 import com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl;
 import com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPham;
 import com.DuAn1.volleyballshoes.app.entity.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -30,6 +31,8 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
     private final SizeDAO sizeDAO;
     private final ColorDAO colorDAO;
     private final ProductDAO productDAO;
+    private ProductVariant currentVariant;
+    private boolean isEditMode = false;
 
     public ViewThemSanPhamm() {
 // Initialize DAOs
@@ -42,6 +45,7 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
 
         initComponents();
         loadAllData();
+        btnSua.setEnabled(false);
     }
 
     public void loadAllData() {
@@ -104,20 +108,20 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
     private <T> void loadDataToComboBox(JComboBox<String> comboBox, List<T> items, String idFieldName, String displayFieldName) {
         comboBox.removeAllItems();
         comboBox.addItem("Chọn");
-        
+
         if (items == null || items.isEmpty()) {
             return;
         }
-        
+
         try {
             // Get the class of the first item to determine the type
             Class<?> itemClass = items.get(0).getClass();
             String className = itemClass.getSimpleName();
-            
+
             // Determine the correct getter methods based on the entity type
             String idGetter;
             String displayGetter;
-            
+
             // Special handling for different entity types
             switch (className) {
                 case "Product":
@@ -141,16 +145,16 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                     idGetter = "get" + idFieldName.substring(0, 1).toUpperCase() + idFieldName.substring(1);
                     displayGetter = "get" + displayFieldName.substring(0, 1).toUpperCase() + displayFieldName.substring(1);
             }
-            
+
             // Get the methods using reflection
             Method idMethod = itemClass.getMethod(idGetter);
             Method displayMethod = itemClass.getMethod(displayGetter);
-            
+
             // Add items to the combo box
             for (T item : items) {
                 Object id = idMethod.invoke(item);
                 Object displayValue = displayMethod.invoke(item);
-                
+
                 if (id != null && displayValue != null) {
                     // Store as "ID:displayValue" for later extraction
                     comboBox.addItem(id + ":" + displayValue.toString());
@@ -159,14 +163,14 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }            
+        }
     }
 
     private void clearForm() {
         // Xóa nội dung các trường nhập liệu
         txt_sku_product_variant.setText("");
         txt_ori_price.setText("");
-        jTextField1.setText(""); // Clear quantity field
+        txt_soluong.setText(""); // Clear quantity field
 
         // Đặt lại các combobox về giá trị mặc định (chọn mục đầu tiên)
         if (cbo_product_code.getItemCount() > 0) {
@@ -184,6 +188,47 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
 
         // Focus về trường đầu tiên
         txt_sku_product_variant.requestFocus();
+    }
+
+    public void loadVariantForEdit(ProductVariant variant) {
+        if (variant == null) {
+            return;
+        }
+
+        this.currentVariant = variant;
+        this.isEditMode = true;
+
+        // Điền dữ liệu vào form
+        txt_sku_product_variant.setText(variant.getVariantSku());
+        txt_ori_price.setText(variant.getVariantOrigPrice().toString());
+        txt_soluong.setText(String.valueOf(variant.getVariantquantity())); 
+
+        // Set combobox dựa trên ID (sử dụng getSelectedIdFromComboBox ngược lại)
+        setComboBoxSelectedById(cbo_product_code, variant.getProductId());
+        setComboBoxSelectedById(cbo_sole, variant.getSoleId());
+        setComboBoxSelectedById(cbo_color, variant.getColorId());
+        setComboBoxSelectedById(cbo_size, variant.getSizeId());
+
+        // Disable btnThem1, enable btnSua
+        btnThem.setEnabled(false);
+        btnSua.setEnabled(true);
+
+        // Có thể thay đổi tiêu đề panel nếu cần
+        pane.setBorder(javax.swing.BorderFactory.createTitledBorder("Sửa Thông Tin Sản Phẩm"));
+    }
+
+    private void setComboBoxSelectedById(JComboBox<String> comboBox, int id) {
+        if (id == -1) {
+            return;
+        }
+        DefaultComboBoxModel<String> model = (DefaultComboBoxModel<String>) comboBox.getModel();
+        for (int i = 0; i < model.getSize(); i++) {
+            String item = model.getElementAt(i);
+            if (item.startsWith(id + ":")) {
+                comboBox.setSelectedIndex(i);
+                break;
+            }
+        }
     }
 
     public static void main(String args[]) {
@@ -228,22 +273,22 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
         jPanel6 = new javax.swing.JPanel();
         hinhAnh = new javax.swing.JLabel();
         btnLH = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
+        lbl_sku = new javax.swing.JLabel();
+        lbl_gia = new javax.swing.JLabel();
         txt_ori_price = new javax.swing.JTextField();
-        jLabel4 = new javax.swing.JLabel();
+        lbl_sole = new javax.swing.JLabel();
         cbo_sole = new javax.swing.JComboBox<>();
-        jLabel5 = new javax.swing.JLabel();
+        lbl_color = new javax.swing.JLabel();
         cbo_color = new javax.swing.JComboBox<>();
-        jLabel8 = new javax.swing.JLabel();
+        lbl_size = new javax.swing.JLabel();
         cbo_size = new javax.swing.JComboBox<>();
         txt_sku_product_variant = new javax.swing.JTextField();
-        jLabel10 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
-        jLabel11 = new javax.swing.JLabel();
+        lbl_soLuong = new javax.swing.JLabel();
+        txt_soluong = new javax.swing.JTextField();
+        lbl_product_id = new javax.swing.JLabel();
         cbo_product_code = new javax.swing.JComboBox<>();
         btnThoat = new javax.swing.JButton();
-        btnThem1 = new javax.swing.JButton();
+        btnThem = new javax.swing.JButton();
         btnSua = new javax.swing.JButton();
 
         btnThem7.setText("+");
@@ -283,25 +328,25 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
             }
         });
 
-        jLabel1.setText("Mã Biến thế Sản phẩm");
+        lbl_sku.setText("Mã Biến thế Sản phẩm");
 
-        jLabel2.setText("Giá");
+        lbl_gia.setText("Giá");
 
-        jLabel4.setText("Đế giày");
+        lbl_sole.setText("Đế giày");
 
         cbo_sole.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
-        jLabel5.setText("Màu sắc");
+        lbl_color.setText("Màu sắc");
 
         cbo_color.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
-        jLabel8.setText("Size");
+        lbl_size.setText("Size");
 
         cbo_size.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
-        jLabel10.setText("Số lượng");
+        lbl_soLuong.setText("Số lượng");
 
-        jLabel11.setText("Mã Sản phẩm");
+        lbl_product_id.setText("Mã Sản phẩm");
 
         cbo_product_code.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
@@ -315,16 +360,16 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                     .addComponent(btnLH, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(paneLayout.createSequentialGroup()
                         .addGroup(paneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel1)
-                            .addComponent(jLabel10))
+                            .addComponent(lbl_gia)
+                            .addComponent(lbl_sku)
+                            .addComponent(lbl_soLuong))
                         .addGap(61, 61, 61)
                         .addGroup(paneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(lbl_size, javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, paneLayout.createSequentialGroup()
-                                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(txt_soluong, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jLabel5))
+                                .addComponent(lbl_color))
                             .addGroup(paneLayout.createSequentialGroup()
                                 .addGroup(paneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(txt_ori_price, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -332,10 +377,10 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                                 .addGroup(paneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(paneLayout.createSequentialGroup()
                                         .addGap(212, 212, 212)
-                                        .addComponent(jLabel4))
+                                        .addComponent(lbl_sole))
                                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, paneLayout.createSequentialGroup()
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jLabel11)
+                                        .addComponent(lbl_product_id)
                                         .addGap(11, 11, 11)))))
                         .addGap(39, 39, 39)
                         .addGroup(paneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -356,28 +401,28 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                     .addGroup(paneLayout.createSequentialGroup()
                         .addGap(24, 24, 24)
                         .addGroup(paneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel1)
+                            .addComponent(lbl_sku)
                             .addComponent(txt_sku_product_variant, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel11)
+                            .addComponent(lbl_product_id)
                             .addComponent(cbo_product_code, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(paneLayout.createSequentialGroup()
                         .addGap(19, 19, 19)
                         .addGroup(paneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(paneLayout.createSequentialGroup()
                                 .addGroup(paneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel2)
+                                    .addComponent(lbl_gia)
                                     .addComponent(txt_ori_price, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel4)
+                                    .addComponent(lbl_sole)
                                     .addComponent(cbo_sole, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addGap(32, 32, 32)
                                 .addGroup(paneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel5)
+                                    .addComponent(lbl_color)
                                     .addComponent(cbo_color, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel10)
-                                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(lbl_soLuong)
+                                    .addComponent(txt_soluong, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addGap(34, 34, 34)
                                 .addGroup(paneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel8)
+                                    .addComponent(lbl_size)
                                     .addComponent(cbo_size, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                             .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -395,13 +440,13 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
             }
         });
 
-        btnThem1.setBackground(new java.awt.Color(0, 51, 255));
-        btnThem1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnThem1.setForeground(new java.awt.Color(255, 255, 255));
-        btnThem1.setText("Thêm");
-        btnThem1.addActionListener(new java.awt.event.ActionListener() {
+        btnThem.setBackground(new java.awt.Color(0, 51, 255));
+        btnThem.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnThem.setForeground(new java.awt.Color(255, 255, 255));
+        btnThem.setText("Thêm");
+        btnThem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnThem1ActionPerformed(evt);
+                btnThemActionPerformed(evt);
             }
         });
 
@@ -427,7 +472,7 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                 .addGap(25, 25, 25)
                 .addComponent(btnThoat)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btnThem1)
+                .addComponent(btnThem)
                 .addGap(18, 18, 18)
                 .addComponent(btnSua)
                 .addGap(226, 226, 226))
@@ -439,7 +484,7 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                 .addComponent(pane, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnThem1)
+                    .addComponent(btnThem)
                     .addComponent(btnThoat)
                     .addComponent(btnSua))
                 .addGap(23, 23, 23))
@@ -455,12 +500,12 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
     }//GEN-LAST:event_btnThoatActionPerformed
 
 
-    private void btnThem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThem1ActionPerformed
+    private void btnThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThemActionPerformed
         try {
             // Lấy dữ liệu từ form
             String sku = txt_sku_product_variant.getText().trim();
             String priceText = txt_ori_price.getText().trim();
-            String quantityText = jTextField1.getText().trim();
+            String quantityText = txt_soluong.getText().trim();
 
             // Validate dữ liệu bắt buộc
             if (sku.isEmpty() || priceText.isEmpty() || quantityText.isEmpty()) {
@@ -533,7 +578,7 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                     .soleId(sole.getSoleId())
                     .variantSku(sku)
                     .variantOrigPrice(BigDecimal.valueOf(price))
-                    .quantity(quantity)
+                    .variantquantity(quantity)
                     .variantImgUrl("") // Có thể thêm URL ảnh sau
                     .build();
 
@@ -547,10 +592,10 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                         "Thành công",
                         JOptionPane.INFORMATION_MESSAGE);
                 clearForm();
-                
+
                 // Notify ViewBanHang to refresh the product variants table
-                com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang viewBanHang = 
-                    com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang.getActiveInstance();
+                com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang viewBanHang
+                        = com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang.getActiveInstance();
                 if (viewBanHang != null) {
                     viewBanHang.refreshProductVariants();
                 }
@@ -568,7 +613,7 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                     "Lỗi hệ thống",
                     JOptionPane.ERROR_MESSAGE);
         }
-    }//GEN-LAST:event_btnThem1ActionPerformed
+    }//GEN-LAST:event_btnThemActionPerformed
 
     private void btnThem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThem7ActionPerformed
         // Thêm nhanh sản phẩm con vào jComboBox1
@@ -582,12 +627,88 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
 
     private void btnSuaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSuaActionPerformed
         // TODO add your handling code here:
+        try {
+            if (!isEditMode || currentVariant == null) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu để sửa!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Lấy dữ liệu từ form (tương tự btnThem1 nhưng update)
+            String sku = txt_sku_product_variant.getText().trim();
+            String priceText = txt_ori_price.getText().trim();
+            String quantityText = txt_soluong.getText().trim();
+
+            // Validate (tương tự btnThem1)
+            if (sku.isEmpty() || priceText.isEmpty() || quantityText.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin bắt buộc!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            double price;
+            int quantity;
+            try {
+                price = Double.parseDouble(priceText);
+                quantity = Integer.parseInt(quantityText);
+                if (price <= 0 || quantity < 0) {
+                    throw new NumberFormatException();
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Giá phải là số dương và số lượng phải là số không âm!", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int productId = getSelectedIdFromComboBox(cbo_product_code);
+            int sizeId = getSelectedIdFromComboBox(cbo_size);
+            int colorId = getSelectedIdFromComboBox(cbo_color);
+            int soleId = getSelectedIdFromComboBox(cbo_sole);
+
+            if (productId == -1 || sizeId == -1 || colorId == -1 || soleId == -1) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Update object
+            currentVariant.setVariantSku(sku);
+            currentVariant.setVariantOrigPrice(BigDecimal.valueOf(price));
+            currentVariant.setVariantquantity(quantity);
+            currentVariant.setProductId(productId);
+            currentVariant.setSizeId(sizeId);
+            currentVariant.setColorId(colorId);
+            currentVariant.setSoleId(soleId);
+            // Có thể update image nếu có
+
+            // Lưu vào DB
+            ProductVariantDAO variantDAO = new ProductVariantDAOImpl();
+            ProductVariant updatedVariant = variantDAO.update(currentVariant); // Giả sử DAO có method update
+
+            if (updatedVariant != null) {
+                JOptionPane.showMessageDialog(this, "Sửa biến thể sản phẩm thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                clearForm();
+                // Refresh bảng ở ViewSanPham
+                com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPham viewSanPham
+                        = com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPham.getActiveInstance(); // Nếu có static method get instance
+                if (viewSanPham != null) {
+                    viewSanPham.loadProductVariants(); // Hoặc method refresh tương ứng
+                }
+                // Đóng dialog
+                java.awt.Window window = javax.swing.SwingUtilities.getWindowAncestor(this);
+                if (window != null) {
+                    window.dispose();
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi sửa biến thể sản phẩm!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(), "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnSuaActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLH;
     private javax.swing.JButton btnSua;
-    private javax.swing.JButton btnThem1;
+    private javax.swing.JButton btnThem;
     private javax.swing.JButton btnThem7;
     private javax.swing.JButton btnThoat;
     private javax.swing.JComboBox<String> cbo_color;
@@ -595,17 +716,17 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
     private javax.swing.JComboBox<String> cbo_size;
     private javax.swing.JComboBox<String> cbo_sole;
     private javax.swing.JLabel hinhAnh;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel6;
-    private javax.swing.JTextField jTextField1;
+    private javax.swing.JLabel lbl_color;
+    private javax.swing.JLabel lbl_gia;
+    private javax.swing.JLabel lbl_product_id;
+    private javax.swing.JLabel lbl_size;
+    private javax.swing.JLabel lbl_sku;
+    private javax.swing.JLabel lbl_soLuong;
+    private javax.swing.JLabel lbl_sole;
     private javax.swing.JPanel pane;
     private javax.swing.JTextField txt_ori_price;
     private javax.swing.JTextField txt_sku_product_variant;
+    private javax.swing.JTextField txt_soluong;
     // End of variables declaration//GEN-END:variables
 }

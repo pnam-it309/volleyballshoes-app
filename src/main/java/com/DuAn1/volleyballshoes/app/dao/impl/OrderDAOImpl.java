@@ -26,7 +26,7 @@ public class OrderDAOImpl implements OrderDAO {
     private Order mapResultSetToOrder(ResultSet rs) throws SQLException {
         Order order = new Order();
         order.setOrderId(rs.getInt("order_id"));
-        
+
         // Handle nullable customer_id
         int customerId = rs.getInt("customer_id");
         if (!rs.wasNull()) {
@@ -34,7 +34,7 @@ public class OrderDAOImpl implements OrderDAO {
         } else {
             order.setCustomerId(null);
         }
-        
+
         order.setStaffId(rs.getInt("staff_id"));
         order.setOrderFinalAmount(rs.getBigDecimal("order_final_amount"));
         order.setOrderPaymentMethod(rs.getString("order_payment_method"));
@@ -87,17 +87,18 @@ public class OrderDAOImpl implements OrderDAO {
 
     /**
      * Find the maximum order code in format HD####
+     *
      * @return the maximum order code number found, or 0 if none found
      */
     private int findMaxOrderCodeNumber() {
         try {
             // First, try to find the maximum order code with the standard HD#### format
             String sql = "SELECT order_code FROM " + TABLE_NAME + " WHERE order_code LIKE 'HD%' ORDER BY order_code DESC";
-            
+
             List<String> orderCodes = XJdbc.query(sql, rs -> {
                 return rs.next() ? rs.getString(1) : null;
             });
-            
+
             int maxNumber = 0;
             for (String code : orderCodes) {
                 if (code != null && code.startsWith("HD") && code.length() > 2) {
@@ -114,20 +115,20 @@ public class OrderDAOImpl implements OrderDAO {
                     }
                 }
             }
-            
+
             // If no valid order codes found, check if there are any orders at all
             if (maxNumber == 0) {
                 sql = "SELECT COUNT(*) FROM " + TABLE_NAME;
                 List<Integer> counts = XJdbc.query(sql, rs -> {
                     return rs.next() ? rs.getInt(1) : 0;
                 });
-                
+
                 // If there are orders but none with valid HD#### format, start from 1
                 if (!counts.isEmpty() && counts.get(0) > 0) {
                     return 0; // This will make the next number 1
                 }
             }
-            
+
             return maxNumber;
         } catch (Exception e) {
             e.printStackTrace();
@@ -138,6 +139,7 @@ public class OrderDAOImpl implements OrderDAO {
 
     /**
      * Check if an order code already exists in the database
+     *
      * @param code the order code to check
      * @return true if the code exists, false otherwise
      */
@@ -151,17 +153,18 @@ public class OrderDAOImpl implements OrderDAO {
 
     /**
      * Generate the next order code in format HD####
+     *
      * @return the next order code (e.g., HD0001, HD0002, ...)
      */
     private String generateNextOrderCode() {
         // First, try to find the maximum order code number from the database
         int maxNumber = findMaxOrderCodeNumber();
-        
+
         // If no orders found, start from 1
         if (maxNumber == 0) {
             return "HD0001";
         }
-        
+
         // Generate next number and format it
         int nextNumber = maxNumber + 1;
         return String.format("HD%04d", nextNumber);
@@ -182,7 +185,7 @@ public class OrderDAOImpl implements OrderDAO {
                         break;
                     }
                 }
-                
+
                 // If all attempts failed, use timestamp as fallback
                 if (order.getOrderCode() == null) {
                     order.setOrderCode("HD" + System.currentTimeMillis());
@@ -193,35 +196,35 @@ public class OrderDAOImpl implements OrderDAO {
             if (order.getOrderCreatedAt() == null) {
                 order.setOrderCreatedAt(LocalDateTime.now());
             }
-            
+
             // Xây dựng câu lệnh SQL tùy thuộc vào việc customer_id có null không
             String sql;
             if (order.getCustomerId() != null) {
                 sql = "INSERT INTO " + TABLE_NAME + " (customer_id, staff_id, order_final_amount, "
-                    + "order_payment_method, order_status, order_code, order_created_at) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-                
+                        + "order_payment_method, order_status, order_code, order_created_at) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
                 XJdbc.executeUpdate(sql,
-                    order.getCustomerId(),
-                    order.getStaffId(),
-                    order.getOrderFinalAmount(),
-                    order.getOrderPaymentMethod(),
-                    order.getOrderStatus(),
-                    order.getOrderCode(),
-                    order.getOrderCreatedAt()
+                        order.getCustomerId(),
+                        order.getStaffId(),
+                        order.getOrderFinalAmount(),
+                        order.getOrderPaymentMethod(),
+                        order.getOrderStatus(),
+                        order.getOrderCode(),
+                        order.getOrderCreatedAt()
                 );
             } else {
                 sql = "INSERT INTO " + TABLE_NAME + " (staff_id, order_final_amount, "
-                    + "order_payment_method, order_status, order_code, order_created_at) "
-                    + "VALUES (?, ?, ?, ?, ?, ?)";
-                
+                        + "order_payment_method, order_status, order_code, order_created_at) "
+                        + "VALUES (?, ?, ?, ?, ?, ?)";
+
                 XJdbc.executeUpdate(sql,
-                    order.getStaffId(),
-                    order.getOrderFinalAmount(),
-                    order.getOrderPaymentMethod(),
-                    order.getOrderStatus(),
-                    order.getOrderCode(),
-                    order.getOrderCreatedAt()
+                        order.getStaffId(),
+                        order.getOrderFinalAmount(),
+                        order.getOrderPaymentMethod(),
+                        order.getOrderStatus(),
+                        order.getOrderCode(),
+                        order.getOrderCreatedAt()
                 );
             }
 
@@ -230,9 +233,9 @@ public class OrderDAOImpl implements OrderDAO {
             List<Integer> ids = XJdbc.query(idSql, rs -> {
                 return rs.next() ? rs.getInt(1) : 0;
             });
-            
+
             int newId = !ids.isEmpty() ? ids.get(0) : 0;
-            
+
             if (newId > 0) {
                 order.setOrderId(newId);
                 System.out.println("[DEBUG] New order created with ID: " + newId);
@@ -255,28 +258,28 @@ public class OrderDAOImpl implements OrderDAO {
             String sql;
             if (order.getCustomerId() != null) {
                 sql = "UPDATE " + TABLE_NAME + " SET customer_id = ?, staff_id = ?, "
-                    + "order_final_amount = ?, order_payment_method = ?, order_status = ? "
-                    + "WHERE order_id = ?";
+                        + "order_final_amount = ?, order_payment_method = ?, order_status = ? "
+                        + "WHERE order_id = ?";
 
                 XJdbc.executeUpdate(sql,
-                    order.getCustomerId(),
-                    order.getStaffId(),
-                    order.getOrderFinalAmount(),
-                    order.getOrderPaymentMethod(),
-                    order.getOrderStatus(),
-                    order.getOrderId()
+                        order.getCustomerId(),
+                        order.getStaffId(),
+                        order.getOrderFinalAmount(),
+                        order.getOrderPaymentMethod(),
+                        order.getOrderStatus(),
+                        order.getOrderId()
                 );
             } else {
                 sql = "UPDATE " + TABLE_NAME + " SET customer_id = NULL, staff_id = ?, "
-                    + "order_final_amount = ?, order_payment_method = ?, order_status = ? "
-                    + "WHERE order_id = ?";
+                        + "order_final_amount = ?, order_payment_method = ?, order_status = ? "
+                        + "WHERE order_id = ?";
 
                 XJdbc.executeUpdate(sql,
-                    order.getStaffId(),
-                    order.getOrderFinalAmount(),
-                    order.getOrderPaymentMethod(),
-                    order.getOrderStatus(),
-                    order.getOrderId()
+                        order.getStaffId(),
+                        order.getOrderFinalAmount(),
+                        order.getOrderPaymentMethod(),
+                        order.getOrderStatus(),
+                        order.getOrderId()
                 );
             }
 
@@ -407,7 +410,7 @@ public class OrderDAOImpl implements OrderDAO {
     public int getNewCustomersCount() {
         // Lấy ngày đầu tháng hiện tại
         LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-        
+
         String sql = "SELECT COUNT(*) FROM Customer WHERE created_at >= ?";
         try (ResultSet rs = XJdbc.executeQuery(sql, startOfMonth)) {
             if (rs.next()) {
@@ -423,17 +426,17 @@ public class OrderDAOImpl implements OrderDAO {
     public Object[][] getRevenueDataByYear(int year) {
         Object[][] data = new Object[12][2];
         String sql = "SELECT MONTH(order_created_at) as month, SUM(order_final_amount) as revenue "
-                   + "FROM " + TABLE_NAME 
-                   + " WHERE YEAR(order_created_at) = ? AND order_status = 'Hoàn thành' "
-                   + "GROUP BY MONTH(order_created_at)";
-        
+                + "FROM " + TABLE_NAME
+                + " WHERE YEAR(order_created_at) = ? AND order_status = 'Hoàn thành' "
+                + "GROUP BY MONTH(order_created_at)";
+
         try (ResultSet rs = XJdbc.executeQuery(sql, year)) {
             // Khởi tạo mảng với các tháng và doanh thu ban đầu là 0
             for (int i = 0; i < 12; i++) {
                 data[i][0] = String.format("Tháng %d", i + 1);
                 data[i][1] = 0.0;
             }
-            
+
             // Cập nhật dữ liệu từ kết quả truy vấn
             while (rs.next()) {
                 int month = rs.getInt("month") - 1; // Chỉ số mảng bắt đầu từ 0
@@ -445,7 +448,7 @@ public class OrderDAOImpl implements OrderDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        
+
         return data;
     }
 
@@ -453,17 +456,17 @@ public class OrderDAOImpl implements OrderDAO {
     public Object[][] getCanceledOrderDataByYear(int year) {
         Object[][] data = new Object[12][2];
         String sql = "SELECT MONTH(order_created_at) as month, COUNT(*) as count "
-                   + "FROM " + TABLE_NAME 
-                   + " WHERE YEAR(order_created_at) = ? AND order_status = 'Đã hủy' "
-                   + "GROUP BY MONTH(order_created_at)";
-        
+                + "FROM " + TABLE_NAME
+                + " WHERE YEAR(order_created_at) = ? AND order_status = 'Đã hủy' "
+                + "GROUP BY MONTH(order_created_at)";
+
         try (ResultSet rs = XJdbc.executeQuery(sql, year)) {
             // Khởi tạo mảng với các tháng và số lượng đơn hủy ban đầu là 0
             for (int i = 0; i < 12; i++) {
                 data[i][0] = String.format("Tháng %d", i + 1);
                 data[i][1] = 0;
             }
-            
+
             // Cập nhật dữ liệu từ kết quả truy vấn
             while (rs.next()) {
                 int month = rs.getInt("month") - 1; // Chỉ số mảng bắt đầu từ 0
@@ -473,7 +476,7 @@ public class OrderDAOImpl implements OrderDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        
+
         return data;
     }
 
@@ -482,47 +485,47 @@ public class OrderDAOImpl implements OrderDAO {
         String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_created_at BETWEEN ? AND ? ORDER BY order_created_at DESC";
         return XJdbc.query(sql, this::mapResultSetToOrder, from, to);
     }
-    
+
     @Override
     public List<Order> findByTotalAmountBetween(double min, double max) {
         String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_final_amount BETWEEN ? AND ? ORDER BY order_created_at DESC";
         return XJdbc.query(sql, this::mapResultSetToOrder, min, max);
     }
-    
+
     @Override
     public List<Order> findByStatus(String status) {
         String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_status = ? ORDER BY order_created_at DESC";
         return XJdbc.query(sql, this::mapResultSetToOrder, status);
     }
-    
+
     @Override
     public Order processPayment(Order order, Map<Integer, Integer> orderDetails) throws Exception {
         OrderDetailDAO orderDetailDAO = new OrderDetailDAOImpl();
         ProductVariantDAO productVariantDAO = new ProductVariantDAOImpl();
-        
+
         try (Connection conn = XJdbc.openConnection()) {
             conn.setAutoCommit(false);
-            
+
             try {
                 // 1. Update order status
                 order.setOrderStatus("Đã thanh toán");
                 order = this.update(order);
-                
+
                 // 2. Process each order detail and update inventory
                 for (Map.Entry<Integer, Integer> entry : orderDetails.entrySet()) {
                     int variantId = entry.getKey();
                     int quantity = entry.getValue();
-                    
+
                     // Update product variant quantity
                     if (!productVariantDAO.reduceQuantity(variantId, quantity)) {
                         throw new IllegalStateException("Không đủ hàng trong kho cho sản phẩm có ID: " + variantId);
                     }
                 }
-                
+
                 // Commit transaction if all operations succeed
                 conn.commit();
                 return order;
-                
+
             } catch (Exception e) {
                 // Rollback transaction on error
                 conn.rollback();
@@ -530,4 +533,52 @@ public class OrderDAOImpl implements OrderDAO {
             }
         }
     }
+
+    @Override
+    public String generateOrderCode() {
+        String prefix = "ORD";
+        String datePart = new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date());
+
+        String sql = "SELECT order_code FROM [Order] WHERE order_code LIKE ? ORDER BY order_code DESC";
+        String likePattern = prefix + datePart + "%";
+
+        List<String> codes = XJdbc.query(sql, rs -> rs.getString("order_code"), likePattern);
+
+        if (!codes.isEmpty()) {
+            String lastCode = codes.get(0);
+            int lastNumber = Integer.parseInt(lastCode.substring(prefix.length() + datePart.length()));
+            return prefix + datePart + String.format("%03d", lastNumber + 1);
+        }
+        return prefix + datePart + "001";
+    }
+
+    @Override
+    public int getStaffIdByCode(String staffCode) {
+        String sql = "SELECT staff_id FROM Staff WHERE staff_code = ?";
+        List<Integer> ids = XJdbc.query(sql, rs -> rs.getInt("staff_id"), staffCode);
+        return ids.isEmpty() ? -1 : ids.get(0);
+    }
+
+    @Override
+    public Order getOrderByCode(String orderCode) {
+        String sql = "SELECT * FROM [Order] WHERE order_code = ?";
+        List<Order> orders = XJdbc.query(sql, rs -> {
+            Order order = new Order();
+            order.setOrderId(rs.getInt("order_id"));
+            order.setCustomerId((Integer) rs.getObject("customer_id"));
+            order.setStaffId((Integer) rs.getObject("staff_id"));
+            order.setOrderFinalAmount(rs.getBigDecimal("order_final_amount"));
+            order.setOrderPaymentMethod(rs.getString("order_payment_method"));
+            order.setOrderStatus(rs.getString("order_status"));
+            order.setOrderCode(rs.getString("order_code"));
+            java.sql.Timestamp ts = rs.getTimestamp("order_created_at");
+            if (ts != null) {
+                order.setOrderCreatedAt(ts.toLocalDateTime());
+            }
+            return order;
+        }, orderCode);
+
+        return orders.isEmpty() ? null : orders.get(0);
+    }
+
 }

@@ -17,7 +17,7 @@ import lombok.*;
 @Builder
 public class Staff {
 
-    private int staffId;
+    private Integer staffId;
     private String staffUsername;
     private String staffPassword;
     private String staffEmail;
