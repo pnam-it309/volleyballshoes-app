@@ -376,15 +376,11 @@ public final class ViewSanPham extends javax.swing.JPanel {
         System.out.println("Column count: " + model.getColumnCount());
 
         // Log column names
-        System.out.println("Column names:");
         for (int i = 0; i < model.getColumnCount(); i++) {
             System.out.println("  " + i + ": " + model.getColumnName(i));
         }
 
-        // Clear existing data
-        System.out.println("\nClearing table model...");
         model.setRowCount(0);
-        System.out.println("Table model cleared. New row count: " + model.getRowCount());
 
         if (variants == null || variants.isEmpty()) {
             System.out.println("No variants to display. Exiting updateVariantTableModel.");
@@ -396,27 +392,15 @@ public final class ViewSanPham extends javax.swing.JPanel {
         ColorDAO colorDAO = new ColorDAOImpl();
         SoleTypeDAO soleTypeDAO = new SoleTypeDAOImpl();
 
-        System.out.println("\n--- Processing Variants ---");
         int rowCount = 0;
 
         for (ProductVariant variant : variants) {
             try {
                 rowCount++;
-                System.out.println("\nProcessing variant " + rowCount + " of " + variants.size());
-                System.out.println("Variant ID: " + variant.getVariantId());
-                System.out.println("Variant SKU: " + variant.getVariantSku());
-                System.out.println("Quantity from variant object: " + variant.getVariantquantity());
-                System.out.println("Price from variant object: " + variant.getVariantOrigPrice());
-
                 // Look up related data with null checks
                 Size size = variant.getSizeId() > 0 ? sizeDAO.findById(variant.getSizeId()) : null;
                 Color color = variant.getColorId() > 0 ? colorDAO.findById(variant.getColorId()) : null;
                 SoleType soleType = variant.getSoleId() > 0 ? soleTypeDAO.findById(variant.getSoleId()) : null;
-
-                // Debug information
-                System.out.println("Looked up data - Size: " + (size != null ? size.getSizeCode() : "null")
-                        + ", Color: " + (color != null ? color.getColorHexCode() : "null")
-                        + ", Sole: " + (soleType != null ? soleType.getSoleCode() : "null"));
 
                 // Prepare row data with product name, color and sole type in the first column
                 String productName = selectedProduct != null ? selectedProduct.getProductName() : "";
@@ -436,9 +420,6 @@ public final class ViewSanPham extends javax.swing.JPanel {
                     formatCurrency(variant.getVariantOrigPrice()),
                     variant.getVariantquantity()
                 };
-
-                // Debug: Print the row data before adding
-                System.out.println("Adding row with data: " + Arrays.toString(rowData));
 
                 // Add row to model
                 model.addRow(rowData);
@@ -460,9 +441,6 @@ public final class ViewSanPham extends javax.swing.JPanel {
             }
         }
 
-        System.out.println("\n=== updateVariantTableModel completed ===");
-        System.out.println("Total rows added to table: " + model.getRowCount());
-        System.out.println("Table model column count: " + model.getColumnCount());
     }
 
     private void setupProductVariantTable() {
@@ -519,7 +497,6 @@ public final class ViewSanPham extends javax.swing.JPanel {
         });
 
         // Log the column names
-        System.out.println("Table columns (UTF-8):");
         for (int i = 0; i < columns.length; i++) {
             System.out.println("  " + i + ": " + columns[i]);
         }
@@ -529,50 +506,16 @@ public final class ViewSanPham extends javax.swing.JPanel {
 
     private void loadSelectedProductVariants() {
         if (selectedProduct == null) {
-            System.out.println("No product selected. Cannot load variants.");
             return;
         }
 
         try {
-            System.out.println("\n=== Loading variants for product ===");
-            System.out.println("Product ID: " + selectedProduct.getProductId());
-            System.out.println("Product Name: " + selectedProduct.getProductName());
-            System.out.println("Product Code: " + selectedProduct.getProductCode());
 
-            // Load variants for the selected product
-            System.out.println("Fetching variants from DAO...");
             List<ProductVariant> variants = productVariantDAO.findByProductId(selectedProduct.getProductId());
 
-            System.out.println("DAO returned " + (variants != null ? variants.size() : 0) + " variants");
-
-            // Debug: Print all variant details
-            if (variants != null && !variants.isEmpty()) {
-                System.out.println("\n=== Variant Details from DAO ===");
-                for (ProductVariant v : variants) {
-                    System.out.println(String.format("Variant ID: %d, SKU: %s, Qty: %d, Price: %s, SizeID: %d, ColorID: %d, SoleID: %d",
-                            v.getVariantId(),
-                            v.getVariantSku(),
-                            v.getVariantquantity(),
-                            v.getVariantOrigPrice(),
-                            v.getSizeId(),
-                            v.getColorId(),
-                            v.getSoleId()
-                    ));
-                }
-            } else {
-                System.out.println("No variants found for this product in the database");
-            }
-
-            // Update the table model with the variants
-            System.out.println("\nUpdating table model with variants...");
             updateVariantTableModel(variants);
 
-            // Verify the table model was updated correctly
-            System.out.println("Table model update complete. Rows in table: " + tblSanPhamCon.getModel().getRowCount());
-
-            // Print the actual table contents for verification
             if (tblSanPhamCon.getModel().getRowCount() > 0) {
-                System.out.println("\n=== Contents of Variant Table ===");
                 DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
                 for (int i = 0; i < model.getRowCount(); i++) {
                     System.out.println(String.format("Row %d: %s, %s, %s, %s, %s, %s",
@@ -684,41 +627,28 @@ public final class ViewSanPham extends javax.swing.JPanel {
     }
 
     public void loadProductVariants() {
-        System.out.println("\n=== loadProductVariants() called ===");
-        System.out.println("Selected Product: " + (selectedProduct != null ? 
-            "ID: " + selectedProduct.getProductId() + ", Name: " + selectedProduct.getProductName() : "null"));
-            
         if (selectedProduct != null) {
             try {
-                // Debug: Print product ID being queried
-                System.out.println("Querying variants for product ID: " + selectedProduct.getProductId());
-                
+
                 // Get variants from DAO
                 List<ProductVariant> variants = productVariantDAO.findByProductId(selectedProduct.getProductId());
-                
-                // Debug: Print number of variants found
-                System.out.println("Number of variants found: " + (variants != null ? variants.size() : "null"));
-                
+
                 if (variants != null && !variants.isEmpty()) {
                     System.out.println("First variant SKU: " + variants.get(0).getVariantSku());
                 }
-                
+
                 // Update the table model
                 updateVariantTableModel(variants);
-                
-                // Debug: Verify table model was updated
-                System.out.println("Table model row count after update: " + tblSanPhamCon.getModel().getRowCount());
-                
+
             } catch (Exception e) {
                 System.err.println("Error in loadProductVariants():");
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(this, 
-                    "Lỗi khi tải biến thể sản phẩm: " + e.getMessage(),
-                    "Lỗi", 
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi tải biến thể sản phẩm: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
             }
         } else {
-            System.out.println("No product selected, clearing variant table");
             DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
             model.setRowCount(0);
         }
@@ -943,6 +873,8 @@ public final class ViewSanPham extends javax.swing.JPanel {
         cbo_category = new javax.swing.JComboBox<>();
         jScrollPane4 = new javax.swing.JScrollPane();
         tblSanPham = new javax.swing.JTable();
+        btn_search_product = new javax.swing.JButton();
+        jTextField1 = new javax.swing.JTextField();
         pnl_thuộc_tính = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
         lbl_ma = new javax.swing.JLabel();
@@ -960,6 +892,8 @@ public final class ViewSanPham extends javax.swing.JPanel {
         btnXoaThuocTinh = new javax.swing.JButton();
         jScrollPane3 = new javax.swing.JScrollPane();
         tblThuocTinh = new javax.swing.JTable();
+        jTextField2 = new javax.swing.JTextField();
+        btn_search_thuoctinh = new javax.swing.JButton();
         pbl_productvariant = new javax.swing.JPanel();
         jPanel8 = new javax.swing.JPanel();
         jPanel9 = new javax.swing.JPanel();
@@ -1128,6 +1062,13 @@ public final class ViewSanPham extends javax.swing.JPanel {
         });
         jScrollPane4.setViewportView(tblSanPham);
 
+        btn_search_product.setText("Tìm kiếm");
+        btn_search_product.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_search_productActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
@@ -1137,12 +1078,17 @@ public final class ViewSanPham extends javax.swing.JPanel {
                     .addGroup(jPanel4Layout.createSequentialGroup()
                         .addGap(19, 19, 19)
                         .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel4Layout.createSequentialGroup()
+                                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(62, 62, 62)
+                                .addComponent(btn_search_product, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 219, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(jPanel4Layout.createSequentialGroup()
                                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(lbl_product_id)
                                     .addComponent(txtMaSP, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(26, 26, 26)
+                                .addGap(41, 41, 41)
                                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(lbl_brand)
                                     .addComponent(cbo_brand, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
@@ -1191,7 +1137,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
                     .addComponent(jLabel4)
                     .addComponent(lbl_product_id))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanel4Layout.createSequentialGroup()
                         .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(txtMaSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1205,9 +1151,15 @@ public final class ViewSanPham extends javax.swing.JPanel {
                             .addComponent(txtTenSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(cbo_category, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(27, 27, 27)
-                        .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED))
+                    .addGroup(jPanel4Layout.createSequentialGroup()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(btn_search_product)
+                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(22, 22, 22)))
                 .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(12, 12, 12)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -1370,6 +1322,8 @@ public final class ViewSanPham extends javax.swing.JPanel {
         });
         jScrollPane3.setViewportView(tblThuocTinh);
 
+        btn_search_thuoctinh.setText("Tìm kiếm");
+
         javax.swing.GroupLayout pnl_thuộc_tínhLayout = new javax.swing.GroupLayout(pnl_thuộc_tính);
         pnl_thuộc_tính.setLayout(pnl_thuộc_tínhLayout);
         pnl_thuộc_tínhLayout.setHorizontalGroup(
@@ -1379,9 +1333,9 @@ public final class ViewSanPham extends javax.swing.JPanel {
                     .addGroup(pnl_thuộc_tínhLayout.createSequentialGroup()
                         .addGap(120, 120, 120)
                         .addComponent(btnThemThuocTinh)
-                        .addGap(158, 158, 158)
+                        .addGap(18, 18, 18)
                         .addComponent(btnsuathuoctinh)
-                        .addGap(121, 121, 121)
+                        .addGap(18, 18, 18)
                         .addComponent(btnXoaThuocTinh))
                     .addGroup(pnl_thuộc_tínhLayout.createSequentialGroup()
                         .addContainerGap()
@@ -1396,13 +1350,19 @@ public final class ViewSanPham extends javax.swing.JPanel {
                             .addGroup(pnl_thuộc_tínhLayout.createSequentialGroup()
                                 .addComponent(rb_size)
                                 .addGap(42, 42, 42)
-                                .addComponent(rb_brand))))
+                                .addGroup(pnl_thuộc_tínhLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 153, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(rb_brand)))))
                     .addGroup(pnl_thuộc_tínhLayout.createSequentialGroup()
                         .addGap(285, 285, 285)
                         .addComponent(jLabel9))
                     .addGroup(pnl_thuộc_tínhLayout.createSequentialGroup()
                         .addGap(18, 18, 18)
-                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 793, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 793, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnl_thuộc_tínhLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(btn_search_thuoctinh)
+                        .addGap(244, 244, 244)))
                 .addContainerGap(164, Short.MAX_VALUE))
         );
         pnl_thuộc_tínhLayout.setVerticalGroup(
@@ -1428,7 +1388,9 @@ public final class ViewSanPham extends javax.swing.JPanel {
                 .addGroup(pnl_thuộc_tínhLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnThemThuocTinh)
                     .addComponent(btnsuathuoctinh)
-                    .addComponent(btnXoaThuocTinh))
+                    .addComponent(btnXoaThuocTinh)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btn_search_thuoctinh))
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 290, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(39, Short.MAX_VALUE))
@@ -2306,12 +2268,55 @@ public final class ViewSanPham extends javax.swing.JPanel {
                 Result result = new MultiFormatReader().decode(bitmap);
                 String qrText = result.getText();
 
+                // Lấy SKU từ dữ liệu QR code (giả sử qrText chứa SKU)
+                String sku = qrText.trim();
+
+                // Tạo tên file mới với SKU và phần mở rộng từ file gốc
+                String originalFilename = selectedFile.getName();
+                String fileExtension = "";
+                int lastDot = originalFilename.lastIndexOf('.');
+                if (lastDot > 0) {
+                    fileExtension = originalFilename.substring(lastDot);
+                }
+
+                // Tạo file mới với tên là SKU và phần mở rộng từ file gốc
+                File newFile = new File(selectedFile.getParent(), sku + fileExtension);
+
+                // Nếu file đã tồn tại, thêm số thứ tự vào tên file
+                int counter = 1;
+                while (newFile.exists()) {
+                    newFile = new File(selectedFile.getParent(),
+                            sku + "_" + (counter++) + fileExtension);
+                }
+
+                // Lưu ảnh với tên mới
+                ImageIO.write(image, fileExtension.substring(1), newFile);
+
                 // Xử lý dữ liệu QR code
                 processQRCodeData(qrText);
 
+                // Lấy tên sản phẩm từ bảng (nếu có)
+                String productName = "";
+                int selectedRow = tblSanPham.getSelectedRow();
+                if (selectedRow >= 0) {
+                    productName = tblSanPham.getValueAt(selectedRow, 2).toString(); // Cột thứ 3 thường là tên sản phẩm
+                }
+
+                String message = "Đã lưu ảnh thành công!\n";
+                message += "Tên file: " + newFile.getName() + "\n";
+                if (!productName.isEmpty()) {
+                    message += "Tên sản phẩm: " + productName + "\n";
+                }
+                message += "SKU: " + sku;
+
+                JOptionPane.showMessageDialog(this,
+                        message,
+                        "Thành công",
+                        JOptionPane.INFORMATION_MESSAGE);
+
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(this,
-                        "Lỗi khi đọc file ảnh: " + e.getMessage(),
+                        "Lỗi khi đọc/ghi file ảnh: " + e.getMessage(),
                         "Lỗi",
                         JOptionPane.ERROR_MESSAGE);
             } catch (NotFoundException e) {
@@ -2321,7 +2326,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
                         JOptionPane.ERROR_MESSAGE);
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this,
-                        "Lỗi khi đọc mã QR: " + e.getMessage(),
+                        "Lỗi khi xử lý ảnh: " + e.getMessage(),
                         "Lỗi",
                         JOptionPane.ERROR_MESSAGE);
             }
@@ -2756,6 +2761,10 @@ public final class ViewSanPham extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_tblSanPhamMouseClicked
 
+    private void btn_search_productActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_search_productActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_search_productActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLamMoi;
     private javax.swing.JButton btnLamMoi1;
@@ -2776,6 +2785,8 @@ public final class ViewSanPham extends javax.swing.JPanel {
     private javax.swing.JButton btn_dowload_template;
     private javax.swing.JButton btn_import_file_excel;
     private javax.swing.JButton btn_search;
+    private javax.swing.JButton btn_search_product;
+    private javax.swing.JButton btn_search_thuoctinh;
     private javax.swing.JButton btnsuathuoctinh;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JComboBox<String> cbbKieu;
@@ -2801,6 +2812,8 @@ public final class ViewSanPham extends javax.swing.JPanel {
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
     private javax.swing.JLabel jlabel5;
     private javax.swing.JLabel lbl_brand;
     private javax.swing.JLabel lbl_category;

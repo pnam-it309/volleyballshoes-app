@@ -16,6 +16,7 @@ import com.DuAn1.volleyballshoes.app.dao.impl.SizeDAOImpl;
 import com.DuAn1.volleyballshoes.app.dao.impl.SoleTypeDAOImpl;
 import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewSanPham.ViewSanPham;
 import com.DuAn1.volleyballshoes.app.entity.*;
+import com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang;
 import java.math.BigDecimal;
 import java.util.List;
 import java.lang.reflect.Method;
@@ -594,8 +595,7 @@ public class ViewThemSanPhamm extends javax.swing.JPanel {
                 clearForm();
 
                 // Notify ViewBanHang to refresh the product variants table
-                com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang viewBanHang
-                        = com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewBanHang.ViewBanHang.getActiveInstance();
+                ViewBanHang viewBanHang = ViewBanHang.getActiveInstance();
                 if (viewBanHang != null) {
                     viewBanHang.refreshProductVariants();
                 }

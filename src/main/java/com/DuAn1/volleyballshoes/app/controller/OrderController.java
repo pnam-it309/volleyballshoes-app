@@ -57,8 +57,8 @@ public class OrderController {
                 .customerId(request.getCustomerId())
                 .staffId(staffId)
                 .orderFinalAmount(BigDecimal.ZERO)
-                .orderPaymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "CASH")
-                .orderStatus("PENDING")
+                .orderPaymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "Tiền mặt")
+                .orderStatus("Chưa thanh toán")
                 .orderCreatedAt(LocalDateTime.now())
                 .build();
 
@@ -156,18 +156,18 @@ public class OrderController {
 
             Order order = orderOpt.get();
 
-            if ("CANCELLED".equals(order.getOrderStatus())) {
+            if ("Hủy hóa đơn".equals(order.getOrderStatus())) {
                 NotificationUtil.showWarning(parentFrame, "Đơn hàng đã bị hủy trước đó");
                 return false;
             }
 
-            if ("COMPLETED".equals(order.getOrderStatus())) {
+            if ("Đã thanh toán".equals(order.getOrderStatus())) {
                 NotificationUtil.showWarning(parentFrame, "Không thể hủy đơn hàng đã hoàn thành");
                 return false;
             }
 
             // Update order status
-            order.setOrderStatus("CANCELLED");
+            order.setOrderStatus("Hủy hóa đơn");
             orderDAO.save(order);
             NotificationUtil.showSuccess(parentFrame, "Đã hủy đơn hàng thành công");
             return true;

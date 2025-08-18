@@ -5,10 +5,11 @@ import com.formdev.flatlaf.FlatLightLaf;
 public class ViewTrangChu extends javax.swing.JPanel {
 
     public ViewTrangChu() {
-                FlatLightLaf.setup();
+        FlatLightLaf.setup();
         initComponents();
         setOpaque(false);
     }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -21,16 +22,13 @@ public class ViewTrangChu extends javax.swing.JPanel {
         jLabel1.setBackground(new java.awt.Color(0, 153, 255));
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 48)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(0, 153, 255));
-        jLabel1.setText("VOLLEYBALL SHOES");
+        jLabel1.setText("VShoesApp");
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel2.setText("Uy tín - Tận Tâm - Chất Lượng");
 
         jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jLabel3.setText("Nơi cung cấp giày bóng chuyền chất lượng cao");
-
-        // Không load icon để tránh lỗi
-        // jLabel4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/duan1/view/viewdangnhap/icon/logob.png"))); // NOI18N
+        jLabel3.setText("Nơi mang vẻ đẹp của văn học Việt Nam đến thế hệ trẻ");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -42,14 +40,14 @@ public class ViewTrangChu extends javax.swing.JPanel {
                         .addGap(263, 263, 263)
                         .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 345, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(271, 271, 271)
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
                         .addGap(324, 324, 324)
                         .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(251, 251, 251)
-                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 368, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 368, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(271, 271, 271)
+                        .addComponent(jLabel1)))
                 .addContainerGap(211, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(

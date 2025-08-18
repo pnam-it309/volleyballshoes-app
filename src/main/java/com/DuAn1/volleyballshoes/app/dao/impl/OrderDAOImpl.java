@@ -175,21 +175,8 @@ public class OrderDAOImpl implements OrderDAO {
         if (order.getOrderId() <= 0) {
             // Generate order code if not provided
             if (order.getOrderCode() == null || order.getOrderCode().isEmpty()) {
-                // Try up to 10 times to get a unique order code
-                String newCode = null;
-                for (int i = 0; i < 10; i++) {
-                    newCode = generateNextOrderCode();
-                    // Check if code already exists
-                    if (!orderCodeExists(newCode)) {
-                        order.setOrderCode(newCode);
-                        break;
-                    }
-                }
-
-                // If all attempts failed, use timestamp as fallback
-                if (order.getOrderCode() == null) {
-                    order.setOrderCode("HD" + System.currentTimeMillis());
-                }
+                // Generate order code with date prefix to ensure uniqueness
+                order.setOrderCode(generateOrderCode());
             }
 
             // Đặt thời gian tạo nếu chưa có
@@ -238,14 +225,12 @@ public class OrderDAOImpl implements OrderDAO {
 
             if (newId > 0) {
                 order.setOrderId(newId);
-                System.out.println("[DEBUG] New order created with ID: " + newId);
             } else {
                 // Fallback: Try to find the order by code if ID retrieval failed
                 System.err.println("[WARN] Failed to get generated ID, trying to find by code...");
                 Optional<Order> foundOrder = findByCode(order.getOrderCode());
                 if (foundOrder.isPresent()) {
                     order.setOrderId(foundOrder.get().getOrderId());
-                    System.out.println("[DEBUG] Found order by code with ID: " + order.getOrderId());
                 } else {
                     System.err.println("[ERROR] Could not retrieve generated order ID");
                     throw new RuntimeException("Could not retrieve generated order ID");

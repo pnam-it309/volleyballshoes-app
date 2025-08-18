@@ -15,4 +15,5 @@ public class OrderDetailResponse {
     private int quantity;
     private BigDecimal unitPrice;
     private BigDecimal totalPrice;
+    private BigDecimal discountPercent;
 }

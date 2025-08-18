@@ -18,6 +18,7 @@ import com.DuAn1.volleyballshoes.app.entity.*;
 import com.DuAn1.volleyballshoes.app.utils.SessionManager;
 import com.DuAn1.volleyballshoes.app.utils.XJdbc;
 import java.util.stream.Collectors;
+import javax.swing.table.DefaultTableCellRenderer;
 
 public class ViewBanHang extends javax.swing.JPanel {
 
@@ -49,6 +50,10 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     private String generateOrderCode() {
         return "HD" + System.currentTimeMillis();
+    }
+
+    void getMaQR(String qrText) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     private void initCartTable() {
@@ -258,14 +263,17 @@ public class ViewBanHang extends javax.swing.JPanel {
         }
         loadProductVariants();
         initCartTable();
-        lbMaHD.setVisible(false);
+        lbMaHD.setVisible(true);
         lbl_odder_code.setVisible(true);
-        lbMaNV.setVisible(false);
+        lbMaNV.setVisible(true);
         lbl_payment_method.setVisible(true);
-        lbNgayTao.setVisible(false);
+        lbNgayTao.setVisible(true);
         lbltienkhachdua.setVisible(true);
     }
 
+    /**
+     * Loads or refreshes the orders in the tblHoaDon table
+     */
     /**
      * Loads or refreshes the orders in the tblHoaDon table
      */
@@ -273,6 +281,10 @@ public class ViewBanHang extends javax.swing.JPanel {
         try {
             DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
             model.setRowCount(0); // Clear existing rows
+
+            // Set column names for orders table
+            String[] columnNames = {"STT", "Mã hóa đơn", "Mã nhân viên", "Trạng thái", "Ngày tạo"};
+            model.setColumnIdentifiers(columnNames);
 
             // Get all orders
             OrderDAO orderDAO = new OrderDAOImpl();
@@ -282,31 +294,45 @@ public class ViewBanHang extends javax.swing.JPanel {
             orders.sort((o1, o2) -> o2.getOrderCreatedAt().compareTo(o1.getOrderCreatedAt()));
 
             // Add orders to table
+            int rowNum = 1;
             for (Order order : orders) {
                 // Format the date
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-                String formattedDate = order.getOrderCreatedAt().format(formatter);
+                String formattedDate = DATE_FORMATTER.format(order.getOrderCreatedAt());
 
-                // Get staff code
+                // Get staff code from staff ID
                 String staffCode = "";
-                StaffDAO staffDAO = new StaffDAOImpl();
-                Staff staff = staffDAO.findById(order.getStaffId());
-                if (staff != null) {
-                    staffCode = staff.getStaffCode();
+                try {
+                    StaffDAO staffDAO = new StaffDAOImpl();
+                    Staff staff = staffDAO.findById(order.getStaffId());
+                    if (staff != null) {
+                        staffCode = staff.getStaffCode();
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error fetching staff with ID: " + order.getStaffId() + ": " + e.getMessage());
                 }
 
-                // Add row to table
+                // Get order status (adjust based on your status field)
+                String status = order.getOrderStatus() != null
+                        ? order.getOrderStatus() : "Chưa thanh toán";
+
+                // Add row to table with the correct column order:
+                // 0: STT, 1: Mã hóa đơn, 2: Mã nhân viên, 3: Trạng thái, 4: Ngày tạo
                 model.addRow(new Object[]{
-                    order.getOrderCode(),
-                    staffCode,
-                    order.getOrderStatus(),
-                    formattedDate
+                    rowNum++, // Cột 0: STT
+                    order.getOrderCode(), // Cột 1: Mã hóa đơn
+                    staffCode, // Cột 2: Mã nhân viên
+                    status, // Cột 3: Trạng thái
+                    formattedDate // Cột 4: Ngày tạo
                 });
             }
 
-            // Auto-resize columns
-            for (int i = 0; i < tblHoaDon.getColumnCount(); i++) {
-                tblHoaDon.getColumnModel().getColumn(i).setPreferredWidth(150);
+            // Set column widths for visible columns
+            if (tblHoaDon.getColumnCount() >= 5) {
+                // Column widths: STT, Mã hóa đơn, Mã NV, Trạng thái, Ngày tạo
+                int[] columnWidths = {50, 150, 120, 100, 150};
+                for (int i = 0; i < columnWidths.length; i++) {
+                    tblHoaDon.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
+                }
             }
 
         } catch (Exception e) {
@@ -533,6 +559,9 @@ public class ViewBanHang extends javax.swing.JPanel {
         tblSanPham = new javax.swing.JTable();
         btn_chon_san_pham = new javax.swing.JButton();
         jLabel2 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        btn_timkiem = new javax.swing.JButton();
+        cbo_sku_sell = new javax.swing.JComboBox<>();
         jScrollPane2 = new javax.swing.JScrollPane();
         tblGioHang = new javax.swing.JTable();
 
@@ -587,13 +616,13 @@ public class ViewBanHang extends javax.swing.JPanel {
 
         tblHoaDon.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
             },
             new String [] {
-                "Mã hóa đơn", "Mã nhân viên", "Trạng thái", "Ngày tạo"
+                "STT", "Mã hóa đơn", "Mã nhân viên", "Trạng thái", "Ngày tạo"
             }
         ));
         tblHoaDon.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -616,8 +645,8 @@ public class ViewBanHang extends javax.swing.JPanel {
                 .addGap(27, 27, 27)
                 .addComponent(btnTheHoaDon)
                 .addGap(104, 104, 104)
-                .addComponent(btn_HuyHD)
-                .addGap(18, 18, 18)
+                .addComponent(btn_HuyHD, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btn_Them1)
                 .addContainerGap(184, Short.MAX_VALUE))
             .addGroup(jPanel2Layout.createSequentialGroup()
@@ -628,11 +657,14 @@ public class ViewBanHang extends javax.swing.JPanel {
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addGap(9, 9, 9)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btn_Them1)
-                    .addComponent(btn_QuetQR)
-                    .addComponent(btnTheHoaDon)
-                    .addComponent(btn_HuyHD, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(btn_Them1)
+                        .addComponent(btn_QuetQR)
+                        .addComponent(btnTheHoaDon))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(1, 1, 1)
+                        .addComponent(btn_HuyHD, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 153, Short.MAX_VALUE))
         );
@@ -1020,6 +1052,15 @@ public class ViewBanHang extends javax.swing.JPanel {
 
         jLabel2.setText("Sản phẩm");
 
+        btn_timkiem.setText("Tìm kiếm");
+        btn_timkiem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_timkiemActionPerformed(evt);
+            }
+        });
+
+        cbo_sku_sell.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+
         javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
         jPanel7.setLayout(jPanel7Layout);
         jPanel7Layout.setHorizontalGroup(
@@ -1028,12 +1069,19 @@ public class ViewBanHang extends javax.swing.JPanel {
                 .addContainerGap()
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel7Layout.createSequentialGroup()
+                        .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 747, Short.MAX_VALUE)
+                        .addContainerGap())
+                    .addGroup(jPanel7Layout.createSequentialGroup()
                         .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(469, 469, 469)
+                        .addGap(108, 108, 108)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 184, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(28, 28, 28)
+                        .addComponent(cbo_sku_sell, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(btn_timkiem)
+                        .addGap(53, 53, 53)
                         .addComponent(btn_chon_san_pham)
-                        .addGap(0, 146, Short.MAX_VALUE))
-                    .addComponent(jScrollPane5))
-                .addContainerGap())
+                        .addGap(72, 72, 72))))
         );
         jPanel7Layout.setVerticalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1041,7 +1089,10 @@ public class ViewBanHang extends javax.swing.JPanel {
                 .addContainerGap()
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btn_chon_san_pham)
-                    .addComponent(jLabel2))
+                    .addComponent(jLabel2)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btn_timkiem)
+                    .addComponent(cbo_sku_sell, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(17, Short.MAX_VALUE))
@@ -1250,17 +1301,70 @@ public class ViewBanHang extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_txtMaKhachhangActionPerformed
 
+    private void updateChangeAmount() {
+        try {
+            // Get total amount
+            String totalText = lbTong.getText().replaceAll("[^0-9]", "");
+            if (totalText.isEmpty()) {
+                return;
+            }
+
+            BigDecimal total = new BigDecimal(totalText);
+            BigDecimal paidAmount = BigDecimal.ZERO;
+
+            // Get paid amount from the active payment field
+            if (txtTienKhachDua.isEnabled() && !txtTienKhachDua.getText().trim().isEmpty()) {
+                paidAmount = new BigDecimal(txtTienKhachDua.getText().trim().replaceAll("[^0-9]", ""));
+            } else if (txtTienKhachCK.isEnabled() && !txtTienKhachCK.getText().trim().isEmpty()) {
+                paidAmount = new BigDecimal(txtTienKhachCK.getText().trim().replaceAll("[^0-9]", ""));
+            } else {
+                lbTienThua.setText("0 đ");
+                return;
+            }
+
+            // Calculate and update change
+            BigDecimal change = paidAmount.subtract(total);
+            if (change.compareTo(BigDecimal.ZERO) < 0) {
+                lbTienThua.setText("0 đ");
+            } else {
+                lbTienThua.setText(String.format("%,d đ", change.longValue()));
+            }
+        } catch (Exception e) {
+            lbTienThua.setText("0 đ");
+        }
+    }
 
     private void txtTienKhachDuaKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtTienKhachDuaKeyReleased
 
     }//GEN-LAST:event_txtTienKhachDuaKeyReleased
 
     private void txtTienKhachDuaCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_txtTienKhachDuaCaretUpdate
-
+        updateChangeAmount();
     }//GEN-LAST:event_txtTienKhachDuaCaretUpdate
 
     private void cbbHinhThucThanhToanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbbHinhThucThanhToanActionPerformed
+        updateChangeAmount();
+        String selectedMethod = (String) cbbHinhThucThanhToan.getSelectedItem();
 
+        if ("Tiền mặt".equals(selectedMethod)) {
+            // Enable cash payment field and disable bank transfer field
+            txtTienKhachDua.setEnabled(true);
+            txtTienKhachCK.setEnabled(false);
+            txtTienKhachCK.setText(""); // Clear the bank transfer field
+            txtTienKhachDua.requestFocus(); // Focus on cash payment field
+        } else if ("Chuyển khoản".equals(selectedMethod)) {
+            // Enable bank transfer field and disable cash payment field
+            txtTienKhachCK.setEnabled(true);
+            txtTienKhachDua.setEnabled(false);
+            txtTienKhachDua.setText(""); // Clear the cash payment field
+            txtTienKhachCK.requestFocus(); // Focus on bank transfer field
+        } else {
+            // If neither is selected (shouldn't happen if combo box is properly configured)
+            txtTienKhachDua.setEnabled(false);
+            txtTienKhachCK.setEnabled(false);
+            txtTienKhachDua.setText("");
+            txtTienKhachCK.setText("");
+        }
     }//GEN-LAST:event_cbbHinhThucThanhToanActionPerformed
 
     private void btnThanhToanbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThanhToanbtn_ThemActionPerformed
@@ -1308,6 +1412,33 @@ public class ViewBanHang extends javax.swing.JPanel {
             String totalText = lbTong.getText().replaceAll("[^0-9]", "");
             BigDecimal finalAmount = new BigDecimal(totalText);
 
+            // Kiểm tra số tiền thanh toán
+            BigDecimal paidAmount = BigDecimal.ZERO;
+            if (txtTienKhachDua.isEnabled() && !txtTienKhachDua.getText().trim().isEmpty()) {
+                try {
+                    paidAmount = new BigDecimal(txtTienKhachDua.getText().trim().replaceAll("[^0-9]", ""));
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Số tiền khách đưa không hợp lệ", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } else if (txtTienKhachCK.isEnabled() && !txtTienKhachCK.getText().trim().isEmpty()) {
+                try {
+                    paidAmount = new BigDecimal(txtTienKhachCK.getText().trim().replaceAll("[^0-9]", ""));
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Số tiền chuyển khoản không hợp lệ", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập số tiền thanh toán", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Kiểm tra số tiền thanh toán có đủ không
+            if (paidAmount.compareTo(finalAmount) < 0) {
+                JOptionPane.showMessageDialog(this, "Số tiền thanh toán không đủ", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             // Cập nhật Order
             OrderController controller = new OrderController();
             OrderResponse currentOrder = controller.getOrderByQRCodeOrId(orderCode);
@@ -1327,25 +1458,50 @@ public class ViewBanHang extends javax.swing.JPanel {
                     .orderCreatedAt(currentOrder.getCreatedAt())
                     .build();
 
-            // Lưu chi tiết hóa đơn và giảm tồn kho
+            // Lưu order trước để có orderId
             OrderDAOImpl orderDAO = new OrderDAOImpl();
-            updatedOrder = orderDAO.processPayment(updatedOrder, items.stream()
-                    .collect(Collectors.toMap(OrderItemRequest::getVariantId, OrderItemRequest::getQuantity)));
+            updatedOrder = orderDAO.save(updatedOrder);
+
+            // Lưu từng order detail
+            for (OrderItemRequest item : items) {
+                // Tính tổng tiền cho từng sản phẩm
+                BigDecimal itemTotal = item.getUnitPrice().multiply(new BigDecimal(item.getQuantity()));
+
+                // Tạo OrderDetail
+                OrderDetail orderDetail = new OrderDetail();
+                orderDetail.setOrderId(updatedOrder.getOrderId());
+                orderDetail.setVariantId(item.getVariantId());
+                orderDetail.setDetailQuantity(item.getQuantity());
+                orderDetail.setDetailUnitPrice(item.getUnitPrice());
+                orderDetail.setDetailDiscountPercent(BigDecimal.ZERO); // Có thể cập nhật sau nếu có giảm giá
+                orderDetail.setDetailTotal(itemTotal);
+
+                // Lưu order detail
+                OrderDetailDAO orderDetailDAO = new OrderDetailDAOImpl();
+                orderDetailDAO.save(orderDetail);
+
+                // Cập nhật số lượng tồn kho
+                ProductVariant variant = productVariantDAO.findById(item.getVariantId());
+                if (variant != null) {
+                    int newQuantity = variant.getVariantquantity() - item.getQuantity();
+                    variant.setVariantquantity(newQuantity);
+                    productVariantDAO.update(variant);
+                }
+            }
 
             // Cập nhật giao diện
             cartModel.setRowCount(0);
             updateCartSummary();
-            loadOrders();
 
             orderCode = null;
             lbMaHD.setText("");
-            lbMaHD.setVisible(false);
+            lbMaHD.setVisible(true);
             lbl_odder_code.setVisible(true);
             lbMaNV.setText("");
-            lbMaNV.setVisible(false);
+            lbMaNV.setVisible(true);
             lbl_payment_method.setVisible(true);
             lbNgayTao.setText("");
-            lbNgayTao.setVisible(false);
+            lbNgayTao.setVisible(true);
             lbltienkhachdua.setVisible(true);
             lbTenKhachHang.setText("");
             txtMaKhachhang.setText("");
@@ -1366,7 +1522,8 @@ public class ViewBanHang extends javax.swing.JPanel {
     }//GEN-LAST:event_btn_khachvanglaiActionPerformed
 
     private void txtTienKhachCKCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_txtTienKhachCKCaretUpdate
-        // TODO add your handling code here:
+        // TODO add your handling code here:         
+        updateChangeAmount();
     }//GEN-LAST:event_txtTienKhachCKCaretUpdate
 
     private void txtTienKhachCKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtTienKhachCKActionPerformed
@@ -1402,7 +1559,7 @@ public class ViewBanHang extends javax.swing.JPanel {
             OrderCreateRequest request = OrderCreateRequest.builder()
                     .customerId(customerId)
                     .staffId(staffId)
-                    .paymentMethod("CASH")
+                    .paymentMethod("Tiền mặt")
                     .items(new ArrayList<>())
                     .build();
 
@@ -1413,16 +1570,16 @@ public class ViewBanHang extends javax.swing.JPanel {
                 orderCode = newOrder.getOrderCode();
                 lbMaHD.setText(orderCode);
                 lbMaHD.setVisible(true);
-                lbl_odder_code.setVisible(false);
+                lbl_odder_code.setVisible(true);
                 lbMaNV.setText(staffCode);
                 lbMaNV.setVisible(true);
-                lbl_payment_method.setVisible(false);
+                lbl_payment_method.setVisible(true);
                 lbNgayTao.setText(DATE_FORMATTER.format(newOrder.getCreatedAt()));
                 lbNgayTao.setVisible(true);
-                lbltienkhachdua.setVisible(false);
+                lbltienkhachdua.setVisible(true);
 
                 DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
-                Object[] row = {newOrder.getOrderId(), newOrder.getOrderCode(), DATE_FORMATTER.format(newOrder.getCreatedAt()), "PENDING"};
+                Object[] row = {newOrder.getOrderId(), newOrder.getOrderCode(), DATE_FORMATTER.format(newOrder.getCreatedAt()), "Chưa thanh toán"};
                 model.addRow(row);
 
                 JOptionPane.showMessageDialog(this, "Tạo hóa đơn mới thành công: " + orderCode, "Thành công", JOptionPane.INFORMATION_MESSAGE);
@@ -1454,13 +1611,13 @@ public class ViewBanHang extends javax.swing.JPanel {
                 // Reset giao diện
                 orderCode = null;
                 lbMaHD.setText("");
-                lbMaHD.setVisible(false);
+                lbMaHD.setVisible(true);
                 lbl_odder_code.setVisible(true);
                 lbMaNV.setText("");
-                lbMaNV.setVisible(false);
+                lbMaNV.setVisible(true);
                 lbl_payment_method.setVisible(true);
                 lbNgayTao.setText("");
-                lbNgayTao.setVisible(false);
+                lbNgayTao.setVisible(true);
                 lbltienkhachdua.setVisible(true);
 
                 // Tải lại bảng hóa đơn
@@ -1501,12 +1658,97 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     private void tblHoaDonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblHoaDonMouseClicked
         // TODO add your handling code here:
+        try {
+            int selectedRow = tblHoaDon.getSelectedRow();
+            if (selectedRow < 0) {
+                return;
+            }
 
+            // Get order code from selected row
+            String orderCode = (String) tblHoaDon.getValueAt(selectedRow, 0);
+
+            // Get order details
+            OrderDAO orderDAO = new OrderDAOImpl();
+            Optional<Order> orderOpt = orderDAO.findByCode(orderCode);
+
+            if (orderOpt.isPresent()) {
+                Order order = orderOpt.get();
+                // Update order info panel
+                lbMaHD.setText(order.getOrderCode());
+                lbNgayTao.setText(DATE_FORMATTER.format(order.getOrderCreatedAt()));
+
+                // Get staff name
+                Staff staff = new StaffDAOImpl().findById(order.getStaffId());
+                lbMaNV.setText(staff != null ? staff.getStaffCode() : "");
+
+                // Get customer name if exists
+                if (order.getCustomerId() != null) {
+                    Customer customer = customerDAO.findById(order.getCustomerId());
+                    lbTenKhachHang.setText(customer != null ? customer.getCustomerFullName() : "");
+                } else {
+                    lbTenKhachHang.setText("Khách vãng lai");
+                }
+
+                // Load order items to cart table
+                DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+                cartModel.setRowCount(0);
+
+                List<OrderDetail> orderDetails = orderDetailDAO.findByOrderId(order.getOrderId());
+                for (OrderDetail detail : orderDetails) {
+                    ProductVariant variant = productVariantDAO.findById(detail.getVariantId());
+                    if (variant != null) {
+                        Product product = productDAO.findById(variant.getProductId());
+                        if (product != null) {
+                            cartModel.addRow(new Object[]{
+                                cartModel.getRowCount() + 1, // STT
+                                variant.getVariantSku(), // Mã SP
+                                product.getProductName(), // Tên SP
+                                detail.getDetailQuantity(), // Số lượng
+                                detail.getDetailUnitPrice(), // Đơn giá
+                                detail.getDetailDiscountPercent(), // Giảm giá %
+                                detail.getDetailTotal() // Thành tiền
+                            });
+                        }
+                    }
+                }
+
+                // Update order summary
+                lbTongTien.setText(String.format("%,d đ", order.getOrderFinalAmount().longValue()));
+                lbTong.setText(String.format("%,d đ", order.getOrderFinalAmount().longValue()));
+
+                // Update payment method
+                if (order.getOrderPaymentMethod() != null) {
+                    cbbHinhThucThanhToan.setSelectedItem(order.getOrderPaymentMethod());
+                }
+
+                // Set order code for payment
+                this.orderCode = orderCode;
+
+                // Show all info panels
+                lbMaHD.setVisible(true);
+                lbNgayTao.setVisible(true);
+                lbMaNV.setVisible(true);
+                lbTenKhachHang.setVisible(true);
+                lbl_odder_code.setVisible(true);
+                lbl_payment_method.setVisible(true);
+                lbltienkhachdua.setVisible(true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi tải chi tiết đơn hàng: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_tblHoaDonMouseClicked
 
     private void tblHoaDonMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblHoaDonMouseEntered
         // TODO add your handling code here:
     }//GEN-LAST:event_tblHoaDonMouseEntered
+
+    private void btn_timkiemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_timkiemActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_timkiemActionPerformed
 
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
@@ -1557,8 +1799,10 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JButton btn_Them1;
     private javax.swing.JButton btn_chon_san_pham;
     private javax.swing.JButton btn_khachvanglai;
+    private javax.swing.JButton btn_timkiem;
     private javax.swing.JComboBox<String> cbbHinhThucThanhToan;
     private javax.swing.JComboBox<String> cbbPhieuGiamGia;
+    private javax.swing.JComboBox<String> cbo_sku_sell;
     private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JComboBox<String> jComboBox2;
     private javax.swing.JComboBox<String> jComboBox3;
@@ -1580,6 +1824,7 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTable jTable1;
+    private javax.swing.JTextField jTextField1;
     private javax.swing.JLabel lbGiamGiaTot;
     private javax.swing.JLabel lbMaHD;
     private javax.swing.JLabel lbMaNV;
@@ -1608,7 +1853,4 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JTextField txtTienKhachDua;
     // End of variables declaration//GEN-END:variables
 
-    void getMaQR(String qrText) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
 }

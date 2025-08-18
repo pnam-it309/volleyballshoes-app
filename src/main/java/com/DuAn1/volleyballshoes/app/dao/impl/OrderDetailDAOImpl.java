@@ -17,10 +17,8 @@ public class OrderDetailDAOImpl implements OrderDetailDAO {
 
     @Override
     public List<OrderDetail> findByOrderId(Integer orderId) {
-        System.out.println("[DEBUG] Searching for order details with orderId: " + orderId);
         String sql = "SELECT * FROM OrderDetail WHERE order_id = ?";
         List<OrderDetail> results = XJdbc.query(sql, this::mapResultSetToOrderDetail, orderId);
-        System.out.println("[DEBUG] Found " + results.size() + " order details");
         return results;
     }
 

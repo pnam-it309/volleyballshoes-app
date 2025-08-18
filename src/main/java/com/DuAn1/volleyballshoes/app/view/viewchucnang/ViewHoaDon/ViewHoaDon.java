@@ -44,17 +44,51 @@ public class ViewHoaDon extends javax.swing.JPanel {
         initComponents();
         initData();
         loadAllOrders();
-        // Đặt lại tên cột tiếng Việt cho bảng hóa đơn (chỉ đúng số cột hiện tại)
-        String[] orderColumnsVN = {"Mã hóa đơn", "Khách hàng", "Tổng tiền", "Trạng thái"};
-        for (int i = 0; i < tblhoadon.getColumnCount() && i < orderColumnsVN.length; i++) {
-            tblhoadon.getColumnModel().getColumn(i).setHeaderValue(orderColumnsVN[i]);
-        }
+        // Đặt lại tên cột tiếng Việt cho bảng hóa đơn
+        String[] orderColumnsVN = {"STT", "Khách hàng", "Tổng tiền", "Trạng thái", "Hình thức TT", "Mã đơn hàng", "Ngày tạo"};
+        DefaultTableModel orderModel = new DefaultTableModel(orderColumnsVN, 0) {
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == 0) return Integer.class; // STT
+                if (columnIndex == 2) return String.class;  // Tổng tiền (đã định dạng)
+                return Object.class;
+            }
+            
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Không cho phép chỉnh sửa các ô
+            }
+        };
+        tblhoadon.setModel(orderModel);
         tblhoadon.getTableHeader().repaint();
-        // Đặt lại tên cột tiếng Việt cho bảng chi tiết hóa đơn (chỉ đúng số cột hiện tại)
-        String[] detailColumnsVN = {"Sản phẩm", "Màu sắc", "Kích thước", "Số lượng", "Đơn giá", "Thành tiền"};
-        for (int i = 0; i < tblHDCT.getColumnCount() && i < detailColumnsVN.length; i++) {
-            tblHDCT.getColumnModel().getColumn(i).setHeaderValue(detailColumnsVN[i]);
-        }
+        // Đặt lại tên cột tiếng Việt cho bảng chi tiết hóa đơn
+        String[] detailColumnsVN = {"STT", "Sản phẩm", "Màu sắc", "Kích thước", "Số lượng", "Đơn giá", "Giảm giá", "Tiền giảm", "Thành tiền"};
+        DefaultTableModel detailModel = new DefaultTableModel(detailColumnsVN, 0) {
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == 0 || columnIndex == 4) return Integer.class; // STT, Số lượng
+                if (columnIndex >= 5) return String.class; // Các cột tiền
+                return Object.class;
+            }
+            
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Không cho phép chỉnh sửa các ô
+            }
+        };
+        tblHDCT.setModel(detailModel);
+        
+        // Đặt chiều rộng cột phù hợp
+        tblHDCT.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
+        tblHDCT.getColumnModel().getColumn(0).setPreferredWidth(40);  // STT
+        tblHDCT.getColumnModel().getColumn(1).setPreferredWidth(200); // Tên sản phẩm
+        tblHDCT.getColumnModel().getColumn(2).setPreferredWidth(80);  // Màu sắc
+        tblHDCT.getColumnModel().getColumn(3).setPreferredWidth(80);  // Kích thước
+        tblHDCT.getColumnModel().getColumn(4).setPreferredWidth(60);  // Số lượng
+        tblHDCT.getColumnModel().getColumn(5).setPreferredWidth(100); // Đơn giá
+        tblHDCT.getColumnModel().getColumn(6).setPreferredWidth(60);  // % Giảm giá
+        tblHDCT.getColumnModel().getColumn(7).setPreferredWidth(100); // Tiền giảm
+        tblHDCT.getColumnModel().getColumn(8).setPreferredWidth(120); // Thành tiền
         tblHDCT.getTableHeader().repaint();
     }
 
@@ -91,13 +125,16 @@ public class ViewHoaDon extends javax.swing.JPanel {
         DefaultTableModel model = (DefaultTableModel) tblhoadon.getModel();
         model.setRowCount(0);
 
+        int stt = 1;
         for (OrderResponse order : orders) {
             model.addRow(new Object[]{
-                order.getOrderId(),
-                order.getCustomerId(),
-                order.getFinalAmount(),
+                stt++, // STT
+                order.getCustomerId()!= null ? order.getCustomerId(): "Khách lẻ",
+                String.format("%,.0f đ", order.getFinalAmount()),
                 order.getStatus(),
-                order.getPaymentMethod()
+                order.getPaymentMethod(),
+                order.getOrderCode(),
+                order.getCreatedAt().toString()
             });
         }
     }
@@ -108,32 +145,45 @@ public class ViewHoaDon extends javax.swing.JPanel {
             model.setRowCount(0);
 
             if (details != null) {
+                int stt = 1;
                 for (OrderDetailResponse detail : details) {
                     try {
-                        // Lấy thông tin sản phẩm
                         String productName = detail.getProductName() != null ? detail.getProductName() : "";
                         String colorName = detail.getColorName() != null ? detail.getColorName() : "";
                         String sizeName = detail.getSizeName() != null ? detail.getSizeName() : "";
                         int quantity = detail.getQuantity();
                         java.math.BigDecimal unitPrice = detail.getUnitPrice() != null ? detail.getUnitPrice() : java.math.BigDecimal.ZERO;
-                        java.math.BigDecimal totalPrice = detail.getTotalPrice() != null ? detail.getTotalPrice() : unitPrice.multiply(java.math.BigDecimal.valueOf(quantity));
+                        java.math.BigDecimal discountPercent = detail.getDiscountPercent() != null ? 
+                                detail.getDiscountPercent() : java.math.BigDecimal.ZERO;
+                        java.math.BigDecimal discount = discountPercent.compareTo(java.math.BigDecimal.ZERO) > 0 ?
+                                unitPrice.multiply(discountPercent).divide(java.math.BigDecimal.valueOf(100)) : 
+                                java.math.BigDecimal.ZERO;
+                        java.math.BigDecimal totalPrice = detail.getTotalPrice() != null ? 
+                                detail.getTotalPrice() : 
+                                unitPrice.multiply(java.math.BigDecimal.valueOf(quantity)).subtract(discount);
 
                         model.addRow(new Object[]{
+                            stt++, // STT
                             productName,
                             colorName,
                             sizeName,
                             quantity,
                             formatCurrency(unitPrice.doubleValue()),
+                            discountPercent.compareTo(java.math.BigDecimal.ZERO) > 0 ? 
+                                discountPercent.setScale(2, java.math.RoundingMode.HALF_UP) + "%" : "0%",
+                            formatCurrency(discount.doubleValue()),
                             formatCurrency(totalPrice.doubleValue())
                         });
                     } catch (Exception e) {
                         System.err.println("Error processing order detail: " + e.getMessage());
+                        e.printStackTrace();
                     }
                 }
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi tải chi tiết hoá đơn: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 
@@ -165,10 +215,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         tblhoadon = new javax.swing.JTable();
         jScrollPane3 = new javax.swing.JScrollPane();
         tblHDCT = new javax.swing.JTable();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        tblLSHD = new javax.swing.JTable();
         jLabel6 = new javax.swing.JLabel();
-        jLabel1 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jLabel7 = new javax.swing.JLabel();
         txtQR = new javax.swing.JTextField();
@@ -338,25 +385,8 @@ public class ViewHoaDon extends javax.swing.JPanel {
         ));
         jScrollPane3.setViewportView(tblHDCT);
 
-        tblLSHD.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        tblLSHD.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
-            new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
-            }
-        ));
-        jScrollPane2.setViewportView(tblLSHD);
-
         jLabel6.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel6.setText("Hoá đơn chi tiết");
-
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        jLabel1.setText("Lịch sử hoá đơn");
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
         jPanel2.setForeground(new java.awt.Color(0, 170, 158));
@@ -390,31 +420,28 @@ public class ViewHoaDon extends javax.swing.JPanel {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(10, 10, 10)
-                .addComponent(btnSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(297, 297, 297)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addComponent(jScrollPane1)
-            .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                    .addGroup(layout.createSequentialGroup()
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(txtQR, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addContainerGap()
-                                .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 747, Short.MAX_VALUE))
+                                .addGap(10, 10, 10)
+                                .addComponent(btnSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(297, 297, 297)
+                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jScrollPane3)
-                                .addGap(18, 18, 18)))
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 293, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                                .addContainerGap()
+                                .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
+            .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 1090, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 1082, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, 1082, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(0, 62, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -429,13 +456,9 @@ public class ViewHoaDon extends javax.swing.JPanel {
                 .addGap(3, 3, 3)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 171, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(jLabel6))
+                .addComponent(jLabel6)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(txtQR, javax.swing.GroupLayout.PREFERRED_SIZE, 0, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(65, Short.MAX_VALUE))
@@ -824,7 +847,6 @@ public class ViewHoaDon extends javax.swing.JPanel {
     private javax.swing.JButton btnSearchNgay;
     private javax.swing.JButton btnXuatExcel;
     private javax.swing.JButton btnXuatPDF;
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -834,10 +856,8 @@ public class ViewHoaDon extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTable tblHDCT;
-    private javax.swing.JTable tblLSHD;
     private javax.swing.JTable tblhoadon;
     private com.toedter.calendar.JDateChooser txtDenNgay;
     private javax.swing.JTextField txtQR;
