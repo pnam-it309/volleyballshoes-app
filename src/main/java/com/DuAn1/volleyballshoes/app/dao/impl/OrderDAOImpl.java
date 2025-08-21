@@ -3,15 +3,21 @@ package com.DuAn1.volleyballshoes.app.dao.impl;
 import com.DuAn1.volleyballshoes.app.dao.OrderDAO;
 import com.DuAn1.volleyballshoes.app.dao.OrderDetailDAO;
 import com.DuAn1.volleyballshoes.app.dao.ProductVariantDAO;
+import com.DuAn1.volleyballshoes.app.dto.response.OrderDetailResponse;
+import com.DuAn1.volleyballshoes.app.dto.response.OrderResponse;
+import com.DuAn1.volleyballshoes.app.dto.response.OrderWithDetailsResponse;
 import com.DuAn1.volleyballshoes.app.entity.Order;
 import com.DuAn1.volleyballshoes.app.utils.XJdbc;
+
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,34 +27,68 @@ public class OrderDAOImpl implements OrderDAO {
     private static final String TABLE_NAME = "[Order]";
 
     /**
-     * Chuyển đổi ResultSet thành đối tượng Order
+     * Map ResultSet -> Order entity
      */
     private Order mapResultSetToOrder(ResultSet rs) throws SQLException {
         Order order = new Order();
-        order.setOrderId(rs.getInt("order_id"));
-
-        // Handle nullable customer_id
-        int customerId = rs.getInt("customer_id");
-        if (!rs.wasNull()) {
-            order.setCustomerId(customerId);
-        } else {
-            order.setCustomerId(null);
-        }
-
-        order.setStaffId(rs.getInt("staff_id"));
-        order.setOrderFinalAmount(rs.getBigDecimal("order_final_amount"));
-        order.setOrderPaymentMethod(rs.getString("order_payment_method"));
-        order.setOrderStatus(rs.getString("order_status"));
-        order.setOrderCode(rs.getString("order_code"));
-
-        // Xử lý ngày giờ
-        Object createdAt = rs.getObject("order_created_at");
-        if (createdAt != null) {
-            if (createdAt instanceof java.sql.Timestamp) {
-                order.setOrderCreatedAt(((java.sql.Timestamp) createdAt).toLocalDateTime());
-            } else if (createdAt instanceof LocalDateTime) {
-                order.setOrderCreatedAt((LocalDateTime) createdAt);
+        try {
+            // Log column names for debugging
+            // java.sql.ResultSetMetaData rsmd = rs.getMetaData();
+            // int columnCount = rsmd.getColumnCount();
+            // System.out.println("\nColumns in result set (" + columnCount + "):");
+            // for (int i = 1; i <= columnCount; i++) {
+            //     System.out.println(i + ". " + rsmd.getColumnName(i) + " (" + rsmd.getColumnTypeName(i) + ")");
+            // }
+            
+            int orderId = rs.getInt("order_id");
+            order.setOrderId(orderId);
+            
+            // customer_id can be null
+            int customerId = rs.getInt("customer_id");
+            if (!rs.wasNull()) {
+                order.setCustomerId(customerId);
+            } else {
+                order.setCustomerId(null);
+                // System.out.println("customer_id is NULL for order " + orderId);
             }
+
+            int staffId = rs.getInt("staff_id");
+            order.setStaffId(staffId);
+            
+            BigDecimal finalAmount = rs.getBigDecimal("order_final_amount");
+            order.setOrderFinalAmount(finalAmount);
+            
+            String paymentMethod = rs.getString("order_payment_method");
+            order.setOrderPaymentMethod(paymentMethod);
+            
+            String status = rs.getString("order_status");
+            order.setOrderStatus(status);
+            
+            String orderCode = rs.getString("order_code");
+            order.setOrderCode(orderCode);
+
+            Timestamp ts = rs.getTimestamp("order_created_at");
+            if (ts != null) {
+                order.setOrderCreatedAt(ts.toLocalDateTime());
+            } else {
+                // System.out.println("order_created_at is NULL for order " + orderId);
+            }
+            
+            // Debug log the mapped order
+            // System.out.println("Mapped Order: ID=" + orderId + 
+            //                  ", CustomerID=" + customerId + 
+            //                  ", StaffID=" + staffId + 
+            //                  ", Status=" + status + 
+            //                  ", Code=" + orderCode);
+            
+        } catch (SQLException e) {
+            System.err.println("Error mapping Order from ResultSet: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        } catch (Exception e) {
+            System.err.println("Unexpected error in mapResultSetToOrder: " + e.getMessage());
+            e.printStackTrace();
+            throw new SQLException("Failed to map Order from ResultSet", e);
         }
 
         return order;
@@ -56,8 +96,21 @@ public class OrderDAOImpl implements OrderDAO {
 
     @Override
     public List<Order> findAll() {
+        System.out.println("OrderDAOImpl.findAll() - Starting to fetch all orders...");
         String sql = "SELECT * FROM " + TABLE_NAME + " ORDER BY order_created_at DESC";
-        return XJdbc.query(sql, this::mapResultSetToOrder);
+        System.out.println("Executing SQL: " + sql);
+        
+        List<Order> orders = XJdbc.query(sql, this::mapResultSetToOrder);
+        
+        System.out.println("OrderDAOImpl.findAll() - Fetched " + (orders != null ? orders.size() : 0) + " orders");
+        if (orders != null && !orders.isEmpty()) {
+            System.out.println("Sample order - ID: " + orders.get(0).getOrderId() + 
+                             ", Status: " + orders.get(0).getOrderStatus() +
+                             ", Customer ID: " + orders.get(0).getCustomerId() +
+                             ", Staff ID: " + orders.get(0).getStaffId());
+        }
+        
+        return orders;
     }
 
     @Override
@@ -67,7 +120,6 @@ public class OrderDAOImpl implements OrderDAO {
                 "SELECT * FROM %s ORDER BY order_created_at DESC OFFSET %d ROWS FETCH NEXT %d ROWS ONLY",
                 TABLE_NAME, offset, pageSize
         );
-
         return XJdbc.query(sql, this::mapResultSetToOrder);
     }
 
@@ -86,199 +138,104 @@ public class OrderDAOImpl implements OrderDAO {
     }
 
     /**
-     * Find the maximum order code in format HD####
-     *
-     * @return the maximum order code number found, or 0 if none found
+     * Tạo mã đơn dạng ORDyyyymmddNNN
      */
-    private int findMaxOrderCodeNumber() {
-        try {
-            // First, try to find the maximum order code with the standard HD#### format
-            String sql = "SELECT order_code FROM " + TABLE_NAME + " WHERE order_code LIKE 'HD%' ORDER BY order_code DESC";
+    @Override
+    public String generateOrderCode() {
+        String prefix = "ORD";
+        String datePart = new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date());
+        String likePattern = prefix + datePart + "%";
 
-            List<String> orderCodes = XJdbc.query(sql, rs -> {
-                return rs.next() ? rs.getString(1) : null;
-            });
+        String sql = "SELECT TOP 1 order_code FROM " + TABLE_NAME +
+                     " WHERE order_code LIKE ? ORDER BY order_code DESC";
 
-            int maxNumber = 0;
-            for (String code : orderCodes) {
-                if (code != null && code.startsWith("HD") && code.length() > 2) {
-                    try {
-                        // Extract the numeric part after 'HD'
-                        String numberStr = code.substring(2);
-                        int number = Integer.parseInt(numberStr);
-                        if (number > maxNumber) {
-                            maxNumber = number;
-                        }
-                    } catch (NumberFormatException e) {
-                        // Skip invalid number formats
-                        continue;
-                    }
-                }
-            }
+        List<String> codes = XJdbc.query(sql, rs -> rs.getString("order_code"), likePattern);
 
-            // If no valid order codes found, check if there are any orders at all
-            if (maxNumber == 0) {
-                sql = "SELECT COUNT(*) FROM " + TABLE_NAME;
-                List<Integer> counts = XJdbc.query(sql, rs -> {
-                    return rs.next() ? rs.getInt(1) : 0;
-                });
-
-                // If there are orders but none with valid HD#### format, start from 1
-                if (!counts.isEmpty() && counts.get(0) > 0) {
-                    return 0; // This will make the next number 1
-                }
-            }
-
-            return maxNumber;
-        } catch (Exception e) {
-            e.printStackTrace();
-            // In case of any error, return 0 to start from HD0001
-            return 0;
+        if (!codes.isEmpty()) {
+            String lastCode = codes.get(0);
+            int lastNumber = Integer.parseInt(lastCode.substring(prefix.length() + datePart.length()));
+            return prefix + datePart + String.format("%03d", lastNumber + 1);
         }
-    }
-
-    /**
-     * Check if an order code already exists in the database
-     *
-     * @param code the order code to check
-     * @return true if the code exists, false otherwise
-     */
-    private boolean orderCodeExists(String code) {
-        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE order_code = ?";
-        List<Integer> counts = XJdbc.query(sql, rs -> {
-            return rs.next() ? rs.getInt(1) : 0;
-        }, code);
-        return !counts.isEmpty() && counts.get(0) > 0;
-    }
-
-    /**
-     * Generate the next order code in format HD####
-     *
-     * @return the next order code (e.g., HD0001, HD0002, ...)
-     */
-    private String generateNextOrderCode() {
-        // First, try to find the maximum order code number from the database
-        int maxNumber = findMaxOrderCodeNumber();
-
-        // If no orders found, start from 1
-        if (maxNumber == 0) {
-            return "HD0001";
-        }
-
-        // Generate next number and format it
-        int nextNumber = maxNumber + 1;
-        return String.format("HD%04d", nextNumber);
+        return prefix + datePart + "001";
     }
 
     @Override
     public Order save(Order order) {
         if (order.getOrderId() <= 0) {
-            // Generate order code if not provided
+            // insert
             if (order.getOrderCode() == null || order.getOrderCode().isEmpty()) {
-                // Generate order code with date prefix to ensure uniqueness
                 order.setOrderCode(generateOrderCode());
             }
-
-            // Đặt thời gian tạo nếu chưa có
             if (order.getOrderCreatedAt() == null) {
                 order.setOrderCreatedAt(LocalDateTime.now());
             }
 
-            // Xây dựng câu lệnh SQL tùy thuộc vào việc customer_id có null không
-            String sql;
-            if (order.getCustomerId() != null) {
-                sql = "INSERT INTO " + TABLE_NAME + " (customer_id, staff_id, order_final_amount, "
-                        + "order_payment_method, order_status, order_code, order_created_at) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            String sqlWithCustomer = "INSERT INTO " + TABLE_NAME +
+                    " (customer_id, staff_id, order_final_amount, order_payment_method, order_status, order_code, order_created_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-                XJdbc.executeUpdate(sql,
-                        order.getCustomerId(),
-                        order.getStaffId(),
-                        order.getOrderFinalAmount(),
-                        order.getOrderPaymentMethod(),
-                        order.getOrderStatus(),
-                        order.getOrderCode(),
-                        order.getOrderCreatedAt()
-                );
-            } else {
-                sql = "INSERT INTO " + TABLE_NAME + " (staff_id, order_final_amount, "
-                        + "order_payment_method, order_status, order_code, order_created_at) "
-                        + "VALUES (?, ?, ?, ?, ?, ?)";
+            String sqlNoCustomer = "INSERT INTO " + TABLE_NAME +
+                    " (staff_id, order_final_amount, order_payment_method, order_status, order_code, order_created_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?)";
 
-                XJdbc.executeUpdate(sql,
-                        order.getStaffId(),
-                        order.getOrderFinalAmount(),
-                        order.getOrderPaymentMethod(),
-                        order.getOrderStatus(),
-                        order.getOrderCode(),
-                        order.getOrderCreatedAt()
-                );
-            }
+            try (Connection conn = XJdbc.openConnection();
+                 PreparedStatement ps = conn.prepareStatement(
+                         (order.getCustomerId() != null ? sqlWithCustomer : sqlNoCustomer),
+                         Statement.RETURN_GENERATED_KEYS
+                 )) {
 
-            // Lấy ID vừa tạo
-            String idSql = "SELECT IDENT_CURRENT('" + TABLE_NAME + "')";
-            List<Integer> ids = XJdbc.query(idSql, rs -> {
-                return rs.next() ? rs.getInt(1) : 0;
-            });
-
-            int newId = !ids.isEmpty() ? ids.get(0) : 0;
-
-            if (newId > 0) {
-                order.setOrderId(newId);
-            } else {
-                // Fallback: Try to find the order by code if ID retrieval failed
-                System.err.println("[WARN] Failed to get generated ID, trying to find by code...");
-                Optional<Order> foundOrder = findByCode(order.getOrderCode());
-                if (foundOrder.isPresent()) {
-                    order.setOrderId(foundOrder.get().getOrderId());
+                if (order.getCustomerId() != null) {
+                    ps.setInt(1, order.getCustomerId());
+                    ps.setInt(2, order.getStaffId());
+                    ps.setBigDecimal(3, order.getOrderFinalAmount());
+                    ps.setString(4, order.getOrderPaymentMethod());
+                    ps.setString(5, order.getOrderStatus());
+                    ps.setString(6, order.getOrderCode());
+                    ps.setTimestamp(7, Timestamp.valueOf(order.getOrderCreatedAt()));
                 } else {
-                    System.err.println("[ERROR] Could not retrieve generated order ID");
-                    throw new RuntimeException("Could not retrieve generated order ID");
+                    ps.setInt(1, order.getStaffId());
+                    ps.setBigDecimal(2, order.getOrderFinalAmount());
+                    ps.setString(3, order.getOrderPaymentMethod());
+                    ps.setString(4, order.getOrderStatus());
+                    ps.setString(5, order.getOrderCode());
+                    ps.setTimestamp(6, Timestamp.valueOf(order.getOrderCreatedAt()));
                 }
+
+                ps.executeUpdate();
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        order.setOrderId(rs.getInt(1));
+                    }
+                }
+
+            } catch (SQLException e) {
+                throw new RuntimeException("Error inserting order", e);
             }
 
-            return order;
         } else {
-            // Cập nhật đơn hàng hiện có
-            String sql;
-            if (order.getCustomerId() != null) {
-                sql = "UPDATE " + TABLE_NAME + " SET customer_id = ?, staff_id = ?, "
-                        + "order_final_amount = ?, order_payment_method = ?, order_status = ? "
-                        + "WHERE order_id = ?";
-
-                XJdbc.executeUpdate(sql,
-                        order.getCustomerId(),
-                        order.getStaffId(),
-                        order.getOrderFinalAmount(),
-                        order.getOrderPaymentMethod(),
-                        order.getOrderStatus(),
-                        order.getOrderId()
-                );
-            } else {
-                sql = "UPDATE " + TABLE_NAME + " SET customer_id = NULL, staff_id = ?, "
-                        + "order_final_amount = ?, order_payment_method = ?, order_status = ? "
-                        + "WHERE order_id = ?";
-
-                XJdbc.executeUpdate(sql,
-                        order.getStaffId(),
-                        order.getOrderFinalAmount(),
-                        order.getOrderPaymentMethod(),
-                        order.getOrderStatus(),
-                        order.getOrderId()
-                );
-            }
-
-            return order;
+            // update
+            String sql = "UPDATE " + TABLE_NAME +
+                    " SET customer_id = ?, staff_id = ?, order_final_amount = ?, order_payment_method = ?, order_status = ?, order_code = ?, order_created_at = ? " +
+                    "WHERE order_id = ?";
+            XJdbc.executeUpdate(sql,
+                    order.getCustomerId(),
+                    order.getStaffId(),
+                    order.getOrderFinalAmount(),
+                    order.getOrderPaymentMethod(),
+                    order.getOrderStatus(),
+                    order.getOrderCode(),
+                    order.getOrderCreatedAt(),
+                    order.getOrderId()
+            );
         }
+        return order;
     }
 
     @Override
     public void deleteById(Integer id) {
-        // Xóa chi tiết đơn hàng trước
-        String deleteDetailsSql = "DELETE FROM OrderDetails WHERE order_id = ?";
+        String deleteDetailsSql = "DELETE FROM OrderDetail WHERE order_id = ?";
         XJdbc.executeUpdate(deleteDetailsSql, id);
 
-        // Sau đó xóa đơn hàng
         String sql = "DELETE FROM " + TABLE_NAME + " WHERE order_id = ?";
         XJdbc.executeUpdate(sql, id);
     }
@@ -307,10 +264,8 @@ public class OrderDAOImpl implements OrderDAO {
         if (keyword == null || keyword.trim().isEmpty()) {
             return new ArrayList<>();
         }
-
         String searchPattern = "%" + keyword.trim() + "%";
         String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_code LIKE ? OR CAST(order_id AS VARCHAR(20)) LIKE ?";
-
         return XJdbc.query(sql, this::mapResultSetToOrder, searchPattern, searchPattern);
     }
 
@@ -319,12 +274,9 @@ public class OrderDAOImpl implements OrderDAO {
         if (order.getOrderId() <= 0) {
             throw new IllegalArgumentException("Order ID must be greater than 0 for update");
         }
-
-        String sql = "UPDATE " + TABLE_NAME + " SET customer_id = ?, staff_id = ?, "
-                + "order_final_amount = ?, order_payment_method = ?, order_status = ?, "
-                + "order_code = ?, order_created_at = ? "
-                + "WHERE order_id = ?";
-
+        String sql = "UPDATE " + TABLE_NAME +
+                " SET customer_id = ?, staff_id = ?, order_final_amount = ?, order_payment_method = ?, order_status = ?, order_code = ?, order_created_at = ? " +
+                "WHERE order_id = ?";
         XJdbc.executeUpdate(sql,
                 order.getCustomerId(),
                 order.getStaffId(),
@@ -335,13 +287,12 @@ public class OrderDAOImpl implements OrderDAO {
                 order.getOrderCreatedAt(),
                 order.getOrderId()
         );
-
         return order;
     }
 
     @Override
     public BigDecimal getTotalRevenue() {
-        String sql = "SELECT SUM(final_amount) FROM orders WHERE status = 'Hoàn thành'";
+        String sql = "SELECT SUM(order_final_amount) FROM " + TABLE_NAME + " WHERE order_status = N'Hoàn thành'";
         try (ResultSet rs = XJdbc.executeQuery(sql)) {
             if (rs.next()) {
                 return rs.getBigDecimal(1);
@@ -354,7 +305,7 @@ public class OrderDAOImpl implements OrderDAO {
 
     @Override
     public int getTotalOrders() {
-        String sql = "SELECT COUNT(*) FROM orders";
+        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME;
         try (ResultSet rs = XJdbc.executeQuery(sql)) {
             if (rs.next()) {
                 return rs.getInt(1);
@@ -365,22 +316,10 @@ public class OrderDAOImpl implements OrderDAO {
         return 0;
     }
 
-    @Override
-    public BigDecimal getRevenueByDateRange(Date fromDate, Date toDate) {
-        String sql = "SELECT SUM(final_amount) FROM orders WHERE created_at BETWEEN ? AND ?";
-        try (ResultSet rs = XJdbc.executeQuery(sql, fromDate, toDate)) {
-            if (rs.next()) {
-                return rs.getBigDecimal(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return BigDecimal.ZERO;
-    }
 
     @Override
     public int getCanceledOrders() {
-        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE order_status = 'Đã hủy'";
+        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE order_status = N'Đã hủy'";
         try (ResultSet rs = XJdbc.executeQuery(sql)) {
             if (rs.next()) {
                 return rs.getInt(1);
@@ -391,179 +330,60 @@ public class OrderDAOImpl implements OrderDAO {
         return 0;
     }
 
+
     @Override
     public int getNewCustomersCount() {
-        // Lấy ngày đầu tháng hiện tại
-        LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-
-        String sql = "SELECT COUNT(*) FROM Customer WHERE created_at >= ?";
-        try (ResultSet rs = XJdbc.executeQuery(sql, startOfMonth)) {
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public Object[][] getRevenueDataByYear(int year) {
-        Object[][] data = new Object[12][2];
-        String sql = "SELECT MONTH(order_created_at) as month, SUM(order_final_amount) as revenue "
-                + "FROM " + TABLE_NAME
-                + " WHERE YEAR(order_created_at) = ? AND order_status = 'Hoàn thành' "
-                + "GROUP BY MONTH(order_created_at)";
-
-        try (ResultSet rs = XJdbc.executeQuery(sql, year)) {
-            // Khởi tạo mảng với các tháng và doanh thu ban đầu là 0
-            for (int i = 0; i < 12; i++) {
-                data[i][0] = String.format("Tháng %d", i + 1);
-                data[i][1] = 0.0;
-            }
-
-            // Cập nhật dữ liệu từ kết quả truy vấn
-            while (rs.next()) {
-                int month = rs.getInt("month") - 1; // Chỉ số mảng bắt đầu từ 0
-                double revenue = rs.getDouble("revenue");
-                if (!rs.wasNull()) {
-                    data[month][1] = revenue;
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return data;
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public Object[][] getCanceledOrderDataByYear(int year) {
-        Object[][] data = new Object[12][2];
-        String sql = "SELECT MONTH(order_created_at) as month, COUNT(*) as count "
-                + "FROM " + TABLE_NAME
-                + " WHERE YEAR(order_created_at) = ? AND order_status = 'Đã hủy' "
-                + "GROUP BY MONTH(order_created_at)";
-
-        try (ResultSet rs = XJdbc.executeQuery(sql, year)) {
-            // Khởi tạo mảng với các tháng và số lượng đơn hủy ban đầu là 0
-            for (int i = 0; i < 12; i++) {
-                data[i][0] = String.format("Tháng %d", i + 1);
-                data[i][1] = 0;
-            }
-
-            // Cập nhật dữ liệu từ kết quả truy vấn
-            while (rs.next()) {
-                int month = rs.getInt("month") - 1; // Chỉ số mảng bắt đầu từ 0
-                int count = rs.getInt("count");
-                data[month][1] = count;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return data;
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
-    @Override
-    public List<Order> findByCreatedDateBetween(Date from, Date to) {
-        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_created_at BETWEEN ? AND ? ORDER BY order_created_at DESC";
-        return XJdbc.query(sql, this::mapResultSetToOrder, from, to);
-    }
-
+ 
     @Override
     public List<Order> findByTotalAmountBetween(double min, double max) {
-        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_final_amount BETWEEN ? AND ? ORDER BY order_created_at DESC";
-        return XJdbc.query(sql, this::mapResultSetToOrder, min, max);
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public List<Order> findByStatus(String status) {
-        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE order_status = ? ORDER BY order_created_at DESC";
-        return XJdbc.query(sql, this::mapResultSetToOrder, status);
-    }
-
-    @Override
-    public Order processPayment(Order order, Map<Integer, Integer> orderDetails) throws Exception {
-        OrderDetailDAO orderDetailDAO = new OrderDetailDAOImpl();
-        ProductVariantDAO productVariantDAO = new ProductVariantDAOImpl();
-
-        try (Connection conn = XJdbc.openConnection()) {
-            conn.setAutoCommit(false);
-
-            try {
-                // 1. Update order status
-                order.setOrderStatus("Đã thanh toán");
-                order = this.update(order);
-
-                // 2. Process each order detail and update inventory
-                for (Map.Entry<Integer, Integer> entry : orderDetails.entrySet()) {
-                    int variantId = entry.getKey();
-                    int quantity = entry.getValue();
-
-                    // Update product variant quantity
-                    if (!productVariantDAO.reduceQuantity(variantId, quantity)) {
-                        throw new IllegalStateException("Không đủ hàng trong kho cho sản phẩm có ID: " + variantId);
-                    }
-                }
-
-                // Commit transaction if all operations succeed
-                conn.commit();
-                return order;
-
-            } catch (Exception e) {
-                // Rollback transaction on error
-                conn.rollback();
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public String generateOrderCode() {
-        String prefix = "ORD";
-        String datePart = new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date());
-
-        String sql = "SELECT order_code FROM [Order] WHERE order_code LIKE ? ORDER BY order_code DESC";
-        String likePattern = prefix + datePart + "%";
-
-        List<String> codes = XJdbc.query(sql, rs -> rs.getString("order_code"), likePattern);
-
-        if (!codes.isEmpty()) {
-            String lastCode = codes.get(0);
-            int lastNumber = Integer.parseInt(lastCode.substring(prefix.length() + datePart.length()));
-            return prefix + datePart + String.format("%03d", lastNumber + 1);
-        }
-        return prefix + datePart + "001";
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public int getStaffIdByCode(String staffCode) {
-        String sql = "SELECT staff_id FROM Staff WHERE staff_code = ?";
-        List<Integer> ids = XJdbc.query(sql, rs -> rs.getInt("staff_id"), staffCode);
-        return ids.isEmpty() ? -1 : ids.get(0);
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public Order getOrderByCode(String orderCode) {
-        String sql = "SELECT * FROM [Order] WHERE order_code = ?";
-        List<Order> orders = XJdbc.query(sql, rs -> {
-            Order order = new Order();
-            order.setOrderId(rs.getInt("order_id"));
-            order.setCustomerId((Integer) rs.getObject("customer_id"));
-            order.setStaffId((Integer) rs.getObject("staff_id"));
-            order.setOrderFinalAmount(rs.getBigDecimal("order_final_amount"));
-            order.setOrderPaymentMethod(rs.getString("order_payment_method"));
-            order.setOrderStatus(rs.getString("order_status"));
-            order.setOrderCode(rs.getString("order_code"));
-            java.sql.Timestamp ts = rs.getTimestamp("order_created_at");
-            if (ts != null) {
-                order.setOrderCreatedAt(ts.toLocalDateTime());
-            }
-            return order;
-        }, orderCode);
-
-        return orders.isEmpty() ? null : orders.get(0);
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
+    @Override
+    public Order processPayment(Order order, Map<Integer, Integer> orderDetails) throws Exception {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public OrderWithDetailsResponse findOrderWithDetails(String orderCode) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public BigDecimal getRevenueByDateRange(java.util.Date fromDate, java.util.Date toDate) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public List<Order> findByCreatedDateBetween(java.util.Date from, java.util.Date to) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

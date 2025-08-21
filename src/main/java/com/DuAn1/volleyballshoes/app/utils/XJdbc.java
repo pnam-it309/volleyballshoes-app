@@ -160,14 +160,44 @@ public class XJdbc {
      * Truy vấn trả về List<T> với RowMapper
      */
     public static <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
+        System.out.println("\n=== XJdbc.query() called ===");
+        System.out.println("SQL: " + sql);
+        if (args != null && args.length > 0) {
+            System.out.print("Parameters: [");
+            for (int i = 0; i < args.length; i++) {
+                if (i > 0) System.out.print(", ");
+                System.out.print(args[i] != null ? args[i].toString() : "null");
+            }
+            System.out.println("]");
+        }
+        
         List<T> list = new ArrayList<>();
         try (ResultSet rs = XJdbc.executeQuery(sql, args)) {
+            System.out.println("Executing query...");
+            int rowCount = 0;
             while (rs.next()) {
-                list.add(mapper.mapRow(rs));
+                rowCount++;
+                try {
+                    T item = mapper.mapRow(rs);
+                    list.add(item);
+                    if (rowCount <= 3) { // Log first 3 rows for debugging
+                        System.out.println("Row " + rowCount + ": " + item);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error mapping row " + rowCount + ": " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
+            System.out.println("Total rows processed: " + rowCount);
+            
         } catch (Exception ex) {
+            System.err.println("Error in XJdbc.query(): " + ex.getMessage());
+            ex.printStackTrace();
             throw new RuntimeException(ex);
         }
+        
+        System.out.println("Returning list with " + list.size() + " items");
+        System.out.println("=== End of XJdbc.query() ===\n");
         return list;
     }
 

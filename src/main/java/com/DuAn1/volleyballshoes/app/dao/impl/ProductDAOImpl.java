@@ -117,6 +117,9 @@ public class ProductDAOImpl implements ProductDAO {
 
     @Override
     public List<Product> findWithPagination(int offset, int limit) {
+        if (offset < 0) {
+            offset = 0;
+        }
         String sql = "SELECT p.*, b.brand_name, c.category_name FROM Product p " +
                    "LEFT JOIN Brand b ON p.brand_id = b.brand_id " +
                    "LEFT JOIN Category c ON p.category_id = c.category_id " +

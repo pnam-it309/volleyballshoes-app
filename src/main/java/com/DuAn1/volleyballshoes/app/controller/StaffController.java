@@ -14,14 +14,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.swing.JFrame;
+
 public class StaffController {
+
     private StaffDAO staffDAO;
     private JFrame parentFrame;
-    
+
     public StaffController() {
         this(null);
     }
-    
+
     public StaffController(JFrame parentFrame) {
         this.parentFrame = parentFrame;
         try {
@@ -52,7 +54,7 @@ public class StaffController {
             NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
             return null;
         }
-        
+
         try {
             Staff staff = staffDAO.findById(id);
             if (staff == null) {
@@ -71,7 +73,7 @@ public class StaffController {
             NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
             return null;
         }
-        
+
         try {
             if (staffDAO.existsByEmail(request.getEmail())) {
                 NotificationUtil.showError(parentFrame, "Email đã được sử dụng");
@@ -101,7 +103,7 @@ public class StaffController {
             NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
             return null;
         }
-        
+
         try {
             Staff staff = staffDAO.findById(id);
             if (staff == null) {
@@ -111,6 +113,9 @@ public class StaffController {
 
             if (request.getName() != null) {
                 staff.setStaffUsername(request.getName());
+            }
+            if (request.getEmail() != null) {  // THÊM
+                staff.setStaffEmail(request.getEmail());
             }
             if (request.getPhone() != null) {
                 staff.setStaffSdt(request.getPhone());
@@ -123,8 +128,17 @@ public class StaffController {
                     return null;
                 }
             }
+            if (request.getStatus() != null) {  // THÊM nếu StaffUpdateRequest có status
+                staff.setStaff_status(Integer.parseInt(request.getStatus()));
+            }
+            // Nếu cần update password, thêm logic riêng (ví dụ nếu request có password mới)
+            // staff.setStaffPassword(request.getPassword());  
 
             Staff updatedStaff = staffDAO.update(staff);
+            if (updatedStaff == null) {
+                NotificationUtil.showError(parentFrame, "Cập nhật thất bại (không có thay đổi hoặc lỗi DB)");
+                return null;
+            }
             NotificationUtil.showSuccess(parentFrame, "Cập nhật thông tin nhân viên thành công");
             return mapToStaffResponse(updatedStaff);
         } catch (Exception e) {
@@ -138,7 +152,7 @@ public class StaffController {
             NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
             return false;
         }
-        
+
         try {
             if (staffDAO.findById(id) == null) {
                 NotificationUtil.showError(parentFrame, "Không tìm thấy nhân viên với ID: " + id);
@@ -158,7 +172,7 @@ public class StaffController {
             return null;
         }
         return StaffResponse.builder()
-                .id((long)staff.getStaffId())
+                .id((long) staff.getStaffId())
                 .name(staff.getStaffUsername())
                 .email(staff.getStaffEmail())
                 .phone(staff.getStaffSdt())

@@ -5,6 +5,8 @@ import com.DuAn1.volleyballshoes.app.dao.impl.*;
 import com.DuAn1.volleyballshoes.app.dto.request.*;
 import com.DuAn1.volleyballshoes.app.dto.response.*;
 import com.DuAn1.volleyballshoes.app.entity.*;
+import com.DuAn1.volleyballshoes.app.entity.Customer;
+import com.DuAn1.volleyballshoes.app.entity.Staff;
 import com.DuAn1.volleyballshoes.app.utils.NotificationUtil;
 
 import java.math.BigDecimal;
@@ -112,15 +114,36 @@ public class OrderController {
     }
 
     public List<OrderResponse> getAllOrders() {
+        System.out.println("OrderController.getAllOrders() called");
         if (orderDAO == null) {
+            String error = "Lỗi: orderDAO is null";
+            System.err.println(error);
             NotificationUtil.showError(parentFrame, "Lỗi kết nối cơ sở dữ liệu");
             return new ArrayList<>();
         }
         try {
-            return orderDAO.findAll().stream()
-                    .map(order -> getOrderResponse(order))
+            System.out.println("Fetching all orders from DAO...");
+            List<Order> orders = orderDAO.findAll();
+            System.out.println("Found " + (orders != null ? orders.size() : 0) + " orders in DAO");
+            
+            if (orders != null && !orders.isEmpty()) {
+                System.out.println("Sample order from DAO - ID: " + orders.get(0).getOrderId() + 
+                                 ", Status: " + orders.get(0).getOrderStatus());
+            }
+            
+            List<OrderResponse> responses = orders.stream()
+                    .map(order -> {
+                        System.out.println("Converting order ID: " + order.getOrderId());
+                        return getOrderResponse(order);
+                    })
                     .collect(Collectors.toList());
+                    
+            System.out.println("Converted " + responses.size() + " orders to OrderResponse");
+            return responses;
+            
         } catch (Exception e) {
+            System.err.println("Error in getAllOrders: " + e.getMessage());
+            e.printStackTrace();
             NotificationUtil.showError(parentFrame, "Lỗi khi tải danh sách đơn hàng: " + e.getMessage());
             return new ArrayList<>();
         }
@@ -231,11 +254,39 @@ public class OrderController {
                 .build())
                 .collect(Collectors.toList());
 
+        // Get customer name if customer exists
+        String customerName = "Khách lẻ";
+        if (order.getCustomerId() != null && customerDAO != null) {
+            try {
+                Customer customer = customerDAO.findById(order.getCustomerId());
+                if (customer != null) {
+                    customerName = customer.getCustomerFullName();
+                }
+            } catch (Exception e) {
+                System.err.println("Error loading customer name: " + e.getMessage());
+            }
+        }
+
+        // Get staff name
+        String staffName = "";
+        if (order.getStaffId() > 0 && staffDAO != null) {
+            try {
+                Staff staff = staffDAO.findById(order.getStaffId());
+                if (staff != null) {
+                    staffName = staff.getStaffUsername();
+                }
+            } catch (Exception e) {
+                System.err.println("Error loading staff name: " + e.getMessage());
+            }
+        }
+
         return OrderResponse.builder()
                 .orderId(order.getOrderId())
                 .orderCode(order.getOrderCode())
                 .customerId(order.getCustomerId())
+                .customerName(customerName)
                 .staffId(order.getStaffId())
+                .staffName(staffName)
                 .finalAmount(order.getOrderFinalAmount())
                 .paymentMethod(order.getOrderPaymentMethod())
                 .status(order.getOrderStatus())
@@ -349,6 +400,25 @@ public class OrderController {
             return getOrderResponse(order);
         } catch (Exception e) {
             NotificationUtil.showError(parentFrame, "Lỗi khi cập nhật đơn hàng: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Get order with all its details by order code
+     * @param orderCode The order code to search for
+     * @return OrderWithDetailsResponse containing order and its details, or null if not found
+     */
+    public OrderWithDetailsResponse getOrderWithDetails(String orderCode) {
+        try {
+            if (orderDAO == null) {
+                throw new IllegalStateException("OrderDAO is not initialized");
+            }
+            return ((OrderDAOImpl) orderDAO).findOrderWithDetails(orderCode);
+        } catch (Exception e) {
+            if (parentFrame != null) {
+                NotificationUtil.showError(parentFrame, "Lỗi khi lấy thông tin đơn hàng: " + e.getMessage());
+            }
             return null;
         }
     }

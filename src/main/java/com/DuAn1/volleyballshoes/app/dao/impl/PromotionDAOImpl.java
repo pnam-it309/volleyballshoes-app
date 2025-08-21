@@ -76,23 +76,23 @@ public class PromotionDAOImpl implements PromotionDAO {
     public Promotion update(Promotion promotion) {
         String sql = "UPDATE Promotion SET "
                 + "promo_name = ?, "
-                + "promo_description = ?, "
                 + "promo_discount_value = ?, "
                 + "promo_start_date = ?, "
-                + "promo_end_date = ?, "
-                + "promo_code = ? "
-                + "WHERE promotion_id = ?";
+                + "promo_end_date = ? "
+                + "WHERE promo_code = ?";
 
-        XJdbc.executeUpdate(sql,
+        int rowsAffected = XJdbc.executeUpdate(sql,
                 promotion.getPromoName(),
                 promotion.getPromoDiscountValue(),
                 promotion.getPromoStartDate(),
                 promotion.getPromoEndDate(),
-                promotion.getPromoCode(),
-                promotion.getPromotionId()
+                promotion.getPromoCode()
         );
 
-        return promotion;
+        if (rowsAffected > 0) {
+            return findByCode(promotion.getPromoCode());
+        }
+        return null;
     }
 
     @Override

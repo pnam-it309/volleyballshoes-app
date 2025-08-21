@@ -33,7 +33,7 @@
               <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
               <Component id="btn_Tìm" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="txt_Tim" pref="102" max="32767" attributes="0"/>
+              <Component id="txt_Tim" pref="160" max="32767" attributes="0"/>
               <EmptySpace min="-2" pref="40" max="-2" attributes="0"/>
               <Component id="cbx_TrangThai" min="-2" pref="140" max="-2" attributes="0"/>
               <EmptySpace type="separate" max="-2" attributes="0"/>
@@ -43,10 +43,10 @@
           <Group type="102" attributes="0">
               <Group type="103" groupAlignment="0" attributes="0">
                   <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
+                  <Component id="jScrollPane2" alignment="0" min="-2" pref="827" max="-2" attributes="0"/>
                   <Component id="Tên" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="jScrollPane2" alignment="0" min="-2" pref="666" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace pref="154" max="32767" attributes="0"/>
+              <EmptySpace pref="111" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -114,7 +114,7 @@
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace min="-2" pref="65" max="-2" attributes="0"/>
-                  <Component id="txt_hoten3" min="-2" pref="238" max="-2" attributes="0"/>
+                  <Component id="txt_hoten" min="-2" pref="238" max="-2" attributes="0"/>
                   <EmptySpace min="-2" pref="214" max="-2" attributes="0"/>
                   <Component id="btn_Them" min="-2" max="-2" attributes="0"/>
                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
@@ -130,84 +130,93 @@
                       <Group type="102" alignment="0" attributes="0">
                           <Component id="lbl_mk" min="-2" max="-2" attributes="0"/>
                           <EmptySpace min="-2" pref="14" max="-2" attributes="0"/>
-                          <Component id="txt_matkhau3" min="-2" pref="233" max="-2" attributes="0"/>
+                          <Component id="txt_matkhau" min="-2" pref="233" max="-2" attributes="0"/>
                       </Group>
                       <Group type="102" alignment="1" attributes="0">
                           <Component id="lbl_sdt" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="32767" attributes="0"/>
-                          <Component id="txt_sdt3" min="-2" pref="237" max="-2" attributes="0"/>
+                          <Component id="txt_sdt" min="-2" pref="237" max="-2" attributes="0"/>
                       </Group>
                   </Group>
-                  <Group type="103" groupAlignment="0" attributes="0">
-                      <Group type="102" alignment="0" attributes="0">
-                          <EmptySpace min="-2" pref="36" max="-2" attributes="0"/>
-                          <Group type="103" groupAlignment="1" attributes="0">
+                  <Group type="103" groupAlignment="1" attributes="0">
+                      <Group type="102" attributes="0">
+                          <EmptySpace min="155" pref="155" max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" attributes="0">
-                                  <Component id="lbl_ma" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                                  <Component id="txt_ma3" min="-2" pref="268" max="-2" attributes="0"/>
+                                  <Component id="rdo_lamviec" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                                  <Component id="rdo_nghiviec" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <Group type="102" alignment="1" attributes="0">
-                                  <Group type="103" groupAlignment="0" attributes="0">
-                                      <Component id="lbl_chucvu" min="-2" max="-2" attributes="0"/>
-                                      <Component id="lbl_trangthai" min="-2" max="-2" attributes="0"/>
-                                  </Group>
-                                  <EmptySpace type="separate" max="-2" attributes="0"/>
-                                  <Group type="103" groupAlignment="0" attributes="0">
-                                      <Group type="102" alignment="0" attributes="0">
-                                          <Component id="rdo_lamviec" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                                          <Component id="rdo_nghiviec" min="-2" max="-2" attributes="0"/>
-                                      </Group>
-                                      <Group type="102" alignment="0" attributes="0">
-                                          <Component id="rdo_QuanLy1" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace min="-2" pref="38" max="-2" attributes="0"/>
-                                          <Component id="rdo_NhanVien1" min="-2" max="-2" attributes="0"/>
-                                      </Group>
-                                  </Group>
-                                  <EmptySpace min="-2" pref="96" max="-2" attributes="0"/>
+                                  <Component id="rdo_QuanLy" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace min="-2" pref="41" max="-2" attributes="0"/>
+                                  <Component id="rdo_NhanVien" min="-2" max="-2" attributes="0"/>
                               </Group>
                           </Group>
+                          <EmptySpace pref="239" max="32767" attributes="0"/>
                       </Group>
                       <Group type="102" alignment="0" attributes="0">
-                          <EmptySpace min="-2" pref="81" max="-2" attributes="0"/>
-                          <Component id="lbl_email" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                          <Component id="txt_email3" min="-2" pref="266" max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="1" attributes="0">
+                              <Group type="102" attributes="0">
+                                  <EmptySpace min="-2" pref="95" max="-2" attributes="0"/>
+                                  <Component id="lbl_ma" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                                  <Component id="txt_ma" min="-2" pref="266" max="-2" attributes="0"/>
+                              </Group>
+                              <Group type="102" alignment="0" attributes="0">
+                                  <EmptySpace min="-2" pref="57" max="-2" attributes="0"/>
+                                  <Group type="103" groupAlignment="1" attributes="0">
+                                      <Component id="lbl_chucvu" min="-2" max="-2" attributes="0"/>
+                                      <Component id="lbl_email" min="-2" max="-2" attributes="0"/>
+                                      <Component id="lbl_trangthai" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                                  <Component id="txt_email" min="-2" pref="266" max="-2" attributes="0"/>
+                              </Group>
+                          </Group>
+                          <EmptySpace min="0" pref="192" max="32767" attributes="0"/>
                       </Group>
                   </Group>
-                  <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
         <DimensionLayout dim="1">
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="0" attributes="0">
-                  <EmptySpace min="-2" pref="17" max="-2" attributes="0"/>
-                  <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="lbl_ten" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="txt_hoten3" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="lbl_ma" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="txt_ma3" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Group type="102" attributes="0">
+                          <EmptySpace min="-2" pref="17" max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="3" attributes="0">
+                              <Component id="lbl_ten" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="txt_hoten" alignment="3" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                      </Group>
+                      <Group type="102" alignment="1" attributes="0">
+                          <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="3" attributes="0">
+                              <Component id="lbl_ma" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="txt_ma" alignment="3" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                      </Group>
                   </Group>
                   <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="txt_sdt3" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="txt_sdt" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="lbl_sdt" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <Group type="103" alignment="0" groupAlignment="3" attributes="0">
                           <Component id="lbl_email" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="txt_email3" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="txt_email" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                   </Group>
                   <EmptySpace min="-2" pref="20" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="lbl_mk" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="txt_matkhau3" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="txt_matkhau" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="lbl_chucvu" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="rdo_QuanLy1" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="rdo_NhanVien1" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="rdo_QuanLy" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="rdo_NhanVien" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
@@ -232,24 +241,19 @@
             <Property name="text" type="java.lang.String" value="S&#x110;T"/>
           </Properties>
         </Component>
-        <Component class="javax.swing.JTextField" name="txt_sdt3">
+        <Component class="javax.swing.JTextField" name="txt_sdt">
         </Component>
         <Component class="javax.swing.JLabel" name="lbl_ten">
           <Properties>
             <Property name="text" type="java.lang.String" value="T&#xea;n"/>
           </Properties>
         </Component>
-        <Component class="javax.swing.JTextField" name="txt_hoten3">
+        <Component class="javax.swing.JTextField" name="txt_hoten">
         </Component>
         <Component class="javax.swing.JLabel" name="lbl_ma">
           <Properties>
             <Property name="text" type="java.lang.String" value="M&#xe3;"/>
           </Properties>
-        </Component>
-        <Component class="javax.swing.JTextField" name="txt_ma3">
-          <Events>
-            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="txt_ma2ActionPerformed"/>
-          </Events>
         </Component>
         <Component class="javax.swing.JLabel" name="lbl_chucvu">
           <Properties>
@@ -261,7 +265,7 @@
             <Property name="text" type="java.lang.String" value="Email:"/>
           </Properties>
         </Component>
-        <Component class="javax.swing.JTextField" name="txt_email3">
+        <Component class="javax.swing.JTextField" name="txt_email">
         </Component>
         <Component class="javax.swing.JLabel" name="lbl_trangthai">
           <Properties>
@@ -289,9 +293,9 @@
             <Property name="text" type="java.lang.String" value="M&#x1ead;t Kh&#x1ea9;u"/>
           </Properties>
         </Component>
-        <Component class="javax.swing.JTextField" name="txt_matkhau3">
+        <Component class="javax.swing.JTextField" name="txt_matkhau">
         </Component>
-        <Component class="javax.swing.JRadioButton" name="rdo_QuanLy1">
+        <Component class="javax.swing.JRadioButton" name="rdo_QuanLy">
           <Properties>
             <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
               <ComponentRef name="buttonGroup2"/>
@@ -299,7 +303,7 @@
             <Property name="text" type="java.lang.String" value="Qu&#x1ea3;n L&#xfd; "/>
           </Properties>
         </Component>
-        <Component class="javax.swing.JRadioButton" name="rdo_NhanVien1">
+        <Component class="javax.swing.JRadioButton" name="rdo_NhanVien">
           <Properties>
             <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
               <ComponentRef name="buttonGroup2"/>
@@ -339,6 +343,8 @@
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_LamMoibtn_ThemActionPerformed"/>
           </Events>
+        </Component>
+        <Component class="javax.swing.JTextField" name="txt_ma">
         </Component>
       </SubComponents>
     </Container>

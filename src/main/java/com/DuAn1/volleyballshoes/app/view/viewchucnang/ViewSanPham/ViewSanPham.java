@@ -13,11 +13,13 @@ import com.google.zxing.LuminanceSource;
 import com.google.zxing.MultiFormatReader;
 import com.google.zxing.NotFoundException;
 import com.google.zxing.Result;
+import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeWriter;
 import java.awt.Component;
+import java.awt.Desktop;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,7 +37,10 @@ import javax.swing.table.DefaultTableModel;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
+import javax.swing.UIManager;
+import javax.swing.plaf.FontUIResource;
+import java.awt.Font;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -154,15 +159,25 @@ public final class ViewSanPham extends javax.swing.JPanel {
 
     private void updatePaginationInfo() {
         try {
-            int totalPages = productController.getTotalPages(pageSize);
-            jlabel5.setText("Trang " + (currentPage + 1) + " / " + totalPages);
+            totalPages = productController.getTotalPages(pageSize);
+            if (totalPages <= 0) {
+                totalPages = 1;
+            }
+            jlabel5.setText("Trang " + currentPage + " / " + totalPages);
+            trang.setText("Trang " + currentPage + " / " + totalPages);
 
-            nhoNhat.setEnabled(currentPage > 0);
-            nho.setEnabled(currentPage > 0);
-            lon.setEnabled(currentPage < totalPages - 1);
-            lonNhat.setEnabled(currentPage < totalPages - 1);
+            boolean canGoBack = currentPage > 1;
+            nhoNhat.setEnabled(canGoBack);
+            nho.setEnabled(canGoBack);
+
+            boolean canGoForward = currentPage < totalPages;
+            lon.setEnabled(canGoForward);
+            lonNhat.setEnabled(canGoForward);
         } catch (Exception e) {
             jlabel5.setText("Trang 1 / 1");
+            trang.setText("Trang 1 / 1");
+            totalPages = 1;
+            currentPage = 1;
         }
     }
 
@@ -353,13 +368,9 @@ public final class ViewSanPham extends javax.swing.JPanel {
     }
 
     private void updateVariantTableModel(List<ProductVariant> variants) {
-        System.out.println("\n=== updateVariantTableModel called ===");
-        System.out.println("Input variants list is " + (variants == null ? "null" : "not null"));
-        System.out.println("Number of variants to process: " + (variants != null ? variants.size() : 0));
 
         // Log the actual variants list content
         if (variants != null && !variants.isEmpty()) {
-            System.out.println("\n--- Variants List Content ---");
             for (int i = 0; i < variants.size(); i++) {
                 ProductVariant v = variants.get(i);
                 System.out.println(String.format("[%d] ID: %d, SKU: %s, Qty: %d, Price: %s, SizeID: %d, ColorID: %d, SoleID: %d",
@@ -371,9 +382,6 @@ public final class ViewSanPham extends javax.swing.JPanel {
 
         // Get the table model
         DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
-        System.out.println("\n--- Table Model Info ---");
-        System.out.println("Current row count: " + model.getRowCount());
-        System.out.println("Column count: " + model.getColumnCount());
 
         // Log column names
         for (int i = 0; i < model.getColumnCount(); i++) {
@@ -391,6 +399,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
         SizeDAO sizeDAO = new SizeDAOImpl();
         ColorDAO colorDAO = new ColorDAOImpl();
         SoleTypeDAO soleTypeDAO = new SoleTypeDAOImpl();
+        ProductDAO productDAO = new ProductDAOImpl();
 
         int rowCount = 0;
 
@@ -402,21 +411,16 @@ public final class ViewSanPham extends javax.swing.JPanel {
                 Color color = variant.getColorId() > 0 ? colorDAO.findById(variant.getColorId()) : null;
                 SoleType soleType = variant.getSoleId() > 0 ? soleTypeDAO.findById(variant.getSoleId()) : null;
 
-                // Prepare row data with product name, color and sole type in the first column
-                String productName = selectedProduct != null ? selectedProduct.getProductName() : "";
-                String colorName = color != null ? color.getColorHexCode() : "";
-                String soleTypeName = soleType != null ? soleType.getSoleCode() : "";
-                String displayName = String.format("%s - %s - %s",
-                        productName,
-                        colorName,
-                        soleTypeName);
+                // Fetch the product for the current variant
+                Product product = productDAO.findById(variant.getProductId());
+                String productName = (product != null) ? product.getProductName() : "Không rõ";
 
                 Object[] rowData = new Object[]{
-                    displayName,
+                    productName,
                     variant.getVariantSku(),
-                    size != null ? size.getSizeCode() : "N/A",
-                    color != null ? color.getColorHexCode() : "N/A",
-                    soleType != null ? soleType.getSoleCode() : "N/A",
+                    size != null ? size.getSizeValue() : "N/A",
+                    color != null ? color.getColorName() : "N/A",
+                    soleType != null ? soleType.getSoleName() : "N/A",
                     formatCurrency(variant.getVariantOrigPrice()),
                     variant.getVariantquantity()
                 };
@@ -424,11 +428,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
                 // Add row to model
                 model.addRow(rowData);
 
-                // Verify the row was added correctly
-                int lastRow = model.getRowCount() - 1;
-                Object addedQuantity = model.getValueAt(lastRow, 5); // Quantity is at index 5
-                System.out.println("Added row " + lastRow + ". Quantity in table: " + addedQuantity);
-
+                // The row has been added to the model.
             } catch (Exception e) {
                 System.err.println("ERROR processing variant " + (variant != null ? variant.getVariantSku() : "null") + ":");
                 e.printStackTrace();
@@ -471,7 +471,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
         // Set preferred widths for columns
         TableColumnModel columnModel = tblSanPhamCon.getColumnModel();
         columnModel.getColumn(0).setPreferredWidth(300); // Wider column for product name
-        columnModel.getColumn(1).setPreferredWidth(100); // SKU
+        columnModel.getColumn(1).setPreferredWidth(300); // SKU
         columnModel.getColumn(2).setPreferredWidth(100);  // Size
         columnModel.getColumn(3).setPreferredWidth(100); // Color
         columnModel.getColumn(4).setPreferredWidth(100); // Sole type
@@ -506,36 +506,17 @@ public final class ViewSanPham extends javax.swing.JPanel {
 
     private void loadSelectedProductVariants() {
         if (selectedProduct == null) {
+            loadProductVariants();
             return;
         }
 
         try {
-
+            // Lấy danh sách ProductVariant theo productId
             List<ProductVariant> variants = productVariantDAO.findByProductId(selectedProduct.getProductId());
-
             updateVariantTableModel(variants);
-
-            if (tblSanPhamCon.getModel().getRowCount() > 0) {
-                DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
-                for (int i = 0; i < model.getRowCount(); i++) {
-                    System.out.println(String.format("Row %d: %s, %s, %s, %s, %s, %s",
-                            i,
-                            model.getValueAt(i, 0), // SKU
-                            model.getValueAt(i, 1), // Size
-                            model.getValueAt(i, 2), // Color
-                            model.getValueAt(i, 3), // Sole
-                            model.getValueAt(i, 4), // Price
-                            model.getValueAt(i, 5) // Quantity
-                    ));
-                }
-            }
         } catch (Exception e) {
-            System.err.println("Error loading product variants:");
+            JOptionPane.showMessageDialog(this, "Lỗi khi tải biến thể sản phẩm: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tải biến thể sản phẩm: " + e.getMessage(),
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -627,30 +608,13 @@ public final class ViewSanPham extends javax.swing.JPanel {
     }
 
     public void loadProductVariants() {
-        if (selectedProduct != null) {
-            try {
-
-                // Get variants from DAO
-                List<ProductVariant> variants = productVariantDAO.findByProductId(selectedProduct.getProductId());
-
-                if (variants != null && !variants.isEmpty()) {
-                    System.out.println("First variant SKU: " + variants.get(0).getVariantSku());
-                }
-
-                // Update the table model
-                updateVariantTableModel(variants);
-
-            } catch (Exception e) {
-                System.err.println("Error in loadProductVariants():");
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this,
-                        "Lỗi khi tải biến thể sản phẩm: " + e.getMessage(),
-                        "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
-            model.setRowCount(0);
+        try {
+            // Lấy tất cả ProductVariant từ ProductVariantDAO
+            List<ProductVariant> variants = productVariantDAO.findAll();
+            updateVariantTableModel(variants);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tải biến thể sản phẩm: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 
@@ -700,33 +664,75 @@ public final class ViewSanPham extends javax.swing.JPanel {
 
             // Create QR code content with product info
             String qrContent = String.format("SKU: %s\nProduct: %s", sku, productName);
+            String defaultFileName = "QR_" + sku + "_" + productName.replaceAll("[^a-zA-Z0-9]", "_") + ".png";
 
-            // Create and show QR code dialog
-            JDialog qrDialog = new JDialog();
-            qrDialog.setTitle("QR Code - " + productName);
+            // Let user choose save location
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Lưu mã QR");
+            fileChooser.setSelectedFile(new File(defaultFileName));
+
+            // Set file filter for PNG images
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("PNG Images", "png");
+            fileChooser.setFileFilter(filter);
+
+            int userSelection = fileChooser.showSaveDialog(this);
+            if (userSelection != JFileChooser.APPROVE_OPTION) {
+                return; // User cancelled the save dialog
+            }
+
+            File outputFile = fileChooser.getSelectedFile();
+            // Ensure the file has .png extension
+            if (!outputFile.getName().toLowerCase().endsWith(".png")) {
+                outputFile = new File(outputFile.getAbsolutePath() + ".png");
+            }
 
             // Generate QR code
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            BitMatrix bitMatrix = qrCodeWriter.encode(qrContent, BarcodeFormat.QR_CODE, 300, 300);
+            int size = 300; // QR code size
+            BitMatrix bitMatrix = qrCodeWriter.encode(qrContent, BarcodeFormat.QR_CODE, size, size);
 
             // Convert to BufferedImage
-            BufferedImage qrImage = new BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB);
-            for (int x = 0; x < 300; x++) {
-                for (int y = 0; y < 300; y++) {
+            BufferedImage qrImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
+            for (int x = 0; x < size; x++) {
+                for (int y = 0; y < size; y++) {
                     qrImage.setRGB(x, y, bitMatrix.get(x, y) ? 0x000000 : 0xFFFFFF);
                 }
             }
 
-            // Display QR code
-            JLabel qrLabel = new JLabel(new ImageIcon(qrImage));
-            qrDialog.add(qrLabel);
-            qrDialog.pack();
-            qrDialog.setLocationRelativeTo(this);
-            qrDialog.setVisible(true);
+            // Save the QR code as PNG
+            ImageIO.write(qrImage, "PNG", outputFile);
 
-        } catch (Exception ex) {
+            // Show success message
+            JOptionPane.showMessageDialog(this,
+                    "Đã lưu mã QR thành công tại:\n" + outputFile.getAbsolutePath(),
+                    "Thành công",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            // Optionally open the saved image
+            int option = JOptionPane.showConfirmDialog(this,
+                    "Bạn có muốn mở ảnh vừa lưu không?",
+                    "Mở ảnh",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (option == JOptionPane.YES_OPTION) {
+                try {
+                    Desktop.getDesktop().open(outputFile);
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(this,
+                            "Không thể mở ảnh: " + ex.getMessage(),
+                            "Lỗi",
+                            JOptionPane.WARNING_MESSAGE);
+                }
+            }
+
+        } catch (WriterException ex) {
             JOptionPane.showMessageDialog(this,
                     "Lỗi khi tạo mã QR: " + ex.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi lưu file ảnh: " + ex.getMessage(),
                     "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
         }
@@ -798,6 +804,26 @@ public final class ViewSanPham extends javax.swing.JPanel {
         btnLonNhat.setEnabled(currentPage < totalPages);
     }
 
+    static {
+        try {
+            // Set system look and feel
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+            // Set default font
+            Font font = new Font("Segoe UI", Font.PLAIN, 13);
+            Enumeration<Object> keys = UIManager.getLookAndFeelDefaults().keys();
+            while (keys.hasMoreElements()) {
+                Object key = keys.nextElement();
+                if (UIManager.get(key) instanceof FontUIResource) {
+                    UIManager.put(key, font);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+// Then modify the main method to be simpler
     public static void main(String args[]) {
         // Set console encoding to UTF-8
         System.setProperty("file.encoding", "UTF-8");
@@ -809,34 +835,14 @@ public final class ViewSanPham extends javax.swing.JPanel {
             e.printStackTrace();
         }
 
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(ViewSanPham.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(ViewSanPham.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(ViewSanPham.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(ViewSanPham.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-        //</editor-fold>
-
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new ViewSanPham().setVisible(true);
+                try {
+                    new ViewSanPham().setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
@@ -1831,7 +1837,6 @@ public final class ViewSanPham extends javax.swing.JPanel {
 
         try {
             ProductCreateRequest request = getCreateRequest();
-            System.out.println("[DEBUG] ProductCreateRequest: " + request);
             productController.createProduct(request);
 
             loadData();
@@ -1845,12 +1850,14 @@ public final class ViewSanPham extends javax.swing.JPanel {
     }//GEN-LAST:event_btnThemActionPerformed
 
     private void nhoNhatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nhoNhatActionPerformed
-        currentPage = 0;
-        loadData();
+        if (currentPage > 1) {
+            currentPage = 1;
+            loadData();
+        }
     }//GEN-LAST:event_nhoNhatActionPerformed
 
     private void nhoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nhoActionPerformed
-        if (currentPage > 0) {
+        if (currentPage > 1) {
             currentPage--;
             loadData();
         }
@@ -1859,7 +1866,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
     private void lonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lonActionPerformed
         try {
             int totalPages = productController.getTotalPages(pageSize);
-            if (currentPage < totalPages - 1) {
+            if (currentPage < totalPages) {
                 currentPage++;
                 loadData();
             }
@@ -1871,7 +1878,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
     private void lonNhatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lonNhatActionPerformed
         try {
             int totalPages = productController.getTotalPages(pageSize);
-            currentPage = Math.max(0, totalPages - 1);
+            currentPage = totalPages;
             loadData();
         } catch (Exception e) {
             // Handle error silently for pagination
@@ -2245,96 +2252,72 @@ public final class ViewSanPham extends javax.swing.JPanel {
     }//GEN-LAST:event_btnLamMoi1ActionPerformed
 
     private void btnTaiQRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTaiQRActionPerformed
+        int selectedRow = tblSanPhamCon.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng chọn một sản phẩm để tạo QR code",
+                    "Cảnh báo",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String sku = tblSanPhamCon.getValueAt(selectedRow, 1).toString(); // Cột 1 là cột SKU
+
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Chọn ảnh QR code");
+        fileChooser.setDialogTitle("Lưu file QR code");
+        fileChooser.setSelectedFile(new File(sku + ".jpg"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("JPEG Image", "jpg"));
 
-        // Chỉ cho phép chọn file ảnh
-        FileNameExtensionFilter filter = new FileNameExtensionFilter(
-                "Image files", "jpg", "jpeg", "png", "gif", "bmp");
-        fileChooser.setFileFilter(filter);
+        // Hiển thị hộp thoại lưu file
+        int userSelection = fileChooser.showSaveDialog(this);
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
 
-        int returnValue = fileChooser.showOpenDialog(this);
-        if (returnValue == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
+            // Đảm bảo file có đuôi .jpg
+            String filePath = fileToSave.getAbsolutePath();
+            if (!filePath.toLowerCase().endsWith(".jpg")) {
+                fileToSave = new File(filePath + ".jpg");
+            }
+
             try {
-                // Đọc ảnh QR code
-                BufferedImage image = ImageIO.read(selectedFile);
+                // Tạo mã QR code từ SKU
+                String qrText = sku;
+                int width = 300;
+                int height = 300;
 
-                // Tạo đối tượng BinaryBitmap từ ảnh
-                LuminanceSource source = new BufferedImageLuminanceSource(image);
-                BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+                // Tạo đối tượng QR code writer
+                QRCodeWriter qrCodeWriter = new QRCodeWriter();
+                BitMatrix bitMatrix = qrCodeWriter.encode(qrText, BarcodeFormat.QR_CODE, width, height);
 
-                // Giải mã QR code
-                Result result = new MultiFormatReader().decode(bitmap);
-                String qrText = result.getText();
-
-                // Lấy SKU từ dữ liệu QR code (giả sử qrText chứa SKU)
-                String sku = qrText.trim();
-
-                // Tạo tên file mới với SKU và phần mở rộng từ file gốc
-                String originalFilename = selectedFile.getName();
-                String fileExtension = "";
-                int lastDot = originalFilename.lastIndexOf('.');
-                if (lastDot > 0) {
-                    fileExtension = originalFilename.substring(lastDot);
+                // Chuyển đổi BitMatrix thành BufferedImage
+                BufferedImage qrImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+                for (int x = 0; x < width; x++) {
+                    for (int y = 0; y < height; y++) {
+                        qrImage.setRGB(x, y, bitMatrix.get(x, y) ? 0x000000 : 0xFFFFFF);
+                    }
                 }
 
-                // Tạo file mới với tên là SKU và phần mở rộng từ file gốc
-                File newFile = new File(selectedFile.getParent(), sku + fileExtension);
-
-                // Nếu file đã tồn tại, thêm số thứ tự vào tên file
-                int counter = 1;
-                while (newFile.exists()) {
-                    newFile = new File(selectedFile.getParent(),
-                            sku + "_" + (counter++) + fileExtension);
-                }
-
-                // Lưu ảnh với tên mới
-                ImageIO.write(image, fileExtension.substring(1), newFile);
-
-                // Xử lý dữ liệu QR code
-                processQRCodeData(qrText);
-
-                // Lấy tên sản phẩm từ bảng (nếu có)
-                String productName = "";
-                int selectedRow = tblSanPham.getSelectedRow();
-                if (selectedRow >= 0) {
-                    productName = tblSanPham.getValueAt(selectedRow, 2).toString(); // Cột thứ 3 thường là tên sản phẩm
-                }
-
-                String message = "Đã lưu ảnh thành công!\n";
-                message += "Tên file: " + newFile.getName() + "\n";
-                if (!productName.isEmpty()) {
-                    message += "Tên sản phẩm: " + productName + "\n";
-                }
-                message += "SKU: " + sku;
+                // Lưu ảnh QR code
+                ImageIO.write(qrImage, "jpg", fileToSave);
 
                 JOptionPane.showMessageDialog(this,
-                        message,
+                        "Đã lưu mã QR code thành công tại: " + fileToSave.getAbsolutePath(),
                         "Thành công",
                         JOptionPane.INFORMATION_MESSAGE);
 
-            } catch (IOException e) {
+            } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this,
-                        "Lỗi khi đọc/ghi file ảnh: " + e.getMessage(),
+                        "Lỗi khi tạo QR code: " + ex.getMessage(),
                         "Lỗi",
                         JOptionPane.ERROR_MESSAGE);
-            } catch (NotFoundException e) {
-                JOptionPane.showMessageDialog(this,
-                        "Không tìm thấy mã QR trong ảnh",
-                        "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this,
-                        "Lỗi khi xử lý ảnh: " + e.getMessage(),
-                        "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
             }
         }
     }//GEN-LAST:event_btnTaiQRActionPerformed
 
     private void btn_dowload_templateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_dowload_templateActionPerformed
         // Tạo hộp thoại chọn nơi lưu file
+
         javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
         fileChooser.setDialogTitle("Chọn nơi lưu file mẫu");
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
@@ -2361,40 +2344,54 @@ public final class ViewSanPham extends javax.swing.JPanel {
                     // Tạo header row
                     org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
                     String[] headers = {
-                        // Product
-                        "Mã sản phẩm (product_code)",
-                        "Tên sản phẩm (product_name)",
-                        "ID thương hiệu (brand_id, nhập số)",
-                        "ID danh mục (category_id, nhập số)",
-                        // ProductVariant
-                        "Mã SKU (variant_sku)",
-                        "ID Kích thước (size_id, nhập số)",
-                        "ID Màu sắc (color_id, nhập số)",
-                        "ID Loại đế (sole_id, nhập số)",
-                        "Giá gốc (variant_orig_price)",
-                        "Số lượng tồn (variant_quantity)"
+                        // Thông tin sản phẩm
+                        "Mã sản phẩm (product_code)*",
+                        "Tên sản phẩm (product_name)*",
+                        "Mô tả (product_description)",
+                        "Mã thương hiệu (brand_code)*",
+                        "Mã danh mục (category_code)*",
+                        // Thông tin biến thể
+                        "Mã SKU (variant_sku)*",
+                        "Số lượng (quantity)*",
+                        "Giá gốc (original_price)*",
+                        "Giá khuyến mãi (sale_price)",
+                        "Mã màu sắc (color_code)*",
+                        "Mã kích thước (size_code)*",
+                        "Mã loại đế (sole_code)*",
+                        "Trạng thái (is_active)",
+                        "Mô tả biến thể (variant_description)"
                     };
 
+                    // Thêm header vào dòng đầu tiên
                     for (int i = 0; i < headers.length; i++) {
                         org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
                         cell.setCellValue(headers[i]);
                         cell.setCellStyle(headerStyle);
                     }
 
-                    // Tạo dòng hướng dẫn
-                    org.apache.poi.ss.usermodel.Row instructionRow1 = sheet.createRow(1);
-                    // Product mẫu
-                    instructionRow1.createCell(0).setCellValue("SP001"); // product_code
-                    instructionRow1.createCell(1).setCellValue("Giày bóng chuyền Mizuno"); // product_name
-                    instructionRow1.createCell(2).setCellValue("1"); // brand_id (nhập số, sẽ map sang tên)
-                    instructionRow1.createCell(3).setCellValue("2"); // category_id (nhập số, sẽ map sang tên)
-                    // ProductVariant mẫu
-                    instructionRow1.createCell(4).setCellValue("SP001-BLACK-42"); // variant_sku
-                    instructionRow1.createCell(5).setCellValue("3"); // size_id (nhập số, sẽ map sang tên)
-                    instructionRow1.createCell(6).setCellValue("5"); // color_id (nhập số, sẽ map sang tên)
-                    instructionRow1.createCell(7).setCellValue("2"); // sole_id (nhập số, sẽ map sang tên)
-                    instructionRow1.createCell(8).setCellValue("650000"); // variant_orig_price
-                    instructionRow1.createCell(9).setCellValue("100"); // variant_quantity
+                    // Tạo dòng ví dụ
+                    org.apache.poi.ss.usermodel.Row exampleRow = sheet.createRow(1);
+                    String[] exampleValues = {
+                        "SP001", // Mã sản phẩm
+                        "Giày bóng chuyền cao cấp", // Tên sản phẩm
+                        "Mô tả sản phẩm chi tiết", // Mô tả
+                        "BRAND1", // Mã thương hiệu
+                        "CAT1", // Mã danh mục
+                        "SP001-RED-42", // Mã SKU
+                        "100", // Số lượng
+                        "500000", // Giá gốc
+                        "450000", // Giá khuyến mãi
+                        "RED", // Mã màu sắc
+                        "42", // Mã kích thước
+                        "SOLE1", // Mã loại đế
+                        "1", // Trạng thái
+                        "Màu đỏ, size 42" // Mô tả biến thể
+                    };
+
+                    // Thêm dữ liệu ví dụ
+                    for (int i = 0; i < exampleValues.length; i++) {
+                        exampleRow.createCell(i).setCellValue(exampleValues[i]);
+                    }
 
                     // Tự động điều chỉnh độ rộng cột
                     for (int i = 0; i < headers.length; i++) {
@@ -2404,15 +2401,12 @@ public final class ViewSanPham extends javax.swing.JPanel {
                     // Lưu file
                     try (java.io.FileOutputStream outputStream = new java.io.FileOutputStream(templatePath)) {
                         workbook.write(outputStream);
+                        JOptionPane.showMessageDialog(this,
+                                "Đã tạo file mẫu thành công tại:\n" + templatePath,
+                                "Thành công",
+                                JOptionPane.INFORMATION_MESSAGE);
                     }
-
-                    // Thông báo thành công
-                    JOptionPane.showMessageDialog(this,
-                            "Đã tạo file mẫu thành công tại: " + templatePath,
-                            "Thành công",
-                            JOptionPane.INFORMATION_MESSAGE);
                 }
-
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this,
                         "Lỗi khi tạo file mẫu: " + e.getMessage(),
@@ -2421,6 +2415,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
                 e.printStackTrace();
             }
         }
+
     }//GEN-LAST:event_btn_dowload_templateActionPerformed
 
     private void btn_import_file_excelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_import_file_excelActionPerformed
@@ -2624,7 +2619,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
     private void tblSanPhamConMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblSanPhamConMouseClicked
         // TODO add your handling code here:
         int selectedRow = tblSanPhamCon.getSelectedRow();
-        if (evt.getClickCount() == 3) {
+        if (evt.getClickCount() == 2) {
             int clickedRow = tblSanPhamCon.rowAtPoint(evt.getPoint());
             if (clickedRow != -1) {
                 generateQRCodeForRow(clickedRow);
@@ -2640,15 +2635,6 @@ public final class ViewSanPham extends javax.swing.JPanel {
                 String soleType = tblSanPhamCon.getValueAt(selectedRow, 3).toString();
                 String price = tblSanPhamCon.getValueAt(selectedRow, 4).toString();
                 String quantity = tblSanPhamCon.getValueAt(selectedRow, 5).toString();
-
-                // Ghi log thông tin sản phẩm được chọn
-                System.out.println("Đã chọn sản phẩm:");
-                System.out.println("SKU: " + sku);
-                System.out.println("Kích thước: " + size);
-                System.out.println("Màu sắc: " + color);
-                System.out.println("Loại đế: " + soleType);
-                System.out.println("Giá: " + price);
-                System.out.println("Số lượng: " + quantity);
 
                 // Tạo mã QR cho sản phẩm
                 String qrData = "SKU: " + sku + "\n"
@@ -2700,56 +2686,37 @@ public final class ViewSanPham extends javax.swing.JPanel {
 
     private void tblSanPhamMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblSanPhamMouseClicked
         // TODO add your handling code here:
-        System.out.println("\n=== tblSanPhamMouseClicked triggered ===");
         selectedRow = tblSanPham.getSelectedRow();
-        System.out.println("Selected row index: " + selectedRow);
 
         if (selectedRow != -1) {
             try {
-                System.out.println("\n=== Processing row selection ===");
 
                 // Get the product code directly from the selected row in the table
                 String productCode = (String) tblSanPham.getValueAt(selectedRow, 0);
-                System.out.println("Selected product code from table: " + productCode);
 
                 if (productCode == null || productCode.trim().isEmpty()) {
                     System.out.println("ERROR: Product code is null or empty");
                     return;
                 }
 
-                // Log the selected row data for debugging
-                System.out.println("\n--- Selected Row Data ---");
                 int colCount = tblSanPham.getColumnCount();
                 for (int i = 0; i < colCount; i++) {
                     System.out.println(tblSanPham.getColumnName(i) + ": " + tblSanPham.getValueAt(selectedRow, i));
                 }
 
-                // Find the product by code to get its ID
-                System.out.println("\nLooking up product with code: " + productCode);
                 selectedProduct = productController.getProductByCode(productCode);
 
                 if (selectedProduct != null) {
-                    System.out.println("\n--- Found Product Details ---");
-                    System.out.println("Product ID: " + selectedProduct.getProductId());
-                    System.out.println("Name: " + selectedProduct.getProductName());
-                    System.out.println("Code: " + selectedProduct.getProductCode());
 
-                    // Fill the form with product details
-                    System.out.println("Filling product form...");
                     fillForm(selectedProduct);
 
-                    // Load variants for the selected product
-                    System.out.println("Loading product variants...");
                     loadSelectedProductVariants();
                 } else {
-                    System.out.println("ERROR: No product found with code: " + productCode);
                     // Clear the variant table if no product is selected
                     DefaultTableModel model = (DefaultTableModel) tblSanPhamCon.getModel();
-                    System.out.println("Clearing variant table (no product found)");
                     model.setRowCount(0);
                 }
             } catch (Exception e) {
-                System.err.println("Error in tblSanPhamMouseClicked: " + e.getMessage());
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this,
                         "Lỗi khi tải thông tin sản phẩm: " + e.getMessage(),

@@ -94,6 +94,28 @@ public class ViewBanHang extends javax.swing.JPanel {
         });
     }
 
+    private void loadProductVariantSKUs() {
+        javax.swing.DefaultComboBoxModel<String> skuModel = new javax.swing.DefaultComboBoxModel<>();
+        try {
+            List<ProductVariant> variants = productVariantDAO.findAll();
+            for (ProductVariant variant : variants) {
+                String sku = variant.getVariantSku();
+                if (sku != null && !sku.trim().isEmpty()) {
+                    skuModel.addElement(sku);
+                }
+            }
+            if (skuModel.getSize() == 0) {
+                skuModel.addElement("Không có SKU");
+            }
+            cbo_sku_sell.setModel(skuModel);
+        } catch (Exception e) {
+            skuModel.removeAllElements();
+            skuModel.addElement("Lỗi tải SKU");
+            cbo_sku_sell.setModel(skuModel);
+            JOptionPane.showMessageDialog(this, "Lỗi khi tải mã SKU: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     /**
      * Updates the total for a specific row in the cart
      *
@@ -261,6 +283,7 @@ public class ViewBanHang extends javax.swing.JPanel {
         while (model.getRowCount() > 0) {
             model.removeRow(0);
         }
+        loadProductVariantSKUs();
         loadProductVariants();
         initCartTable();
         lbMaHD.setVisible(true);
@@ -559,7 +582,7 @@ public class ViewBanHang extends javax.swing.JPanel {
         tblSanPham = new javax.swing.JTable();
         btn_chon_san_pham = new javax.swing.JButton();
         jLabel2 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
+        txt_ten = new javax.swing.JTextField();
         btn_timkiem = new javax.swing.JButton();
         cbo_sku_sell = new javax.swing.JComboBox<>();
         jScrollPane2 = new javax.swing.JScrollPane();
@@ -1068,20 +1091,19 @@ public class ViewBanHang extends javax.swing.JPanel {
             .addGroup(jPanel7Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel7Layout.createSequentialGroup()
-                        .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 747, Short.MAX_VALUE)
-                        .addContainerGap())
+                    .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 747, Short.MAX_VALUE)
                     .addGroup(jPanel7Layout.createSequentialGroup()
                         .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(108, 108, 108)
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 184, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(28, 28, 28)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txt_ten, javax.swing.GroupLayout.PREFERRED_SIZE, 184, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(cbo_sku_sell, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(84, 84, 84)
                         .addComponent(btn_timkiem)
-                        .addGap(53, 53, 53)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(btn_chon_san_pham)
-                        .addGap(72, 72, 72))))
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
         );
         jPanel7Layout.setVerticalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1090,7 +1112,7 @@ public class ViewBanHang extends javax.swing.JPanel {
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btn_chon_san_pham)
                     .addComponent(jLabel2)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txt_ten, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btn_timkiem)
                     .addComponent(cbo_sku_sell, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -1189,7 +1211,16 @@ public class ViewBanHang extends javax.swing.JPanel {
     }//GEN-LAST:event_tblGioHangMouseClicked
 
     private void btn_chon_san_phambtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_chon_san_phambtn_ThemActionPerformed
-        // TODO add your handling code here:
+        // Check if there's an active order and if it's already paid
+        if (orderCode != null && !orderCode.trim().isEmpty()) {
+            OrderController controller = new OrderController();
+            OrderResponse order = controller.getOrderByQRCodeOrId(orderCode);
+            if (order != null && "Đã thanh toán".equals(order.getStatus())) {
+                JOptionPane.showMessageDialog(this, "Không thể thêm sản phẩm vào hóa đơn đã thanh toán", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+        
         int selectedRow = tblSanPham.getSelectedRow();
 
         // Check if a product is selected
@@ -1370,7 +1401,7 @@ public class ViewBanHang extends javax.swing.JPanel {
     private void btnThanhToanbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnThanhToanbtn_ThemActionPerformed
         // TODO add your handling code here:
         try {
-            if (orderCode == null) {
+            if (orderCode == null || orderCode.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Vui lòng tạo hóa đơn trước khi thanh toán", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -1385,6 +1416,9 @@ public class ViewBanHang extends javax.swing.JPanel {
             Integer customerId = currentTemporaryCustomer != null ? currentTemporaryCustomer.getCustomerId() : null;
             Integer staffId = session.getStaffId();
             String paymentMethod = (String) cbbHinhThucThanhToan.getSelectedItem();
+            if (paymentMethod == null || paymentMethod.trim().isEmpty()) {
+                paymentMethod = "Tiền mặt"; // Mặc định
+            }
 
             // Lấy danh sách items từ giỏ hàng
             List<OrderItemRequest> items = new ArrayList<>();
@@ -1395,35 +1429,36 @@ public class ViewBanHang extends javax.swing.JPanel {
                     JOptionPane.showMessageDialog(this, "Không tìm thấy sản phẩm: " + sku, "Lỗi", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                if ((int) cartModel.getValueAt(i, 3) > variant.getVariantquantity()) {
-                    JOptionPane.showMessageDialog(this, "Sản phẩm " + sku + " không đủ tồn kho", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                int requestedQuantity = (int) cartModel.getValueAt(i, 3);
+                if (requestedQuantity > variant.getVariantquantity()) {
+                    JOptionPane.showMessageDialog(this, "Sản phẩm " + sku + " không đủ tồn kho (" + variant.getVariantquantity() + " còn lại)", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
                 OrderItemRequest item = OrderItemRequest.builder()
                         .variantId(variant.getVariantId())
-                        .quantity((int) cartModel.getValueAt(i, 3))
+                        .quantity(requestedQuantity)
                         .unitPrice((BigDecimal) cartModel.getValueAt(i, 4))
                         .build();
                 items.add(item);
             }
 
             // Tính tổng tiền từ lbTong
-            String totalText = lbTong.getText().replaceAll("[^0-9]", "");
-            BigDecimal finalAmount = new BigDecimal(totalText);
+            String totalText = lbTong.getText().replaceAll("[^0-9]", "").replace(",", "");
+            BigDecimal finalAmount = new BigDecimal(totalText.isEmpty() ? "0" : totalText);
 
             // Kiểm tra số tiền thanh toán
             BigDecimal paidAmount = BigDecimal.ZERO;
             if (txtTienKhachDua.isEnabled() && !txtTienKhachDua.getText().trim().isEmpty()) {
                 try {
-                    paidAmount = new BigDecimal(txtTienKhachDua.getText().trim().replaceAll("[^0-9]", ""));
+                    paidAmount = new BigDecimal(txtTienKhachDua.getText().trim().replaceAll("[^0-9]", "").replace(",", ""));
                 } catch (NumberFormatException e) {
                     JOptionPane.showMessageDialog(this, "Số tiền khách đưa không hợp lệ", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
             } else if (txtTienKhachCK.isEnabled() && !txtTienKhachCK.getText().trim().isEmpty()) {
                 try {
-                    paidAmount = new BigDecimal(txtTienKhachCK.getText().trim().replaceAll("[^0-9]", ""));
+                    paidAmount = new BigDecimal(txtTienKhachCK.getText().trim().replaceAll("[^0-9]", "").replace(",", ""));
                 } catch (NumberFormatException e) {
                     JOptionPane.showMessageDialog(this, "Số tiền chuyển khoản không hợp lệ", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     return;
@@ -1435,7 +1470,7 @@ public class ViewBanHang extends javax.swing.JPanel {
 
             // Kiểm tra số tiền thanh toán có đủ không
             if (paidAmount.compareTo(finalAmount) < 0) {
-                JOptionPane.showMessageDialog(this, "Số tiền thanh toán không đủ", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Số tiền thanh toán không đủ (Thiếu: " + finalAmount.subtract(paidAmount) + " đ)", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -1447,53 +1482,89 @@ public class ViewBanHang extends javax.swing.JPanel {
                 return;
             }
 
+            // Áp dụng giảm giá nếu có khuyến mãi
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            Promotion selectedPromotion = null;
+            if (cbbPhieuGiamGia.getSelectedItem() != null && !cbbPhieuGiamGia.getSelectedItem().toString().isEmpty()) {
+                String promotionName = cbbPhieuGiamGia.getSelectedItem().toString();
+                selectedPromotion = promotionDAO.findByCode(promotionName);
+                if (selectedPromotion != null) {
+                    // Tính toán số tiền được giảm
+                    discountAmount = finalAmount.multiply(selectedPromotion.getPromoDiscountValue())
+                            .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
+                    finalAmount = finalAmount.subtract(discountAmount);
+                }
+            }
+
             Order updatedOrder = Order.builder()
                     .orderId(currentOrder.getOrderId())
                     .customerId(customerId)
                     .staffId(staffId)
                     .orderFinalAmount(finalAmount)
                     .orderPaymentMethod(paymentMethod)
-                    .orderStatus("COMPLETED")
+                    .orderStatus("Đã thanh toán")
                     .orderCode(orderCode)
                     .orderCreatedAt(currentOrder.getCreatedAt())
+                    .promotionId(selectedPromotion != null ? selectedPromotion.getPromotionId() : null)
+                    .discountAmount(discountAmount)
                     .build();
 
             // Lưu order trước để có orderId
             OrderDAOImpl orderDAO = new OrderDAOImpl();
             updatedOrder = orderDAO.save(updatedOrder);
 
-            // Lưu từng order detail
+            // Không cần cập nhật số lần sử dụng vì entity Promotion không có trường này
+
+            // Lưu từng order detail và cập nhật tồn kho
+            OrderDetailDAO orderDetailDAO = new OrderDetailDAOImpl();
             for (OrderItemRequest item : items) {
-                // Tính tổng tiền cho từng sản phẩm
                 BigDecimal itemTotal = item.getUnitPrice().multiply(new BigDecimal(item.getQuantity()));
 
-                // Tạo OrderDetail
                 OrderDetail orderDetail = new OrderDetail();
                 orderDetail.setOrderId(updatedOrder.getOrderId());
                 orderDetail.setVariantId(item.getVariantId());
                 orderDetail.setDetailQuantity(item.getQuantity());
                 orderDetail.setDetailUnitPrice(item.getUnitPrice());
-                orderDetail.setDetailDiscountPercent(BigDecimal.ZERO); // Có thể cập nhật sau nếu có giảm giá
-                orderDetail.setDetailTotal(itemTotal);
 
-                // Lưu order detail
-                OrderDetailDAO orderDetailDAO = new OrderDetailDAOImpl();
+                // Áp dụng giảm giá nếu có khuyến mãi
+                if (selectedPromotion != null) {
+                    orderDetail.setDetailDiscountPercent(selectedPromotion.getPromoDiscountValue());
+                    BigDecimal itemDiscount = itemTotal.multiply(selectedPromotion.getPromoDiscountValue())
+                            .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
+                    itemTotal = itemTotal.subtract(itemDiscount);
+                } else {
+                    orderDetail.setDetailDiscountPercent(BigDecimal.ZERO);
+                }
+
+                orderDetail.setDetailTotal(itemTotal);
                 orderDetailDAO.save(orderDetail);
 
                 // Cập nhật số lượng tồn kho
                 ProductVariant variant = productVariantDAO.findById(item.getVariantId());
                 if (variant != null) {
                     int newQuantity = variant.getVariantquantity() - item.getQuantity();
+                    if (newQuantity < 0) {
+                        throw new Exception("Số lượng tồn kho âm cho sản phẩm ID: " + item.getVariantId());
+                    }
                     variant.setVariantquantity(newQuantity);
                     productVariantDAO.update(variant);
                 }
             }
 
-            // Cập nhật giao diện
+            // Cập nhật trạng thái trên bảng tblHoaDon (THÊM PHẦN NÀY)
+            DefaultTableModel hoaDonModel = (DefaultTableModel) tblHoaDon.getModel();
+            for (int i = 0; i < hoaDonModel.getRowCount(); i++) {
+                if (hoaDonModel.getValueAt(i, 1).equals(orderCode)) { // Cột 1 là Mã hóa đơn
+                    hoaDonModel.setValueAt("Đã thanh toán", i, 3); // Cột 3 là Trạng thái
+                    break;
+                }
+            }
+
+            // Cập nhật giao diện giỏ hàng và reset các trường
             cartModel.setRowCount(0);
             updateCartSummary();
 
-            orderCode = null;
+            // Reset và ẩn thông tin
             lbMaHD.setText("");
             lbMaHD.setVisible(true);
             lbl_odder_code.setVisible(true);
@@ -1506,8 +1577,19 @@ public class ViewBanHang extends javax.swing.JPanel {
             lbTenKhachHang.setText("");
             txtMaKhachhang.setText("");
             currentTemporaryCustomer = null;
+            txtTienKhachDua.setText("");
+            txtTienKhachCK.setText("");
 
-            JOptionPane.showMessageDialog(this, "Thanh toán thành công cho hóa đơn: " + orderCode, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            // Hiển thị tiền thừa (nếu có)
+            BigDecimal change = paidAmount.subtract(finalAmount);
+            lbTienThua.setText(String.format("%,d đ", change.longValue()));
+            lbTienThua.setVisible(true);
+
+            // Thông báo thành công (sử dụng updatedOrder.getOrderCode() để tránh null)
+            JOptionPane.showMessageDialog(this, "Thanh toán thành công cho hóa đơn: " + updatedOrder.getOrderCode(), "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+            // Set orderCode = null sau cùng để tránh ảnh hưởng thông báo
+            orderCode = null;
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi thanh toán: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
@@ -1554,7 +1636,7 @@ public class ViewBanHang extends javax.swing.JPanel {
 
             Integer customerId = currentTemporaryCustomer != null ? currentTemporaryCustomer.getCustomerId() : null;
             Integer staffId = session.getStaffId();
-            String staffCode = session.getStaffCode();
+            String staffCode = session.getStaffCode();  // Từ session
 
             OrderCreateRequest request = OrderCreateRequest.builder()
                     .customerId(customerId)
@@ -1578,9 +1660,18 @@ public class ViewBanHang extends javax.swing.JPanel {
                 lbNgayTao.setVisible(true);
                 lbltienkhachdua.setVisible(true);
 
+                // THÊM ROW MỚI VÀO BẢNG (KHÔNG LOAD TOÀN BỘ)
                 DefaultTableModel model = (DefaultTableModel) tblHoaDon.getModel();
-                Object[] row = {newOrder.getOrderId(), newOrder.getOrderCode(), DATE_FORMATTER.format(newOrder.getCreatedAt()), "Chưa thanh toán"};
-                model.addRow(row);
+                String formattedDate = DATE_FORMATTER.format(newOrder.getCreatedAt());
+                Object[] newRow = {1, newOrder.getOrderCode(), staffCode, "Chưa thanh toán", formattedDate};
+
+                // Insert row mới vào vị trí 0 (mới nhất ở trên)
+                model.insertRow(0, newRow);
+
+                // Update STT của tất cả row cũ (tăng +1)
+                for (int i = 1; i < model.getRowCount(); i++) {
+                    model.setValueAt(i + 1, i, 0);  // Cột 0 là STT
+                }
 
                 JOptionPane.showMessageDialog(this, "Tạo hóa đơn mới thành công: " + orderCode, "Thành công", JOptionPane.INFORMATION_MESSAGE);
             } else {
@@ -1593,16 +1684,37 @@ public class ViewBanHang extends javax.swing.JPanel {
     }//GEN-LAST:event_btnTheHoaDonbtn_ThemActionPerformed
 
     private void btn_HuyHDbtn_ThemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_HuyHDbtn_ThemActionPerformed
-        // TODO add your handling code here:
         try {
-            if (orderCode == null) {
-                JOptionPane.showMessageDialog(this, "Không có hóa đơn để hủy", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            // Check if a row is selected in tblHoaDon
+            int selectedRow = tblHoaDon.getSelectedRow();
+            if (selectedRow < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn hóa đơn cần hủy từ danh sách", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Get order code from selected row
+            orderCode = String.valueOf(tblHoaDon.getValueAt(selectedRow, 1));
+
+            if (orderCode == null || orderCode.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy mã hóa đơn", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             OrderController controller = new OrderController();
             OrderResponse order = controller.getOrderByQRCodeOrId(orderCode);
-            if (order != null && controller.cancelOrder(order.getOrderId())) {
+            if (order != null) {
+                // Check if order is already paid
+                if ("Đã thanh toán".equals(order.getStatus())) {
+                    JOptionPane.showMessageDialog(this, "Không thể hủy hóa đơn đã thanh toán", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                // Update order status to 'Hủy' (Cancelled)
+                Order updatedOrder = orderDAO.findByCode(orderCode).orElse(null);
+                if (updatedOrder != null) {
+                    updatedOrder.setOrderStatus("Hủy");
+                    orderDAO.save(updatedOrder);
+                }
                 // Xóa giỏ hàng
                 DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
                 cartModel.setRowCount(0);
@@ -1619,9 +1731,6 @@ public class ViewBanHang extends javax.swing.JPanel {
                 lbNgayTao.setText("");
                 lbNgayTao.setVisible(true);
                 lbltienkhachdua.setVisible(true);
-
-                // Tải lại bảng hóa đơn
-                loadOrders();
 
                 JOptionPane.showMessageDialog(this, "Hủy hóa đơn thành công", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             }
@@ -1664,8 +1773,8 @@ public class ViewBanHang extends javax.swing.JPanel {
                 return;
             }
 
-            // Get order code from selected row
-            String orderCode = (String) tblHoaDon.getValueAt(selectedRow, 0);
+            // Get order code from selected row (column 1 contains the order code)
+            String orderCode = String.valueOf(tblHoaDon.getValueAt(selectedRow, 1));
 
             // Get order details
             OrderDAO orderDAO = new OrderDAOImpl();
@@ -1748,6 +1857,97 @@ public class ViewBanHang extends javax.swing.JPanel {
 
     private void btn_timkiemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_timkiemActionPerformed
         // TODO add your handling code here:
+        String nameSearch = txt_ten.getText().trim();
+        String skuSearch = cbo_sku_sell.getSelectedItem() != null
+                ? cbo_sku_sell.getSelectedItem().toString().trim() : "";
+
+        // If both fields are empty, reload all products
+        if (nameSearch.isEmpty() && skuSearch.isEmpty()) {
+            loadProductVariants();
+            return;
+        }
+
+        searchProducts(nameSearch, skuSearch);
+    }
+
+    /**
+     * Searches products by name or SKU and updates the products table
+     *
+     * @param nameSearch The term to search for in product names
+     * @param skuSearch The term to search for in product SKUs
+     */
+    private void searchProducts(String nameSearch, String skuSearch) {
+        try {
+            DefaultTableModel model = (DefaultTableModel) tblSanPham.getModel();
+            model.setRowCount(0); // Clear existing data
+
+            // If both search terms are empty, load all products
+            if (nameSearch.isEmpty() && skuSearch.isEmpty()) {
+                loadProductVariants();
+                return;
+            }
+
+            // Fetch all variants with error handling
+            List<ProductVariant> variants = productVariantDAO.findAll();
+
+            // Initialize caches for related entities
+            Map<Integer, Product> productCache = new HashMap<>();
+            Map<Integer, Size> sizeCache = new HashMap<>();
+            Map<Integer, Color> colorCache = new HashMap<>();
+            Map<Integer, SoleType> soleTypeCache = new HashMap<>();
+
+            boolean found = false;
+
+            // Process each variant
+            for (ProductVariant variant : variants) {
+                try {
+                    // Get or fetch related entities with null checks
+                    Product product = getOrFetchProduct(variant.getProductId(), productCache);
+                    if (product == null) {
+                        continue;
+                    }
+
+                    // Check if product matches search criteria
+                    boolean nameMatches = nameSearch.isEmpty()
+                            || product.getProductName().toLowerCase().contains(nameSearch.toLowerCase());
+                    boolean skuMatches = skuSearch.isEmpty()
+                            || (variant.getVariantSku() != null
+                            && variant.getVariantSku().equalsIgnoreCase(skuSearch));
+
+                    if (nameMatches && skuMatches) {
+                        Size size = getOrFetchSize(variant.getSizeId(), sizeCache);
+                        Color color = getOrFetchColor(variant.getColorId(), colorCache);
+                        SoleType soleType = getOrFetchSoleType(variant.getSoleId(), soleTypeCache);
+
+                        // Add row with actual names
+                        model.addRow(createProductRow(variant, product, size, color, soleType));
+                        found = true;
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error processing variant " + variant.getVariantSku() + ": " + e.getMessage());
+                }
+            }
+
+            // Auto-resize columns to fit content
+            autoResizeTableColumns(tblSanPham);
+
+            // Show message if no results found
+            if (!found) {
+                JOptionPane.showMessageDialog(this,
+                        "Không tìm thấy sản phẩm nào phù hợp với: "
+                        + (!nameSearch.isEmpty() ? "Tên: " + nameSearch + " " : "")
+                        + (!skuSearch.isEmpty() ? "Mã SKU: " + skuSearch : ""),
+                        "Thông báo",
+                        JOptionPane.INFORMATION_MESSAGE);
+                // Reload all products
+                loadProductVariants();
+            }
+
+        } catch (Exception e) {
+            handleException("Lỗi khi tìm kiếm sản phẩm", e);
+            // Reload all products on error
+            loadProductVariants();
+        }
     }//GEN-LAST:event_btn_timkiemActionPerformed
 
     public static void main(String args[]) {
@@ -1824,7 +2024,6 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTable jTable1;
-    private javax.swing.JTextField jTextField1;
     private javax.swing.JLabel lbGiamGiaTot;
     private javax.swing.JLabel lbMaHD;
     private javax.swing.JLabel lbMaNV;
@@ -1851,6 +2050,129 @@ public class ViewBanHang extends javax.swing.JPanel {
     private javax.swing.JTextField txtMaKhachhang;
     private javax.swing.JTextField txtTienKhachCK;
     private javax.swing.JTextField txtTienKhachDua;
+    private javax.swing.JTextField txt_ten;
     // End of variables declaration//GEN-END:variables
+    
+    /**
+     * Adds a product to cart by scanning its QR code
+     * @param sku The product SKU from the QR code
+     */
+    /**
+     * Looks up a product by SKU and adds it to the cart if found
+     * @param sku The product SKU to look up
+     */
+    public void lookUpProductBySKU(String sku) {
+        try {
+            // Find the product variant by SKU
+            ProductVariant variant = productVariantDAO.findBySku(sku);
+            if (variant == null) {
+                JOptionPane.showMessageDialog(this,
+                    "Không tìm thấy sản phẩm với mã: " + sku,
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // If we found the product, add it to cart
+            addProductToCartBySKU(sku);
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                "Lỗi khi tìm kiếm sản phẩm: " + ex.getMessage(),
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+    
+    /**
+     * Adds a product to cart by scanning its QR code
+     * @param sku The product SKU from the QR code
+     */
+    public void addProductToCartBySKU(String sku) {
+        try {
+            // Find the product variant by SKU
+            ProductVariant variant = productVariantDAO.findBySku(sku);
+            if (variant == null) {
+                JOptionPane.showMessageDialog(this,
+                    "Không tìm thấy sản phẩm với mã: " + sku,
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Get the product for this variant
+            Product product = productDAO.findById(variant.getProductId());
+            if (product == null) {
+                JOptionPane.showMessageDialog(this,
+                    "Không tìm thấy thông tin sản phẩm",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Show quantity input dialog
+            String quantityStr = JOptionPane.showInputDialog(this,
+                "Nhập số lượng cho " + product.getProductName(),
+                "Nhập số lượng",
+                JOptionPane.QUESTION_MESSAGE);
+
+            if (quantityStr == null || quantityStr.trim().isEmpty()) {
+                return; // User cancelled
+            }
+
+            try {
+                int quantity = Integer.parseInt(quantityStr);
+                if (quantity <= 0) {
+                    throw new NumberFormatException("Số lượng phải lớn hơn 0");
+                }
+
+                // Add to cart
+                DefaultTableModel model = (DefaultTableModel) tblGioHang.getModel();
+                boolean found = false;
+                
+                // Check if product already exists in cart
+                for (int i = 0; i < model.getRowCount(); i++) {
+                    if (model.getValueAt(i, 0).equals(variant.getVariantId())) {
+                        // Update quantity if product exists
+                        int currentQty = Integer.parseInt(model.getValueAt(i, 4).toString());
+                        model.setValueAt(currentQty + quantity, i, 4);
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    // Add new row if product doesn't exist in cart
+                    Object[] row = new Object[]{
+                        variant.getVariantId(),
+                        variant.getVariantSku(),
+                        product.getProductName(),
+                        variant.getVariantOrigPrice(),
+                        quantity,
+                        variant.getVariantOrigPrice().multiply(new BigDecimal(quantity)),
+                        "Xóa"
+                    };
+                    model.addRow(row);
+                }
+                
+                // Update the cart total
+                updateCartSummary();
+                
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this,
+                    "Vui lòng nhập số lượng hợp lệ",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                "Lỗi khi thêm sản phẩm vào giỏ hàng: " + ex.getMessage(),
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
 
 }

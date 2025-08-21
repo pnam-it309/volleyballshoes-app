@@ -19,6 +19,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Order {
+
     private int orderId;
     private Integer customerId;  // Made nullable
     private int staffId;
@@ -27,4 +28,8 @@ public class Order {
     private String orderStatus;
     private String orderCode;
     private LocalDateTime orderCreatedAt;
+
+    private Integer promotionId;
+
+    private BigDecimal discountAmount;
 }

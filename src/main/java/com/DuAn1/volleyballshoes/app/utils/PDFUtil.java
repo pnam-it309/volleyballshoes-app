@@ -42,13 +42,13 @@ public class PDFUtil {
                     });
 
             for (OrderResponse order : orders) {
-                table.addCell(order.getOrderCode());
-                table.addCell(order.getCustomerId().toString());
-                table.addCell(order.getStaffId().toString());
-                table.addCell(order.getFinalAmount().toString());
-                table.addCell(order.getPaymentMethod());
-                table.addCell(order.getStatus());
-                table.addCell(order.getCreatedAt().toString());
+                table.addCell(order.getOrderCode() != null ? order.getOrderCode() : "");
+                table.addCell(order.getCustomerId() != null ? order.getCustomerId().toString() : "N/A");
+                table.addCell(order.getStaffId() != null ? order.getStaffId().toString() : "N/A");
+                table.addCell(order.getFinalAmount() != null ? order.getFinalAmount().toString() : "0.00");
+                table.addCell(order.getPaymentMethod() != null ? order.getPaymentMethod() : "");
+                table.addCell(order.getStatus() != null ? order.getStatus() : "");
+                table.addCell(order.getCreatedAt() != null ? order.getCreatedAt().toString() : "");
             }
 
             document.add(table);

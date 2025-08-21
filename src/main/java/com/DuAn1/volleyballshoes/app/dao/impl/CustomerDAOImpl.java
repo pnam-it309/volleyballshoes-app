@@ -56,7 +56,7 @@ public class CustomerDAOImpl implements CustomerDAO {
 //    }
     @Override
     public List<Customer> findAll() {
-        String sql = "SELECT * FROM Customer ORDER BY customer_id DESC";
+        String sql = "SELECT * FROM Customer ORDER BY customer_code DESC";
         return XJdbc.query(sql, this::mapResultSetToCustomer);
     }
 
@@ -68,7 +68,7 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public Customer findByCode(String customerCode) {
-            String sql = "SELECT * FROM Customer "
+        String sql = "SELECT * FROM Customer "
                 + "WHERE UPPER(LTRIM(RTRIM(customer_code))) = UPPER(LTRIM(RTRIM(?)))";
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer, customerCode);
     }
@@ -156,18 +156,18 @@ public class CustomerDAOImpl implements CustomerDAO {
 
         Customer customer = new Customer();
         customer.setCustomerId(rs.getInt("customer_id"));
-        customer.setCustomerFullName(rs.getString("customer_full_name"));
-        customer.setCustomerEmail(rs.getString("customer_email"));
-        customer.setCustomerPhone(rs.getString("customer_phone"));
-        customer.setCustomerCode(rs.getString("customer_code"));
+        customer.setCustomerFullName(rs.getString("customer_full_name") != null ? rs.getString("customer_full_name").trim() : "");
+        customer.setCustomerEmail(rs.getString("customer_email") != null ? rs.getString("customer_email").trim() : "");
+        customer.setCustomerPhone(rs.getString("customer_phone") != null ? rs.getString("customer_phone").trim() : "");
+        customer.setCustomerCode(rs.getString("customer_code") != null ? rs.getString("customer_code").trim() : "");
 
         return customer;
     }
 
     @Override
     public Customer update(Customer customer) {
-        String sql = "UPDATE Customer SET customer_username = ?, "
-                + "customer_email = ?, customer_sdt = ?, customer_code = ? "
+        String sql = "UPDATE Customer SET customer_full_name = ?, "
+                + "customer_email = ?, customer_phone = ?, customer_code = ? "
                 + "OUTPUT INSERTED.* WHERE customer_id = ?";
 
         return XJdbc.queryForObject(sql, this::mapResultSetToCustomer,

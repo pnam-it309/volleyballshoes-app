@@ -10,6 +10,8 @@ import javax.swing.table.DefaultTableModel;
 
 public class ViewKhachHang extends javax.swing.JPanel {
 
+    private Integer selectedCustomerId = null;
+
     public ViewKhachHang() {
         initComponents();
         initTable();
@@ -48,17 +50,20 @@ public class ViewKhachHang extends javax.swing.JPanel {
             List<Customer> customers = customerController.getAllCustomers();
 
             if (customers == null || customers.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu khách hàng!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
 
+            System.out.println("Số lượng khách hàng: " + customers.size()); // Debug
             for (Customer customer : customers) {
                 if (customer != null) {
-                    customerTableModel.addRow(new Object[]{
+                    Object[] row = new Object[]{
                         customer.getCustomerCode() != null ? customer.getCustomerCode() : "",
-                        customer.getCustomerFullName()!= null ? customer.getCustomerFullName(): "",
+                        customer.getCustomerFullName() != null ? customer.getCustomerFullName() : "",
                         customer.getCustomerPhone() != null ? customer.getCustomerPhone() : "",
                         customer.getCustomerEmail() != null ? customer.getCustomerEmail() : ""
-                    });
+                    };
+                    customerTableModel.addRow(row);
                 }
             }
         } catch (Exception e) {
@@ -316,19 +321,18 @@ public class ViewKhachHang extends javax.swing.JPanel {
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 293, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
                 .addGap(21, 21, 21)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 474, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 396, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(79, 79, 79))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jScrollPane3)
+                            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jScrollPane1))
+                        .addContainerGap(37, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -337,15 +341,15 @@ public class ViewKhachHang extends javax.swing.JPanel {
                 .addComponent(jLabel1)
                 .addGap(35, 35, 35)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel11)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel11)
-                    .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(35, 35, 35)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 217, Short.MAX_VALUE)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                .addGap(84, 84, 84))
+                .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 20, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(126, 126, 126))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -379,7 +383,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
             Object ten = null;
             Object email = null;
             Object sdt = null;
-        model.addRow(new Object[]{ten, sdt, email});
+            model.addRow(new Object[]{ten, sdt, email});
 
             JOptionPane.showMessageDialog(this,
                     "Thêm khách hàng thành công!",
@@ -394,40 +398,35 @@ public class ViewKhachHang extends javax.swing.JPanel {
     }//GEN-LAST:event_tbl_ThemActionPerformed
 
     private void tbl_XoaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_XoaActionPerformed
+        int row = tbl_bang.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn khách hàng cần xóa!");
+            return;
+        }
+
+        String code = tbl_bang.getValueAt(row, 0).toString();
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc muốn xóa khách hàng này? Hành động không thể hoàn tác!",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
         try {
-            int selectedRow = tbl_bang.getSelectedRow();
-            if (selectedRow < 0) {
-                JOptionPane.showMessageDialog(this,
-                        "Vui lòng chọn khách hàng cần cập nhật!",
-                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
-                return;
+            Customer customer = customerController.getCustomerByCode(code);
+            if (customer != null) {
+                customerController.deleteCustomer(customer.getCustomerId());
+                JOptionPane.showMessageDialog(this, "Xóa thành công!");
+                loadCustomerData();
+                clearFields();
+                selectedCustomerId = null;
+            } else {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy khách hàng!");
             }
-
-            // Lấy mã khách hàng từ dòng được chọn
-            String customerCode = tbl_bang.getValueAt(selectedRow, 0).toString();
-
-            // Cập nhật thông tin khách hàng
-            Customer updatedCustomer = new Customer();
-            updatedCustomer.setCustomerCode(customerCode);
-            updatedCustomer.setCustomerFullName(txt_ten.getText().trim());
-            updatedCustomer.setCustomerPhone(txt_sdt.getText().trim());
-            updatedCustomer.setCustomerEmail(txt_email.getText().trim());
-
-            // Gọi controller để cập nhật
-            customerController.updateCustomer(updatedCustomer);
-
-            // Làm mới dữ liệu
-            loadCustomerData();
-            clearFields();
-
-            JOptionPane.showMessageDialog(this,
-                    "Cập nhật thông tin khách hàng thành công!",
-                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
-
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi cập nhật khách hàng: " + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Lỗi xóa: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }//GEN-LAST:event_tbl_XoaActionPerformed
 
@@ -479,22 +478,16 @@ public class ViewKhachHang extends javax.swing.JPanel {
     private void tbl_bangMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tbl_bangMouseClicked
         // TODO add your handling code here:
         int selectedRow = tbl_bang.getSelectedRow();
-        if (selectedRow >= 0) {  // Ensure a row is selected
+        if (selectedRow >= 0) {
             try {
-                // Get customer code from the selected row (assuming it's in the first column)
                 String customerCode = tbl_bang.getValueAt(selectedRow, 0).toString();
-
-                // Fetch the complete customer details
                 Customer customer = customerController.getCustomerByCode(customerCode);
-
                 if (customer != null) {
-                    // Populate the form fields with customer data
-                    txt_ma.setText(customer.getCustomerCode());
-                    txt_ten.setText(customer.getCustomerFullName());
-                    txt_sdt.setText(customer.getCustomerPhone());
-                    txt_email.setText(customer.getCustomerEmail());
-
-                    // Load order history for this customer
+                    txt_ma.setText(customer.getCustomerCode() != null ? customer.getCustomerCode() : "");
+                    txt_ten.setText(customer.getCustomerFullName() != null ? customer.getCustomerFullName() : "");
+                    txt_sdt.setText(customer.getCustomerPhone() != null ? customer.getCustomerPhone() : "");
+                    txt_email.setText(customer.getCustomerEmail() != null ? customer.getCustomerEmail() : "");
+                    selectedCustomerId = customer.getCustomerId();
                     loadOrderHistory(customer.getCustomerId());
                 }
             } catch (Exception e) {
@@ -507,34 +500,51 @@ public class ViewKhachHang extends javax.swing.JPanel {
 
     private void tbl_capNhatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tbl_capNhatActionPerformed
         // TODO add your handling code here:
-            int row = tbl_bang.getSelectedRow();
-    if (row == -1) {
-        JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần cập nhật!");
-        return;
-    }
-
-    try {
-        String ma = txt_ma.getText().trim();
-        String ten = txt_ten.getText().trim();
-        String sdt = txt_sdt.getText().trim();
-
-        if (ma.isEmpty() || ten.isEmpty() || sdt.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!");
+        if (selectedCustomerId == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn khách hàng cần cập nhật!");
             return;
         }
 
-        double gia = Double.parseDouble(sdt);
+        String code = txt_ma.getText().trim();
+        String name = txt_ten.getText().trim();
+        String phone = txt_sdt.getText().trim();
+        String email = txt_email.getText().trim();
 
-        DefaultTableModel model = (DefaultTableModel) tbl_bang.getModel();
-        model.setValueAt(ma, row, 0);
-        model.setValueAt(ten, row, 1);
-        model.setValueAt(gia, row, 2);
+        if (code.isEmpty() || name.isEmpty() || phone.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin bắt buộc (mã, tên, số ĐT)!");
+            return;
+        }
 
-        JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
-        lamMoiForm();
-    } catch (NumberFormatException e) {
-        JOptionPane.showMessageDialog(this, "sdt phải là số!");
-    }
+        // Validate phone là số (không chứa ký tự đặc biệt như ')
+        if (!phone.matches("\\d+")) {
+            JOptionPane.showMessageDialog(this, "Số điện thoại phải là số nguyên!");
+            return;
+        }
+
+        // Optional: validate email format
+        // if (!email.isEmpty() && !email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+        //     JOptionPane.showMessageDialog(this, "Email không hợp lệ!");
+        //     return;
+        // }
+        Customer customer = new Customer();
+        customer.setCustomerId(selectedCustomerId);
+        customer.setCustomerCode(code);
+        customer.setCustomerFullName(name);
+        customer.setCustomerPhone(phone);
+        customer.setCustomerEmail(email);
+
+        try {
+            customerController.updateCustomer(customer);
+            JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+            loadCustomerData();
+            clearFields();
+            selectedCustomerId = null;
+        } catch (IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Lỗi", JOptionPane.WARNING_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi cập nhật: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }//GEN-LAST:event_tbl_capNhatActionPerformed
 
     private void txt_nhapTimActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txt_nhapTimActionPerformed
@@ -585,7 +595,8 @@ public class ViewKhachHang extends javax.swing.JPanel {
         txt_email.setText("");
         txt_nhapTim.setText("");
         tbl_bang.clearSelection();
-        orderHistoryTableModel.setRowCount(0); // Clear order history
+        orderHistoryTableModel.setRowCount(0);
+        selectedCustomerId = null;
     }
 
     public static void main(String args[]) {
@@ -620,13 +631,14 @@ public class ViewKhachHang extends javax.swing.JPanel {
             }
         });
     }
+
     private void lamMoiForm() {
-    txt_ma.setText("");
-    txt_ten.setText("");
-    txt_sdt.setText("");
-    txt_nhapTim.setText("");
-    tbl_bang.clearSelection();
-}
+        txt_ma.setText("");
+        txt_ten.setText("");
+        txt_sdt.setText("");
+        txt_nhapTim.setText("");
+        tbl_bang.clearSelection();
+    }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JLabel jLabel1;
@@ -654,7 +666,5 @@ public class ViewKhachHang extends javax.swing.JPanel {
     private javax.swing.JTextField txt_sdt;
     private javax.swing.JTextField txt_ten;
     // End of variables declaration//GEN-END:variables
-
-   
 
 }

@@ -1,5 +1,6 @@
 package com.DuAn1.volleyballshoes.app.dao;
 
+import com.DuAn1.volleyballshoes.app.dto.response.OrderWithDetailsResponse;
 import com.DuAn1.volleyballshoes.app.entity.Order;
 import com.DuAn1.volleyballshoes.app.entity.OrderDetail;
 import java.math.BigDecimal;
@@ -59,4 +60,6 @@ public interface OrderDAO {
     Order getOrderByCode(String orderCode);
 
     Order processPayment(Order order, Map<Integer, Integer> orderDetails) throws Exception;
+    
+    OrderWithDetailsResponse findOrderWithDetails(String orderCode);
 }

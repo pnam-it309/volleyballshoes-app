@@ -20,6 +20,7 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 /**
@@ -152,74 +153,85 @@ public class QuetQRBanHang extends javax.swing.JFrame implements Runnable, Threa
     public void run() {
         do {
             try {
-                Thread.sleep(33);
-
-                if (webcam == null || !webcam.isOpen()) {
-                    System.err.println("[ERROR] Webcam is not available or closed");
-                    continue;
-                }
-
-                BufferedImage image = webcam.getImage();
-                if (image == null) {
-                    System.err.println("[WARN] No image received from webcam");
-                    continue;
-                }
-
-                try {
-                    LuminanceSource source = new BufferedImageLuminanceSource(image);
-                    BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-
-                    Result result = new MultiFormatReader().decode(bitmap);
-                    if (result != null) {
-                        final String qrText = result.getText().trim();
-                        if (!qrText.isEmpty()) {
-                            System.out.println("[DEBUG] QR Code detected: " + qrText);
-                            processQRCode(qrText);
-                            // Stop scanning after successful read
-                            break;
-                        }
-                    }
-                } catch (NotFoundException e) {
-                    // No QR code found in the image, continue scanning
-                    continue;
-                } catch (Exception e) {
-                    System.err.println("[ERROR] Error processing QR code: " + e.getMessage());
-                    e.printStackTrace();
-                    // Continue scanning on error
-                    continue;
-                }
-
-            } catch (Exception e) {
-                System.err.println("[ERROR] Error in QR scanning loop: " + e.getMessage());
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
                 e.printStackTrace();
-                // Add a small delay to prevent tight loop on error
+            }
+            Result result = null;
+            BufferedImage image = null;
+
+            if (webcam.isOpen()) {
+                if ((image = webcam.getImage()) == null) {
+                    continue;
+                }
+
+                LuminanceSource source = new BufferedImageLuminanceSource(image);
+                BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+
                 try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ie) {
+                    result = new MultiFormatReader().decode(bitmap);
+                } catch (NotFoundException e) {
+                    // No QR code found, continue scanning
+                }
+
+                if (result != null) {
+                    final String qrText = result.getText().trim();
+                    if (!qrText.isEmpty()) {
+                        System.out.println("[DEBUG] QR Code detected: " + qrText);
+                        // Process QR code in the Event Dispatch Thread
+                        SwingUtilities.invokeLater(() -> {
+                            processQRCode(qrText);
+                            // Close the scanner after successful read
+                            if (webcam != null) {
+                                webcam.close();
+                            }
+                            this.dispose();
+                        });
+                        break;
+                    }
                 }
             }
         } while (true);
     }
 
-    private void processQRCode(final String qrText) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                if (viewBanHang != null) {
-                    viewBanHang.getMaQR(qrText);
-                } else {
-                    System.err.println("[ERROR] ViewBanHang reference is null");
-                }
-            } catch (Exception e) {
-                System.err.println("[ERROR] Error processing QR code: " + e.getMessage());
-                e.printStackTrace();
-            } finally {
-                // Close the webcam and dispose the window
-                if (webcam != null) {
-                    webcam.close();
-                }
-                dispose();
+    private void processQRCode(String qrText) {
+        System.out.println("Processing QR: " + qrText);
+        // The QR code should contain just the SKU
+        String sku = qrText.trim();
+        
+        if (sku.isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "Không tìm thấy mã sản phẩm trong QR code", 
+                "Lỗi", 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // If we have a reference to ViewBanHang, try to find the product
+        if (viewBanHang != null) {
+            viewBanHang.lookUpProductBySKU(sku);
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Đã quét mã: " + sku + "\nVui chọn sản phẩm từ danh sách.", 
+                "Thông báo", 
+                JOptionPane.INFORMATION_MESSAGE);
+        }
+        String[] lines = qrText.split("\\n");
+        for (String line : lines) {
+            if (line.startsWith("SKU:")) {
+                sku = line.substring(4).trim();
+                break;
             }
-        });
+        }
+        
+        if (!sku.isEmpty() && viewBanHang != null) {
+            viewBanHang.addProductToCartBySKU(sku);
+        } else {
+            JOptionPane.showMessageDialog(this,
+                "Không tìm thấy mã sản phẩm trong QR code",
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     @Override

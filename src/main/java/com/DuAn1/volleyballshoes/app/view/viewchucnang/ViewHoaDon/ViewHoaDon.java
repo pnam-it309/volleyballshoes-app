@@ -4,6 +4,7 @@ import com.DuAn1.volleyballshoes.app.controller.BillController;
 import com.DuAn1.volleyballshoes.app.controller.OrderController;
 import com.DuAn1.volleyballshoes.app.dto.response.OrderDetailResponse;
 import com.DuAn1.volleyballshoes.app.dto.response.OrderResponse;
+import com.DuAn1.volleyballshoes.app.dto.response.OrderWithDetailsResponse;
 import com.DuAn1.volleyballshoes.app.entity.Order;
 import com.DuAn1.volleyballshoes.app.entity.OrderDetail;
 import com.DuAn1.volleyballshoes.app.utils.ExcelUtil;
@@ -15,11 +16,23 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.swing.JOptionPane;
-import com.DuAn1.volleyballshoes.app.dto.response.OrderItemResponse;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.*;
+import javax.swing.table.*;
+import java.awt.*;
+import java.util.*;
+import java.util.List;
+import com.DuAn1.volleyballshoes.app.dto.response.*;
 
 public class ViewHoaDon extends javax.swing.JPanel {
+    // Utility method to safely set font with fallback
+    private static Font getSafeFont(String fontName, int style, int size) {
+        try {
+            return new Font(fontName, style, size);
+        } catch (Exception e) {
+            // Fallback to default font if specified font fails to load
+            return new Font(Font.SANS_SERIF, style, size);
+        }
+    }
 
     // Chuyển đổi tạm thời từ OrderItemResponse sang OrderDetailResponse để hiển thị bảng chi tiết
     private List<OrderDetailResponse> convertToOrderDetailResponses(List<OrderItemResponse> items) {
@@ -40,29 +53,78 @@ public class ViewHoaDon extends javax.swing.JPanel {
 
     private OrderController orderController = new OrderController();
 
+
     public ViewHoaDon() {
+        try {
+            // Set system look and feel
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            
+            // Set default font for all components
+            Font defaultFont = getSafeFont("Segoe UI", Font.PLAIN, 12);
+            Enumeration<Object> keys = UIManager.getDefaults().keys();
+            while (keys.hasMoreElements()) {
+                Object key = keys.nextElement();
+                if (key.toString().toLowerCase().contains(".font")) {
+                    try {
+                        UIManager.put(key, defaultFont);
+                    } catch (Exception e) {
+                        // Ignore any font setting errors
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        System.out.println("=== Initializing ViewHoaDon ===");
         initComponents();
-        initData();
-        loadAllOrders();
-        // Đặt lại tên cột tiếng Việt cho bảng hóa đơn
-        String[] orderColumnsVN = {"STT", "Khách hàng", "Tổng tiền", "Trạng thái", "Hình thức TT", "Mã đơn hàng", "Ngày tạo"};
-        DefaultTableModel orderModel = new DefaultTableModel(orderColumnsVN, 0) {
+        
+        // Initialize the table model with correct column names and types
+        String[] orderColumns = {"STT", "Khách hàng", "Tổng tiền", "Trạng thái", "Hình thức TT", "Mã đơn hàng", "Ngày tạo"};
+        DefaultTableModel orderModel = new DefaultTableModel(orderColumns, 0) {
+            Class[] types = new Class[]{
+                Integer.class,  // STT
+                String.class,   // Khách hàng
+                String.class,   // Tổng tiền (đã định dạng)
+                String.class,   // Trạng thái
+                String.class,   // Hình thức TT
+                String.class,   // Mã đơn hàng
+                String.class    // Ngày tạo
+            };
+            
             @Override
             public Class<?> getColumnClass(int columnIndex) {
-                if (columnIndex == 0) return Integer.class; // STT
-                if (columnIndex == 2) return String.class;  // Tổng tiền (đã định dạng)
-                return Object.class;
+                return types[columnIndex];
             }
             
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Không cho phép chỉnh sửa các ô
+                return false; // Make all cells non-editable
             }
         };
+        
+        // Set the model and configure table properties
         tblhoadon.setModel(orderModel);
-        tblhoadon.getTableHeader().repaint();
-        // Đặt lại tên cột tiếng Việt cho bảng chi tiết hóa đơn
-        String[] detailColumnsVN = {"STT", "Sản phẩm", "Màu sắc", "Kích thước", "Số lượng", "Đơn giá", "Giảm giá", "Tiền giảm", "Thành tiền"};
+        tblhoadon.setAutoCreateRowSorter(true);
+        tblhoadon.setFillsViewportHeight(true);
+        tblhoadon.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tblhoadon.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        tblhoadon.getTableHeader().setReorderingAllowed(false);
+        
+        // Set preferred column widths
+        int[] columnWidths = {50, 200, 150, 100, 120, 150, 150}; // STT, Khách hàng, Tổng tiền, Trạng thái, Hình thức TT, Mã đơn hàng, Ngày tạo
+        for (int i = 0; i < columnWidths.length && i < orderModel.getColumnCount(); i++) {
+            tblhoadon.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
+        }
+        
+        // Set preferred size
+        tblhoadon.setPreferredScrollableViewportSize(new Dimension(1000, 400));
+        
+        // Initialize data and load orders
+        initData();
+        loadAllOrders();
+        
+          String[] detailColumnsVN = {"STT", "Sản phẩm", "Màu sắc", "Kích thước", "Số lượng", "Đơn giá", "Giảm giá", "Tiền giảm", "Thành tiền"};
         DefaultTableModel detailModel = new DefaultTableModel(detailColumnsVN, 0) {
             @Override
             public Class<?> getColumnClass(int columnIndex) {
@@ -78,18 +140,6 @@ public class ViewHoaDon extends javax.swing.JPanel {
         };
         tblHDCT.setModel(detailModel);
         
-        // Đặt chiều rộng cột phù hợp
-        tblHDCT.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
-        tblHDCT.getColumnModel().getColumn(0).setPreferredWidth(40);  // STT
-        tblHDCT.getColumnModel().getColumn(1).setPreferredWidth(200); // Tên sản phẩm
-        tblHDCT.getColumnModel().getColumn(2).setPreferredWidth(80);  // Màu sắc
-        tblHDCT.getColumnModel().getColumn(3).setPreferredWidth(80);  // Kích thước
-        tblHDCT.getColumnModel().getColumn(4).setPreferredWidth(60);  // Số lượng
-        tblHDCT.getColumnModel().getColumn(5).setPreferredWidth(100); // Đơn giá
-        tblHDCT.getColumnModel().getColumn(6).setPreferredWidth(60);  // % Giảm giá
-        tblHDCT.getColumnModel().getColumn(7).setPreferredWidth(100); // Tiền giảm
-        tblHDCT.getColumnModel().getColumn(8).setPreferredWidth(120); // Thành tiền
-        tblHDCT.getTableHeader().repaint();
     }
 
     private void initData() {
@@ -105,7 +155,6 @@ public class ViewHoaDon extends javax.swing.JPanel {
         CBhinhthucTT.addItem("Tất cả");
         CBhinhthucTT.addItem("Tiền mặt");
         CBhinhthucTT.addItem("Chuyển khoản");
-        CBhinhthucTT.addItem("Ví điện tử");
 
         // Đặt ngày mặc định là hôm nay
         txtTuNgay.setDate(new Date());
@@ -114,28 +163,133 @@ public class ViewHoaDon extends javax.swing.JPanel {
 
     private void loadAllOrders() {
         try {
+            System.out.println("Fetching all orders from controller...");
             List<OrderResponse> orders = orderController.getAllOrders();
+            System.out.println("Retrieved " + (orders != null ? orders.size() : 0) + " orders from controller");
+            if (orders != null && !orders.isEmpty()) {
+                System.out.println("First order details - ID: " + orders.get(0).getOrderId() + 
+                                 ", Code: " + orders.get(0).getOrderCode() +
+                                 ", Customer: " + orders.get(0).getCustomerName());
+            }
             loadDataTable(orders);
         } catch (Exception e) {
+            System.err.println("Error in loadAllOrders: " + e.getMessage());
+            e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Lỗi khi tải danh sách hoá đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void loadDataTable(List<OrderResponse> orders) {
-        DefaultTableModel model = (DefaultTableModel) tblhoadon.getModel();
-        model.setRowCount(0);
 
+    private void loadDataTable(List<OrderResponse> orders) {
+        if (orders == null) {
+            System.err.println("Error: Orders list is null");
+            return;
+        }
+        
+
+        for (int i = 0; i < tblhoadon.getColumnCount(); i++) {
+            System.out.println("  Column " + i + ": " + 
+                             tblhoadon.getColumnName(i) + 
+                             " (" + tblhoadon.getColumnClass(i).getSimpleName() + ")");
+        }
+        
+        // Print current table data
+        System.out.println("\nCurrent table data:");
+        DefaultTableModel currentModel = (DefaultTableModel) tblhoadon.getModel();
+        for (int row = 0; row < Math.min(5, currentModel.getRowCount()); row++) {
+            System.out.print("Row " + row + ": ");
+            for (int col = 0; col < currentModel.getColumnCount(); col++) {
+                System.out.print(currentModel.getValueAt(row, col) + " | ");
+            }
+            System.out.println();
+        }
+        
+        System.out.println("Loading " + orders.size() + " orders into table");
+        DefaultTableModel model = (DefaultTableModel) tblhoadon.getModel();
+        
+        // Clear existing data
+        model.setRowCount(0);
+        
+        if (orders.isEmpty()) {
+            System.out.println("No orders found");
+            JOptionPane.showMessageDialog(this, "Không tìm thấy đơn hàng nào", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
         int stt = 1;
+        // Process each order
         for (OrderResponse order : orders) {
-            model.addRow(new Object[]{
-                stt++, // STT
-                order.getCustomerId()!= null ? order.getCustomerId(): "Khách lẻ",
-                String.format("%,.0f đ", order.getFinalAmount()),
-                order.getStatus(),
-                order.getPaymentMethod(),
-                order.getOrderCode(),
-                order.getCreatedAt().toString()
-            });
+            try {
+                System.out.println("Processing order: " + order.getOrderCode() + 
+                               ", Customer: " + order.getCustomerName() + 
+                               ", Amount: " + order.getFinalAmount());
+                
+                // Handle null customer name
+                String customerName = order.getCustomerName();
+                if (customerName == null || customerName.trim().isEmpty()) {
+                    customerName = "Khách lẻ";
+                } else {
+                    try {
+                        customerName = new String(customerName.getBytes("ISO-8859-1"), "UTF-8");
+                    } catch (Exception e) {
+                        System.err.println("Error converting customer name: " + e.getMessage());
+                    }
+                }
+                
+                // Format date
+                String orderDate = "";
+                if (order.getCreatedAt() != null) {
+                    orderDate = order.getCreatedAt().toString();
+                }
+                
+                // Format amount
+                double amount = order.getFinalAmount() != null ? 
+                              order.getFinalAmount().doubleValue() : 0.0;
+                
+                
+                // Add row to table model - ensure column order matches the model
+                Object[] rowData = {
+                    stt++, // STT (Integer)
+                    customerName, // Khách hàng (String)
+                    String.format("%,.0f đ", amount), // Tổng tiền (String)
+                    order.getStatus() != null ? order.getStatus() : "", // Trạng thái (String)
+                    order.getPaymentMethod() != null ? order.getPaymentMethod() : "", // Hình thức TT (String)
+                    order.getOrderCode() != null ? order.getOrderCode() : "", // Mã đơn hàng (String)
+                    orderDate // Ngày tạo (String)
+                };
+                model.addRow(rowData);
+                
+
+            } catch (Exception e) {
+                System.err.println("Error processing order " + (order != null ? order.getOrderCode() : "null") + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
+        // Notify the table that the model has changed
+        model.fireTableDataChanged();
+        System.out.println("Finished loading " + orders.size() + " orders into table");
+        
+        // Force UI update
+        tblhoadon.revalidate();
+        tblhoadon.repaint();
+        
+        // Ensure table is visible and has a reasonable size
+        if (tblhoadon.getPreferredSize().width < 100) {
+            System.out.println("Adjusting table preferred size...");
+            tblhoadon.setPreferredScrollableViewportSize(new Dimension(1000, 400));
+        }
+        
+        // Force update of the UI
+        tblhoadon.revalidate();
+        tblhoadon.repaint();
+        
+        // Debug: Print scroll pane info
+        if (tblhoadon.getParent() instanceof JViewport) {
+            JViewport viewport = (JViewport) tblhoadon.getParent();
+            System.out.println("Viewport size: " + viewport.getSize());
+            System.out.println("Viewport view size: " + viewport.getViewSize());
+            System.out.println("Viewport view position: " + viewport.getViewPosition());
         }
     }
 
@@ -223,7 +377,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         setBackground(new java.awt.Color(255, 255, 255));
 
         btnSearch.setBackground(new java.awt.Color(0, 51, 255));
-        btnSearch.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnSearch.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
         btnSearch.setForeground(new java.awt.Color(255, 255, 255));
         btnSearch.setText("Tìm Kiếm");
         btnSearch.addActionListener(new java.awt.event.ActionListener() {
@@ -241,7 +395,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         txtTuNgay.setBounds(200, 20, 162, 29);
 
         jLabel2.setBackground(javax.swing.UIManager.getDefaults().getColor("Actions.Blue"));
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel2.setFont(getSafeFont("Segoe UI", Font.BOLD, 14));
         jLabel2.setText("Từ");
         jPanel5.add(jLabel2);
         jLabel2.setBounds(170, 30, 30, 20);
@@ -250,13 +404,13 @@ public class ViewHoaDon extends javax.swing.JPanel {
         jPanel5.add(txtDenNgay);
         txtDenNgay.setBounds(420, 20, 162, 29);
 
-        jLabel4.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel4.setFont(getSafeFont("Segoe UI", Font.BOLD, 14));
         jLabel4.setText("Đến");
         jPanel5.add(jLabel4);
         jLabel4.setBounds(370, 30, 40, 20);
 
         btnSearchNgay.setBackground(new java.awt.Color(0, 51, 255));
-        btnSearchNgay.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnSearchNgay.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
         btnSearchNgay.setForeground(new java.awt.Color(255, 255, 255));
         btnSearchNgay.setText("Tìm theo ngày");
         btnSearchNgay.addActionListener(new java.awt.event.ActionListener() {
@@ -267,7 +421,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         jPanel5.add(btnSearchNgay);
         btnSearchNgay.setBounds(10, 20, 140, 30);
 
-        jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLabel3.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
         jLabel3.setText("Trạng thái hoá đơn");
         jPanel5.add(jLabel3);
         jLabel3.setBounds(360, 90, 120, 16);
@@ -281,7 +435,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         CBtrangThai.setBounds(480, 80, 130, 30);
 
         btnSearchGia.setBackground(new java.awt.Color(0, 51, 255));
-        btnSearchGia.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnSearchGia.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
         btnSearchGia.setForeground(new java.awt.Color(255, 255, 255));
         btnSearchGia.setText("Tìm Kiếm");
         btnSearchGia.addActionListener(new java.awt.event.ActionListener() {
@@ -293,7 +447,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         btnSearchGia.setBounds(10, 70, 140, 30);
 
         btnXuatExcel.setBackground(new java.awt.Color(0, 51, 255));
-        btnXuatExcel.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnXuatExcel.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
         btnXuatExcel.setForeground(new java.awt.Color(255, 255, 255));
         btnXuatExcel.setText("Xuất Excel");
         btnXuatExcel.addActionListener(new java.awt.event.ActionListener() {
@@ -304,7 +458,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         jPanel5.add(btnXuatExcel);
         btnXuatExcel.setBounds(600, 20, 100, 30);
 
-        jLabel5.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLabel5.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
         jLabel5.setText("Hình thức TT");
         jPanel5.add(jLabel5);
         jLabel5.setBounds(620, 90, 80, 10);
@@ -771,38 +925,50 @@ public class ViewHoaDon extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_CBtrangThaiActionPerformed
 
-    private void btnXuatPDFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXuatPDFActionPerformed
-    int selectedRow = tblhoadon.getSelectedRow();
-    if (selectedRow < 0) {
-        JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn để xuất PDF!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
-        return;
-    }
-    String orderId = tblhoadon.getValueAt(selectedRow, 0).toString();
-    if (orderId == null || orderId.trim().isEmpty()) {
-        JOptionPane.showMessageDialog(this, "Hóa đơn không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-    OrderResponse order = orderController.getOrderById(Integer.parseInt(orderId));
-    if (order == null) {
-        JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-    List<OrderResponse> orders = new ArrayList<>();
-    orders.add(order);
-    javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
-    fileChooser.setDialogTitle("Chọn nơi lưu file PDF");
-    fileChooser.setSelectedFile(new java.io.File("order_" + orderId + ".pdf"));
-    int userSelection = fileChooser.showSaveDialog(this);
-    if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
-        String filePath = fileChooser.getSelectedFile().getAbsolutePath();
-        if (!filePath.toLowerCase().endsWith(".pdf")) {
-            filePath += ".pdf";
+    private void btnXuatPDFActionPerformed(java.awt.event.ActionEvent evt) {
+        int selectedRow = tblhoadon.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn để xuất PDF!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
         }
-        PDFUtil.exportOrdersToPDF(orders, filePath);
-        JOptionPane.showMessageDialog(this, "Xuất PDF thành công! File lưu tại: " + filePath);
-    }
+        
+        // Get the order code from column 5 (index 5) which is the "Mã đơn hàng" column
+        String orderCode = tblhoadon.getValueAt(selectedRow, 5).toString();
+        if (orderCode == null || orderCode.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy mã đơn hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        OrderWithDetailsResponse orderWithDetails = orderController.getOrderWithDetails(orderCode);
+        if (orderWithDetails == null || orderWithDetails.getOrder() == null) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin đơn hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        List<OrderResponse> orders = new ArrayList<>();
+        orders.add(orderWithDetails.getOrder());
+        
+        javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+        fileChooser.setDialogTitle("Chọn nơi lưu file PDF");
+        fileChooser.setSelectedFile(new java.io.File("order_" + orderCode + ".pdf"));
+        
+        int userSelection = fileChooser.showSaveDialog(this);
+        if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
+            String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+            if (!filePath.toLowerCase().endsWith(".pdf")) {
+                filePath += ".pdf";
+            }
+            
+            try {
+                PDFUtil.exportOrdersToPDF(orders, filePath);
+                JOptionPane.showMessageDialog(this, "Xuất PDF thành công! File lưu tại: " + filePath, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi xuất file PDF: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     // TODO add your handling code here:
-}//GEN-LAST:event_btnXuatPDFActionPerformed
+}                                          
 
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
