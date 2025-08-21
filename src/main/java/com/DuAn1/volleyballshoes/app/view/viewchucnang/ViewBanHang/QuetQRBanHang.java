@@ -207,15 +207,7 @@ public class QuetQRBanHang extends javax.swing.JFrame implements Runnable, Threa
             return;
         }
         
-        // If we have a reference to ViewBanHang, try to find the product
-        if (viewBanHang != null) {
-            viewBanHang.lookUpProductBySKU(sku);
-        } else {
-            JOptionPane.showMessageDialog(this, 
-                "Đã quét mã: " + sku + "\nVui chọn sản phẩm từ danh sách.", 
-                "Thông báo", 
-                JOptionPane.INFORMATION_MESSAGE);
-        }
+        // Extract SKU from QR text if it's in format "SKU:xxx"
         String[] lines = qrText.split("\\n");
         for (String line : lines) {
             if (line.startsWith("SKU:")) {
@@ -225,7 +217,7 @@ public class QuetQRBanHang extends javax.swing.JFrame implements Runnable, Threa
         }
         
         if (!sku.isEmpty() && viewBanHang != null) {
-            viewBanHang.addProductToCartBySKU(sku);
+            viewBanHang.addProductToCartBySKU(sku, true);
         } else {
             JOptionPane.showMessageDialog(this,
                 "Không tìm thấy mã sản phẩm trong QR code",

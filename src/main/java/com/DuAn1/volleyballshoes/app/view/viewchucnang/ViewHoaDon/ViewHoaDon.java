@@ -22,8 +22,11 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 import com.DuAn1.volleyballshoes.app.dto.response.*;
+import java.io.File;
+import java.text.SimpleDateFormat;
 
 public class ViewHoaDon extends javax.swing.JPanel {
+
     // Utility method to safely set font with fallback
     private static Font getSafeFont(String fontName, int style, int size) {
         try {
@@ -53,12 +56,11 @@ public class ViewHoaDon extends javax.swing.JPanel {
 
     private OrderController orderController = new OrderController();
 
-
     public ViewHoaDon() {
         try {
             // Set system look and feel
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            
+
             // Set default font for all components
             Font defaultFont = getSafeFont("Segoe UI", Font.PLAIN, 12);
             Enumeration<Object> keys = UIManager.getDefaults().keys();
@@ -75,34 +77,34 @@ public class ViewHoaDon extends javax.swing.JPanel {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         System.out.println("=== Initializing ViewHoaDon ===");
         initComponents();
-        
+
         // Initialize the table model with correct column names and types
         String[] orderColumns = {"STT", "Khách hàng", "Tổng tiền", "Trạng thái", "Hình thức TT", "Mã đơn hàng", "Ngày tạo"};
         DefaultTableModel orderModel = new DefaultTableModel(orderColumns, 0) {
             Class[] types = new Class[]{
-                Integer.class,  // STT
-                String.class,   // Khách hàng
-                String.class,   // Tổng tiền (đã định dạng)
-                String.class,   // Trạng thái
-                String.class,   // Hình thức TT
-                String.class,   // Mã đơn hàng
-                String.class    // Ngày tạo
+                Integer.class, // STT
+                String.class, // Khách hàng
+                String.class, // Tổng tiền (đã định dạng)
+                String.class, // Trạng thái
+                String.class, // Hình thức TT
+                String.class, // Mã đơn hàng
+                String.class // Ngày tạo
             };
-            
+
             @Override
             public Class<?> getColumnClass(int columnIndex) {
                 return types[columnIndex];
             }
-            
+
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false; // Make all cells non-editable
             }
         };
-        
+
         // Set the model and configure table properties
         tblhoadon.setModel(orderModel);
         tblhoadon.setAutoCreateRowSorter(true);
@@ -110,36 +112,40 @@ public class ViewHoaDon extends javax.swing.JPanel {
         tblhoadon.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tblhoadon.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         tblhoadon.getTableHeader().setReorderingAllowed(false);
-        
+
         // Set preferred column widths
         int[] columnWidths = {50, 200, 150, 100, 120, 150, 150}; // STT, Khách hàng, Tổng tiền, Trạng thái, Hình thức TT, Mã đơn hàng, Ngày tạo
         for (int i = 0; i < columnWidths.length && i < orderModel.getColumnCount(); i++) {
             tblhoadon.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
         }
-        
+
         // Set preferred size
         tblhoadon.setPreferredScrollableViewportSize(new Dimension(1000, 400));
-        
+
         // Initialize data and load orders
         initData();
         loadAllOrders();
-        
-          String[] detailColumnsVN = {"STT", "Sản phẩm", "Màu sắc", "Kích thước", "Số lượng", "Đơn giá", "Giảm giá", "Tiền giảm", "Thành tiền"};
+
+        String[] detailColumnsVN = {"STT", "Sản phẩm", "Màu sắc", "Kích thước", "Số lượng", "Đơn giá", "Giảm giá", "Tiền giảm", "Thành tiền"};
         DefaultTableModel detailModel = new DefaultTableModel(detailColumnsVN, 0) {
             @Override
             public Class<?> getColumnClass(int columnIndex) {
-                if (columnIndex == 0 || columnIndex == 4) return Integer.class; // STT, Số lượng
-                if (columnIndex >= 5) return String.class; // Các cột tiền
+                if (columnIndex == 0 || columnIndex == 4) {
+                    return Integer.class; // STT, Số lượng
+                }
+                if (columnIndex >= 5) {
+                    return String.class; // Các cột tiền
+                }
                 return Object.class;
             }
-            
+
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false; // Không cho phép chỉnh sửa các ô
             }
         };
         tblHDCT.setModel(detailModel);
-        
+
     }
 
     private void initData() {
@@ -167,9 +173,9 @@ public class ViewHoaDon extends javax.swing.JPanel {
             List<OrderResponse> orders = orderController.getAllOrders();
             System.out.println("Retrieved " + (orders != null ? orders.size() : 0) + " orders from controller");
             if (orders != null && !orders.isEmpty()) {
-                System.out.println("First order details - ID: " + orders.get(0).getOrderId() + 
-                                 ", Code: " + orders.get(0).getOrderCode() +
-                                 ", Customer: " + orders.get(0).getCustomerName());
+                System.out.println("First order details - ID: " + orders.get(0).getOrderId()
+                        + ", Code: " + orders.get(0).getOrderCode()
+                        + ", Customer: " + orders.get(0).getCustomerName());
             }
             loadDataTable(orders);
         } catch (Exception e) {
@@ -179,20 +185,18 @@ public class ViewHoaDon extends javax.swing.JPanel {
         }
     }
 
-
     private void loadDataTable(List<OrderResponse> orders) {
         if (orders == null) {
             System.err.println("Error: Orders list is null");
             return;
         }
-        
 
         for (int i = 0; i < tblhoadon.getColumnCount(); i++) {
-            System.out.println("  Column " + i + ": " + 
-                             tblhoadon.getColumnName(i) + 
-                             " (" + tblhoadon.getColumnClass(i).getSimpleName() + ")");
+            System.out.println("  Column " + i + ": "
+                    + tblhoadon.getColumnName(i)
+                    + " (" + tblhoadon.getColumnClass(i).getSimpleName() + ")");
         }
-        
+
         // Print current table data
         System.out.println("\nCurrent table data:");
         DefaultTableModel currentModel = (DefaultTableModel) tblhoadon.getModel();
@@ -203,27 +207,27 @@ public class ViewHoaDon extends javax.swing.JPanel {
             }
             System.out.println();
         }
-        
+
         System.out.println("Loading " + orders.size() + " orders into table");
         DefaultTableModel model = (DefaultTableModel) tblhoadon.getModel();
-        
+
         // Clear existing data
         model.setRowCount(0);
-        
+
         if (orders.isEmpty()) {
             System.out.println("No orders found");
             JOptionPane.showMessageDialog(this, "Không tìm thấy đơn hàng nào", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        
+
         int stt = 1;
         // Process each order
         for (OrderResponse order : orders) {
             try {
-                System.out.println("Processing order: " + order.getOrderCode() + 
-                               ", Customer: " + order.getCustomerName() + 
-                               ", Amount: " + order.getFinalAmount());
-                
+                System.out.println("Processing order: " + order.getOrderCode()
+                        + ", Customer: " + order.getCustomerName()
+                        + ", Amount: " + order.getFinalAmount());
+
                 // Handle null customer name
                 String customerName = order.getCustomerName();
                 if (customerName == null || customerName.trim().isEmpty()) {
@@ -235,18 +239,17 @@ public class ViewHoaDon extends javax.swing.JPanel {
                         System.err.println("Error converting customer name: " + e.getMessage());
                     }
                 }
-                
+
                 // Format date
                 String orderDate = "";
                 if (order.getCreatedAt() != null) {
                     orderDate = order.getCreatedAt().toString();
                 }
-                
+
                 // Format amount
-                double amount = order.getFinalAmount() != null ? 
-                              order.getFinalAmount().doubleValue() : 0.0;
-                
-                
+                double amount = order.getFinalAmount() != null
+                        ? order.getFinalAmount().doubleValue() : 0.0;
+
                 // Add row to table model - ensure column order matches the model
                 Object[] rowData = {
                     stt++, // STT (Integer)
@@ -258,32 +261,31 @@ public class ViewHoaDon extends javax.swing.JPanel {
                     orderDate // Ngày tạo (String)
                 };
                 model.addRow(rowData);
-                
 
             } catch (Exception e) {
                 System.err.println("Error processing order " + (order != null ? order.getOrderCode() : "null") + ": " + e.getMessage());
                 e.printStackTrace();
             }
         }
-        
+
         // Notify the table that the model has changed
         model.fireTableDataChanged();
         System.out.println("Finished loading " + orders.size() + " orders into table");
-        
+
         // Force UI update
         tblhoadon.revalidate();
         tblhoadon.repaint();
-        
+
         // Ensure table is visible and has a reasonable size
         if (tblhoadon.getPreferredSize().width < 100) {
             System.out.println("Adjusting table preferred size...");
             tblhoadon.setPreferredScrollableViewportSize(new Dimension(1000, 400));
         }
-        
+
         // Force update of the UI
         tblhoadon.revalidate();
         tblhoadon.repaint();
-        
+
         // Debug: Print scroll pane info
         if (tblhoadon.getParent() instanceof JViewport) {
             JViewport viewport = (JViewport) tblhoadon.getParent();
@@ -307,14 +309,14 @@ public class ViewHoaDon extends javax.swing.JPanel {
                         String sizeName = detail.getSizeName() != null ? detail.getSizeName() : "";
                         int quantity = detail.getQuantity();
                         java.math.BigDecimal unitPrice = detail.getUnitPrice() != null ? detail.getUnitPrice() : java.math.BigDecimal.ZERO;
-                        java.math.BigDecimal discountPercent = detail.getDiscountPercent() != null ? 
-                                detail.getDiscountPercent() : java.math.BigDecimal.ZERO;
-                        java.math.BigDecimal discount = discountPercent.compareTo(java.math.BigDecimal.ZERO) > 0 ?
-                                unitPrice.multiply(discountPercent).divide(java.math.BigDecimal.valueOf(100)) : 
-                                java.math.BigDecimal.ZERO;
-                        java.math.BigDecimal totalPrice = detail.getTotalPrice() != null ? 
-                                detail.getTotalPrice() : 
-                                unitPrice.multiply(java.math.BigDecimal.valueOf(quantity)).subtract(discount);
+                        java.math.BigDecimal discountPercent = detail.getDiscountPercent() != null
+                                ? detail.getDiscountPercent() : java.math.BigDecimal.ZERO;
+                        java.math.BigDecimal discount = discountPercent.compareTo(java.math.BigDecimal.ZERO) > 0
+                                ? unitPrice.multiply(discountPercent).divide(java.math.BigDecimal.valueOf(100))
+                                : java.math.BigDecimal.ZERO;
+                        java.math.BigDecimal totalPrice = detail.getTotalPrice() != null
+                                ? detail.getTotalPrice()
+                                : unitPrice.multiply(java.math.BigDecimal.valueOf(quantity)).subtract(discount);
 
                         model.addRow(new Object[]{
                             stt++, // STT
@@ -323,8 +325,8 @@ public class ViewHoaDon extends javax.swing.JPanel {
                             sizeName,
                             quantity,
                             formatCurrency(unitPrice.doubleValue()),
-                            discountPercent.compareTo(java.math.BigDecimal.ZERO) > 0 ? 
-                                discountPercent.setScale(2, java.math.RoundingMode.HALF_UP) + "%" : "0%",
+                            discountPercent.compareTo(java.math.BigDecimal.ZERO) > 0
+                            ? discountPercent.setScale(2, java.math.RoundingMode.HALF_UP) + "%" : "0%",
                             formatCurrency(discount.doubleValue()),
                             formatCurrency(totalPrice.doubleValue())
                         });
@@ -364,7 +366,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         CBhinhthucTT = new javax.swing.JComboBox<>();
         btnRestart = new javax.swing.JButton();
         btnLoc = new javax.swing.JButton();
-        btnXuatPDF = new javax.swing.JButton();
+        btnXuatPDF1 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblhoadon = new javax.swing.JTable();
         jScrollPane3 = new javax.swing.JScrollPane();
@@ -377,7 +379,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         setBackground(new java.awt.Color(255, 255, 255));
 
         btnSearch.setBackground(new java.awt.Color(0, 51, 255));
-        btnSearch.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
+        btnSearch.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnSearch.setForeground(new java.awt.Color(255, 255, 255));
         btnSearch.setText("Tìm Kiếm");
         btnSearch.addActionListener(new java.awt.event.ActionListener() {
@@ -395,7 +397,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         txtTuNgay.setBounds(200, 20, 162, 29);
 
         jLabel2.setBackground(javax.swing.UIManager.getDefaults().getColor("Actions.Blue"));
-        jLabel2.setFont(getSafeFont("Segoe UI", Font.BOLD, 14));
+        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel2.setText("Từ");
         jPanel5.add(jLabel2);
         jLabel2.setBounds(170, 30, 30, 20);
@@ -404,13 +406,13 @@ public class ViewHoaDon extends javax.swing.JPanel {
         jPanel5.add(txtDenNgay);
         txtDenNgay.setBounds(420, 20, 162, 29);
 
-        jLabel4.setFont(getSafeFont("Segoe UI", Font.BOLD, 14));
+        jLabel4.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel4.setText("Đến");
         jPanel5.add(jLabel4);
         jLabel4.setBounds(370, 30, 40, 20);
 
         btnSearchNgay.setBackground(new java.awt.Color(0, 51, 255));
-        btnSearchNgay.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
+        btnSearchNgay.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnSearchNgay.setForeground(new java.awt.Color(255, 255, 255));
         btnSearchNgay.setText("Tìm theo ngày");
         btnSearchNgay.addActionListener(new java.awt.event.ActionListener() {
@@ -421,7 +423,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         jPanel5.add(btnSearchNgay);
         btnSearchNgay.setBounds(10, 20, 140, 30);
 
-        jLabel3.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
+        jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel3.setText("Trạng thái hoá đơn");
         jPanel5.add(jLabel3);
         jLabel3.setBounds(360, 90, 120, 16);
@@ -435,7 +437,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         CBtrangThai.setBounds(480, 80, 130, 30);
 
         btnSearchGia.setBackground(new java.awt.Color(0, 51, 255));
-        btnSearchGia.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
+        btnSearchGia.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnSearchGia.setForeground(new java.awt.Color(255, 255, 255));
         btnSearchGia.setText("Tìm Kiếm");
         btnSearchGia.addActionListener(new java.awt.event.ActionListener() {
@@ -447,7 +449,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         btnSearchGia.setBounds(10, 70, 140, 30);
 
         btnXuatExcel.setBackground(new java.awt.Color(0, 51, 255));
-        btnXuatExcel.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
+        btnXuatExcel.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnXuatExcel.setForeground(new java.awt.Color(255, 255, 255));
         btnXuatExcel.setText("Xuất Excel");
         btnXuatExcel.addActionListener(new java.awt.event.ActionListener() {
@@ -458,7 +460,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
         jPanel5.add(btnXuatExcel);
         btnXuatExcel.setBounds(600, 20, 100, 30);
 
-        jLabel5.setFont(getSafeFont("Segoe UI", Font.BOLD, 12));
+        jLabel5.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel5.setText("Hình thức TT");
         jPanel5.add(jLabel5);
         jLabel5.setBounds(620, 90, 80, 10);
@@ -495,17 +497,17 @@ public class ViewHoaDon extends javax.swing.JPanel {
         jPanel5.add(btnLoc);
         btnLoc.setBounds(810, 20, 80, 30);
 
-        btnXuatPDF.setBackground(new java.awt.Color(51, 51, 255));
-        btnXuatPDF.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        btnXuatPDF.setForeground(new java.awt.Color(255, 255, 255));
-        btnXuatPDF.setText("Xuất PDF");
-        btnXuatPDF.addActionListener(new java.awt.event.ActionListener() {
+        btnXuatPDF1.setBackground(new java.awt.Color(51, 51, 255));
+        btnXuatPDF1.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnXuatPDF1.setForeground(new java.awt.Color(255, 255, 255));
+        btnXuatPDF1.setText("Xuất PDF");
+        btnXuatPDF1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnXuatPDFActionPerformed(evt);
+                btnXuatPDF1ActionPerformed(evt);
             }
         });
-        jPanel5.add(btnXuatPDF);
-        btnXuatPDF.setBounds(710, 20, 90, 30);
+        jPanel5.add(btnXuatPDF1);
+        btnXuatPDF1.setBounds(710, 20, 90, 30);
 
         tblhoadon.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -760,35 +762,67 @@ public class ViewHoaDon extends javax.swing.JPanel {
     }//GEN-LAST:event_tblhoadonMouseClicked
 
     private void btnXuatExcelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXuatExcelActionPerformed
-    int selectedRow = tblhoadon.getSelectedRow();
-    if (selectedRow < 0) {
-        JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn để xuất Excel!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
-        return;
-    }
-    String orderId = tblhoadon.getValueAt(selectedRow, 0).toString();
-    if (orderId == null || orderId.trim().isEmpty()) {
-        JOptionPane.showMessageDialog(this, "Hóa đơn không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-    // Sử dụng BillController để lấy BillResponse và xuất đúng mẫu
-    BillController billController = new BillController();
-    com.DuAn1.volleyballshoes.app.dto.response.BillResponse bill = billController.getBillById(Integer.parseInt(orderId));
-    if (bill == null) {
-        JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-    javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
-    fileChooser.setDialogTitle("Chọn nơi lưu file Excel");
-    fileChooser.setSelectedFile(new java.io.File("order_" + orderId + ".xlsx"));
-    int userSelection = fileChooser.showSaveDialog(this);
-    if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
-        String filePath = fileChooser.getSelectedFile().getAbsolutePath();
-        if (!filePath.toLowerCase().endsWith(".xlsx")) {
-            filePath += ".xlsx";
+        try {
+            // Create a file chooser
+            javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+            fileChooser.setDialogTitle("Chọn nơi lưu file Excel");
+            fileChooser.setSelectedFile(new java.io.File("DanhSachHoaDon_"
+                    + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".xlsx"));
+
+            int userSelection = fileChooser.showSaveDialog(this);
+            if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
+                String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+                if (!filePath.toLowerCase().endsWith(".xlsx")) {
+                    filePath += ".xlsx";
+                }
+
+                // Get all orders with details
+                List<OrderWithDetailsResponse> allOrders = new ArrayList<>();
+                for (int i = 0; i < tblhoadon.getRowCount(); i++) {
+                    String orderCode = tblhoadon.getValueAt(i, 5).toString(); // Column 5 is the order code
+                    try {
+                        OrderWithDetailsResponse orderWithDetails = orderController.getOrderWithDetails(orderCode);
+                        if (orderWithDetails != null) {
+                            allOrders.add(orderWithDetails);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error getting details for order " + orderCode + ": " + e.getMessage());
+                    }
+                }
+
+                if (allOrders.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                            "Không có dữ liệu hóa đơn để xuất!",
+                            "Cảnh báo",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // Export all orders to Excel
+                ExcelUtil.exportAllOrdersToExcel(allOrders, filePath);
+
+                JOptionPane.showMessageDialog(this,
+                        "Xuất danh sách hóa đơn thành công!\nFile đã được lưu tại: " + filePath,
+                        "Thành công",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                // Optionally open the Excel file after export
+                if (Desktop.isDesktopSupported()) {
+                    try {
+                        File file = new File(filePath);
+                        Desktop.getDesktop().open(file);
+                    } catch (Exception ex) {
+                        // Ignore if opening fails
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi xuất file Excel: " + ex.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
-        com.DuAn1.volleyballshoes.app.utils.ExcelUtil.exportBillToExcel(bill, filePath);
-        JOptionPane.showMessageDialog(this, "Xuất Excel thành công! File lưu tại: " + filePath);
-    }
 // TODO add your handling code here:
 }//GEN-LAST:event_btnXuatExcelActionPerformed
 
@@ -925,50 +959,71 @@ public class ViewHoaDon extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_CBtrangThaiActionPerformed
 
-    private void btnXuatPDFActionPerformed(java.awt.event.ActionEvent evt) {
+    private void btnXuatPDF1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnXuatPDF1ActionPerformed
+        // TODO add your handling code here:
         int selectedRow = tblhoadon.getSelectedRow();
         if (selectedRow < 0) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn để xuất PDF!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         // Get the order code from column 5 (index 5) which is the "Mã đơn hàng" column
         String orderCode = tblhoadon.getValueAt(selectedRow, 5).toString();
         if (orderCode == null || orderCode.trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Không tìm thấy mã đơn hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
+
         OrderWithDetailsResponse orderWithDetails = orderController.getOrderWithDetails(orderCode);
         if (orderWithDetails == null || orderWithDetails.getOrder() == null) {
             JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin đơn hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
-        List<OrderResponse> orders = new ArrayList<>();
-        orders.add(orderWithDetails.getOrder());
-        
+
+        // Create a file chooser
         javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
         fileChooser.setDialogTitle("Chọn nơi lưu file PDF");
-        fileChooser.setSelectedFile(new java.io.File("order_" + orderCode + ".pdf"));
-        
+        fileChooser.setSelectedFile(new java.io.File("HoaDon_" + orderCode + ".pdf"));
+
+        // Set file filter for PDF files
+        javax.swing.filechooser.FileNameExtensionFilter filter = new javax.swing.filechooser.FileNameExtensionFilter("PDF Files", "pdf");
+        fileChooser.setFileFilter(filter);
+
         int userSelection = fileChooser.showSaveDialog(this);
         if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
             String filePath = fileChooser.getSelectedFile().getAbsolutePath();
             if (!filePath.toLowerCase().endsWith(".pdf")) {
                 filePath += ".pdf";
             }
-            
+
             try {
-                PDFUtil.exportOrdersToPDF(orders, filePath);
-                JOptionPane.showMessageDialog(this, "Xuất PDF thành công! File lưu tại: " + filePath, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                // Export the order with details to PDF
+                PDFUtil.exportOrderToPDF(orderWithDetails, filePath);
+                JOptionPane.showMessageDialog(this,
+                        "Xuất hóa đơn thành công!\nFile đã được lưu tại: " + filePath,
+                        "Thành công",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                // Optionally open the PDF after export
+                if (Desktop.isDesktopSupported()) {
+                    try {
+                        File file = new File(filePath);
+                        if (file.exists()) {
+                            Desktop.getDesktop().open(file);
+                        }
+                    } catch (Exception ex) {
+                        // Ignore if we can't open the file
+                    }
+                }
             } catch (Exception e) {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Lỗi khi xuất file PDF: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi xuất file PDF: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
             }
         }
-    // TODO add your handling code here:
-}                                          
+    }//GEN-LAST:event_btnXuatPDF1ActionPerformed
 
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
@@ -1012,7 +1067,7 @@ public class ViewHoaDon extends javax.swing.JPanel {
     private javax.swing.JButton btnSearchGia;
     private javax.swing.JButton btnSearchNgay;
     private javax.swing.JButton btnXuatExcel;
-    private javax.swing.JButton btnXuatPDF;
+    private javax.swing.JButton btnXuatPDF1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;

@@ -2061,35 +2061,11 @@ public class ViewBanHang extends javax.swing.JPanel {
      * Looks up a product by SKU and adds it to the cart if found
      * @param sku The product SKU to look up
      */
-    public void lookUpProductBySKU(String sku) {
-        try {
-            // Find the product variant by SKU
-            ProductVariant variant = productVariantDAO.findBySku(sku);
-            if (variant == null) {
-                JOptionPane.showMessageDialog(this,
-                    "Không tìm thấy sản phẩm với mã: " + sku,
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            // If we found the product, add it to cart
-            addProductToCartBySKU(sku);
-            
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                "Lỗi khi tìm kiếm sản phẩm: " + ex.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
-    }
-    
     /**
-     * Adds a product to cart by scanning its QR code
-     * @param sku The product SKU from the QR code
+     * Looks up a product by SKU and adds it to the cart
+     * @param sku The product SKU to look up
      */
-    public void addProductToCartBySKU(String sku) {
+    public void lookUpProductBySKU(String sku) {
         try {
             // Find the product variant by SKU
             ProductVariant variant = productVariantDAO.findBySku(sku);
@@ -2111,60 +2087,153 @@ public class ViewBanHang extends javax.swing.JPanel {
                 return;
             }
             
+            // Check if product already exists in cart
+            DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+            int existingRow = -1;
+            for (int i = 0; i < cartModel.getRowCount(); i++) {
+                if (cartModel.getValueAt(i, 1).equals(sku)) {
+                    existingRow = i;
+                    break;
+                }
+            }
+            
+            if (existingRow >= 0) {
+                // If product exists in cart, just select it in the table
+                tblGioHang.setRowSelectionInterval(existingRow, existingRow);
+                tblGioHang.scrollRectToVisible(tblGioHang.getCellRect(existingRow, 0, true));
+                return;
+            }
+            
+            // If product not in cart, add it with quantity prompt
+            addProductToCartBySKU(sku, true);
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                "Lỗi khi tìm kiếm sản phẩm: " + ex.getMessage(),
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+    
+    /**
+     * Adds a product to cart by scanning its QR code or manual SKU entry
+     * @param sku The product SKU from the QR code or manual entry
+     * @param isFromQR true if called from QR code scan, false if from manual SKU entry
+     */
+    public void addProductToCartBySKU(String sku, boolean isFromQR) {
+        try {
+            // Find the product variant by SKU
+            ProductVariant variant = productVariantDAO.findBySku(sku);
+            if (variant == null) {
+                JOptionPane.showMessageDialog(this,
+                    "Không tìm thấy sản phẩm với mã: " + sku,
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Get the product for this variant
+            Product product = productDAO.findById(variant.getProductId());
+            if (product == null) {
+                JOptionPane.showMessageDialog(this,
+                    "Không tìm thấy thông tin sản phẩm",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Get cart table model
+            DefaultTableModel cartModel = (DefaultTableModel) tblGioHang.getModel();
+            
+            // Check if product already exists in cart
+            int existingRow = -1;
+            for (int i = 0; i < cartModel.getRowCount(); i++) {
+                if (cartModel.getValueAt(i, 1).equals(sku)) { // Check by SKU
+                    existingRow = i;
+                    break;
+                }
+            }
+            
+            int currentQuantity = 0;
+            if (existingRow >= 0) {
+                // Product exists in cart, get current quantity
+                currentQuantity = (int) cartModel.getValueAt(existingRow, 3);
+            }
+            
             // Show quantity input dialog
+            String quantityPrompt = "Nhập số lượng cho " + product.getProductName() + 
+                                 "\nSố lượng hiện có trong giỏ: " + currentQuantity +
+                                 "\nSố lượng có sẵn: " + variant.getVariantquantity();
+            
             String quantityStr = JOptionPane.showInputDialog(this,
-                "Nhập số lượng cho " + product.getProductName(),
+                quantityPrompt,
                 "Nhập số lượng",
-                JOptionPane.QUESTION_MESSAGE);
+                JOptionPane.PLAIN_MESSAGE);
 
             if (quantityStr == null || quantityStr.trim().isEmpty()) {
-                return; // User cancelled
+                return; // User cancelled or entered nothing
             }
 
+            int quantityToAdd;
             try {
-                int quantity = Integer.parseInt(quantityStr);
-                if (quantity <= 0) {
+                quantityToAdd = Integer.parseInt(quantityStr);
+                if (quantityToAdd <= 0) {
                     throw new NumberFormatException("Số lượng phải lớn hơn 0");
                 }
-
-                // Add to cart
-                DefaultTableModel model = (DefaultTableModel) tblGioHang.getModel();
-                boolean found = false;
                 
-                // Check if product already exists in cart
-                for (int i = 0; i < model.getRowCount(); i++) {
-                    if (model.getValueAt(i, 0).equals(variant.getVariantId())) {
-                        // Update quantity if product exists
-                        int currentQty = Integer.parseInt(model.getValueAt(i, 4).toString());
-                        model.setValueAt(currentQty + quantity, i, 4);
-                        found = true;
-                        break;
-                    }
+                int newTotalQuantity = currentQuantity + quantityToAdd;
+                if (newTotalQuantity > variant.getVariantquantity()) {
+                    JOptionPane.showMessageDialog(this, 
+                        String.format("Số lượng vượt quá số lượng tồn kho. Tối đa có thể thêm: %d", 
+                            variant.getVariantquantity() - currentQuantity), 
+                        "Lỗi", 
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
                 
-                if (!found) {
-                    // Add new row if product doesn't exist in cart
-                    Object[] row = new Object[]{
-                        variant.getVariantId(),
-                        variant.getVariantSku(),
-                        product.getProductName(),
-                        variant.getVariantOrigPrice(),
-                        quantity,
-                        variant.getVariantOrigPrice().multiply(new BigDecimal(quantity)),
-                        "Xóa"
-                    };
-                    model.addRow(row);
-                }
-                
-                // Update the cart total
-                updateCartSummary();
+                // Update quantity to be the new total quantity
+                quantityToAdd = newTotalQuantity;
                 
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this,
                     "Vui lòng nhập số lượng hợp lệ",
                     "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
+                return;
             }
+
+            // Calculate line total (price * total quantity)
+            BigDecimal lineTotal = variant.getVariantOrigPrice().multiply(BigDecimal.valueOf(quantityToAdd));
+
+            if (existingRow >= 0) {
+                // Update existing item with new total quantity
+                cartModel.setValueAt(quantityToAdd, existingRow, 3); // Update quantity
+                cartModel.setValueAt(lineTotal, existingRow, 6); // Update line total
+                cartModel.setValueAt(BigDecimal.ZERO, existingRow, 5); // Reset discount to 0
+                
+                // Update STT (row number) for all rows
+                for (int i = 0; i < cartModel.getRowCount(); i++) {
+                    cartModel.setValueAt(i + 1, i, 0);
+                }
+            } else {
+                // Add new item to cart
+                Object[] rowData = {
+                    cartModel.getRowCount() + 1, // STT
+                    sku, // Mã SP
+                    product.getProductName(), // Tên sản phẩm
+                    quantityToAdd, // Số lượng
+                    variant.getVariantOrigPrice(), // Đơn giá
+                    BigDecimal.ZERO, // Phần trăm giảm (mặc định 0)
+                    lineTotal // Thành tiền
+                };
+                cartModel.addRow(rowData);
+            }
+
+            // Update cart summary and refresh UI
+            updateCartSummary();
+            tblGioHang.revalidate();
+            tblGioHang.repaint();
             
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
