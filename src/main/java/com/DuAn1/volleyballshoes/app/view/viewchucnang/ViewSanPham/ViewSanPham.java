@@ -880,7 +880,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
         jScrollPane4 = new javax.swing.JScrollPane();
         tblSanPham = new javax.swing.JTable();
         btn_search_product = new javax.swing.JButton();
-        jTextField1 = new javax.swing.JTextField();
+        txt_timkiemtheotensanpham = new javax.swing.JTextField();
         pnl_thuộc_tính = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
         lbl_ma = new javax.swing.JLabel();
@@ -898,7 +898,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
         btnXoaThuocTinh = new javax.swing.JButton();
         jScrollPane3 = new javax.swing.JScrollPane();
         tblThuocTinh = new javax.swing.JTable();
-        jTextField2 = new javax.swing.JTextField();
+        txt_timkiemtheotenthuoctinh = new javax.swing.JTextField();
         btn_search_thuoctinh = new javax.swing.JButton();
         pbl_productvariant = new javax.swing.JPanel();
         jPanel8 = new javax.swing.JPanel();
@@ -1089,7 +1089,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
                                 .addGap(62, 62, 62)
                                 .addComponent(btn_search_product, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 219, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(txt_timkiemtheotensanpham, javax.swing.GroupLayout.PREFERRED_SIZE, 219, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(jPanel4Layout.createSequentialGroup()
                                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(lbl_product_id)
@@ -1164,7 +1164,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(btn_search_product)
-                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(txt_timkiemtheotensanpham, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(22, 22, 22)))
                 .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(12, 12, 12)
@@ -1329,6 +1329,11 @@ public final class ViewSanPham extends javax.swing.JPanel {
         jScrollPane3.setViewportView(tblThuocTinh);
 
         btn_search_thuoctinh.setText("Tìm kiếm");
+        btn_search_thuoctinh.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_search_thuoctinhActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout pnl_thuộc_tínhLayout = new javax.swing.GroupLayout(pnl_thuộc_tính);
         pnl_thuộc_tính.setLayout(pnl_thuộc_tínhLayout);
@@ -1357,7 +1362,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
                                 .addComponent(rb_size)
                                 .addGap(42, 42, 42)
                                 .addGroup(pnl_thuộc_tínhLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 153, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(txt_timkiemtheotenthuoctinh, javax.swing.GroupLayout.PREFERRED_SIZE, 153, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(rb_brand)))))
                     .addGroup(pnl_thuộc_tínhLayout.createSequentialGroup()
                         .addGap(285, 285, 285)
@@ -1395,7 +1400,7 @@ public final class ViewSanPham extends javax.swing.JPanel {
                     .addComponent(btnThemThuocTinh)
                     .addComponent(btnsuathuoctinh)
                     .addComponent(btnXoaThuocTinh)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txt_timkiemtheotenthuoctinh, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btn_search_thuoctinh))
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 290, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -2730,7 +2735,47 @@ public final class ViewSanPham extends javax.swing.JPanel {
 
     private void btn_search_productActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_search_productActionPerformed
         // TODO add your handling code here:
+         String searchText = txt_timkiemtheotensanpham.getText().trim();
+        if (searchText.isEmpty()) {
+            // If search text is empty, reload all products
+            loadData();
+            return;
+        }
+        
+        try {
+            // Call the product controller to search by name
+            List<ProductResponse> searchResults = productController.searchProductsByName(searchText);
+            
+            // Clear the current table
+            DefaultTableModel model = (DefaultTableModel) tblSanPham.getModel();
+            model.setRowCount(0);
+            
+            // Add the search results to the table
+            for (ProductResponse product : searchResults) {
+                model.addRow(new Object[]{
+                    product.getProductId(),
+                    product.getProductName(),
+                    product.getProductCode(),
+                    product.getProductDescription(),
+                    product.getBrandName(),
+                    product.getCategoryName()
+                });
+            }
+            
+            // Update pagination info
+            currentPage = 1;
+            totalPages = (int) Math.ceil((double) searchResults.size() / pageSize);
+            updatePaginationInfo();
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi tìm kiếm sản phẩm: " + e.getMessage(), 
+                "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btn_search_productActionPerformed
+
+    private void btn_search_thuoctinhActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_search_thuoctinhActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_search_thuoctinhActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLamMoi;
@@ -2779,8 +2824,6 @@ public final class ViewSanPham extends javax.swing.JPanel {
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTabbedPane jTabbedPane1;
-    private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
     private javax.swing.JLabel jlabel5;
     private javax.swing.JLabel lbl_brand;
     private javax.swing.JLabel lbl_category;
@@ -2811,6 +2854,8 @@ public final class ViewSanPham extends javax.swing.JPanel {
     private javax.swing.JTextField txtTen;
     private javax.swing.JTextField txtTenSP;
     private javax.swing.JTextField txt_productname;
+    private javax.swing.JTextField txt_timkiemtheotensanpham;
+    private javax.swing.JTextField txt_timkiemtheotenthuoctinh;
     private javax.swing.JTextArea txtaMoTa;
     // End of variables declaration//GEN-END:variables
 }

@@ -124,7 +124,9 @@ public class ProductController {
             return getAllProducts();
         }
         
-        return productDAO.findByName(productName).stream()
+        // Add wildcards for partial matching
+        String searchTerm = "%" + productName.trim() + "%";
+        return productDAO.findByName(searchTerm).stream()
             .map(ProductResponse::fromEntity)
             .collect(Collectors.toList());
     }
@@ -140,16 +142,17 @@ public class ProductController {
             .collect(Collectors.toList());
     }
     
-    public long getTotalProductCount() {
+    public long countAllProducts() {
         return productDAO.countAll();
     }
+    
     
     public int getTotalPages(int pageSize) {
         if (pageSize <= 0) {
             throw new IllegalArgumentException("Kích thước trang không hợp lệ");
         }
         
-        long totalCount = getTotalProductCount();
+        long totalCount = countAllProducts();
         return (int) Math.ceil((double) totalCount / pageSize);
     }
     
