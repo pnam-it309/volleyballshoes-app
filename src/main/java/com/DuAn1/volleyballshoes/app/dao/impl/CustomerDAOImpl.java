@@ -6,6 +6,7 @@ import com.DuAn1.volleyballshoes.app.utils.XJdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Implementation of CustomerDAO interface for managing customer data.
@@ -56,8 +57,17 @@ public class CustomerDAOImpl implements CustomerDAO {
 //    }
     @Override
     public List<Customer> findAll() {
-        String sql = "SELECT * FROM Customer ORDER BY customer_code DESC";
-        return XJdbc.query(sql, this::mapResultSetToCustomer);
+        try {
+            String sql = "SELECT * FROM Customer ORDER BY customer_code DESC";
+            System.out.println("Executing query: " + sql);
+            List<Customer> customers = XJdbc.query(sql, this::mapResultSetToCustomer);
+            System.out.println("Found " + (customers != null ? customers.size() : 0) + " customers");
+            return customers != null ? customers : new ArrayList<>();
+        } catch (Exception e) {
+            System.err.println("Error in CustomerDAOImpl.findAll(): " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 
     @Override
@@ -150,7 +160,7 @@ public class CustomerDAOImpl implements CustomerDAO {
      * Chuyển đổi ResultSet thành đối tượng Customer
      */
     private Customer mapResultSetToCustomer(ResultSet rs) throws SQLException {
-        if (rs == null || !rs.next()) {
+        if (rs == null) {
             return null;
         }
 
@@ -182,7 +192,15 @@ public class CustomerDAOImpl implements CustomerDAO {
     @Override
     public boolean deleteById(Integer id) {
         String sql = "DELETE FROM Customer WHERE customer_id = ?";
-        return XJdbc.executeUpdate(sql, id) > 0;
+        try {
+            int result = XJdbc.executeUpdate(sql, id);
+            return result > 0;
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("REFERENCE constraint")) {
+                throw new RuntimeException("Không thể xóa khách hàng vì đã có đơn hàng liên quan. Vui lòng xóa các đơn hàng của khách hàng trước.", e);
+            }
+            throw new RuntimeException("Lỗi khi xóa khách hàng: " + e.getMessage(), e);
+        }
     }
 
     @Override
