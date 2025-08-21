@@ -403,7 +403,6 @@ public class ViewNhanVien extends javax.swing.JPanel {
             JOptionPane.showMessageDialog(this,
                     "Lỗi khi tìm kiếm nhân viên: " + e.getMessage(),
                     "Lỗi",
-                    JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }//GEN-LAST:event_btn_Tìmbtn_ThemActionPerformed

@@ -13,6 +13,15 @@ public class ViewKhachHang extends javax.swing.JPanel {
     private Integer selectedCustomerId = null;
 
     public ViewKhachHang() {
+        // Initialize table model first
+        String[] customerColumns = {"Mã KH", "Tên KH", "Số ĐT", "Email"};
+        customerTableModel = new DefaultTableModel(customerColumns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Không cho phép chỉnh sửa trực tiếp trên bảng
+            }
+        };
+        
         initComponents();
         initTable();
         loadCustomerData();
@@ -23,14 +32,7 @@ public class ViewKhachHang extends javax.swing.JPanel {
     private DefaultTableModel orderHistoryTableModel;
 
     private void initTable() {
-        // Khởi tạo model cho bảng khách hàng
-        String[] customerColumns = {"Mã KH", "Tên KH", "Số ĐT", "Email"};
-        customerTableModel = new DefaultTableModel(customerColumns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // Không cho phép chỉnh sửa trực tiếp trên bảng
-            }
-        };
+        // Use the already initialized customerTableModel
         tbl_bang.setModel(customerTableModel);
 
         // Khởi tạo model cho bảng lịch sử đơn hàng
@@ -45,32 +47,78 @@ public class ViewKhachHang extends javax.swing.JPanel {
     }
 
     private void loadCustomerData() {
+        System.out.println("\n=== Bắt đầu tải dữ liệu khách hàng ===");
+        
         try {
-            customerTableModel.setRowCount(0); // Xóa dữ liệu cũ
-            List<Customer> customers = customerController.getAllCustomers();
-
-            if (customers == null || customers.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Không có dữ liệu khách hàng!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            // Clear existing data
+            if (customerTableModel == null) {
+                System.err.println("Lỗi: customerTableModel chưa được khởi tạo!");
                 return;
             }
-
-            System.out.println("Số lượng khách hàng: " + customers.size()); // Debug
+            customerTableModel.setRowCount(0);
+            
+            // Get customers from controller
+            System.out.println("Đang gọi getAllCustomers() từ controller...");
+            List<Customer> customers = customerController.getAllCustomers();
+            
+            if (customers == null) {
+                System.err.println("Lỗi: Danh sách khách hàng trả về là null");
+                JOptionPane.showMessageDialog(this, 
+                    "Lỗi kết nối cơ sở dữ liệu. Vui lòng kiểm tra log để biết thêm chi tiết.", 
+                    "Lỗi", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            System.out.println("Đã nhận được " + customers.size() + " khách hàng từ cơ sở dữ liệu");
+            
+            if (customers.isEmpty()) {
+                System.out.println("Cảnh báo: Không tìm thấy khách hàng nào trong cơ sở dữ liệu");
+                JOptionPane.showMessageDialog(this, 
+                    "Không tìm thấy dữ liệu khách hàng.", 
+                    "Thông báo", 
+                    JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            
+            // Add customers to table
+            int addedCount = 0;
             for (Customer customer : customers) {
-                if (customer != null) {
-                    Object[] row = new Object[]{
-                        customer.getCustomerCode() != null ? customer.getCustomerCode() : "",
-                        customer.getCustomerFullName() != null ? customer.getCustomerFullName() : "",
-                        customer.getCustomerPhone() != null ? customer.getCustomerPhone() : "",
-                        customer.getCustomerEmail() != null ? customer.getCustomerEmail() : ""
-                    };
-                    customerTableModel.addRow(row);
+                try {
+                    if (customer != null) {
+                        System.out.println(String.format("Thêm khách hàng [%s] %s - %s", 
+                            customer.getCustomerCode(), 
+                            customer.getCustomerFullName(),
+                            customer.getCustomerPhone()));
+                            
+                        Object[] row = new Object[]{
+                            customer.getCustomerCode() != null ? customer.getCustomerCode() : "",
+                            customer.getCustomerFullName() != null ? customer.getCustomerFullName() : "",
+                            customer.getCustomerPhone() != null ? customer.getCustomerPhone() : "",
+                            customer.getCustomerEmail() != null ? customer.getCustomerEmail() : ""
+                        };
+                        customerTableModel.addRow(row);
+                        addedCount++;
+                    } else {
+                        System.err.println("Cảnh báo: Phát hiện đối tượng Customer null trong danh sách");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Lỗi khi thêm khách hàng vào bảng: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
+            
+            System.out.println("Đã thêm thành công " + addedCount + "/" + customers.size() + " khách hàng vào bảng");
+            
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tải dữ liệu khách hàng: " + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            System.err.println("Lỗi trong quá trình tải dữ liệu khách hàng: " + e.getMessage());
             e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Lỗi khi tải dữ liệu khách hàng: " + e.getMessage(),
+                "Lỗi", 
+                JOptionPane.ERROR_MESSAGE);
+        } finally {
+            System.out.println("=== Kết thúc tải dữ liệu khách hàng ===\n");
         }
     }
 
