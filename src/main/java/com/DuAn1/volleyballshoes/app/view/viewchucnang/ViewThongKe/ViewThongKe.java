@@ -1,12 +1,15 @@
 package com.DuAn1.volleyballshoes.app.view.viewchucnang.ViewThongKe;
 
-import com.DuAn1.volleyballshoes.app.controller.StatisticController;
+import com.DuAn1.volleyballshoes.app.controller.ThongKeController;
 import com.DuAn1.volleyballshoes.app.dao.ThongKeDao;
 import com.DuAn1.volleyballshoes.app.dao.impl.ThongKeDaoImpl;
 import java.awt.Color;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableModel;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartFrame;
@@ -17,8 +20,162 @@ import org.jfree.data.category.DefaultCategoryDataset;
 
 public class ViewThongKe extends javax.swing.JPanel {
 
+    private ThongKeController thongKeController;
+    private SimpleDateFormat dateFormat;
+
     public ViewThongKe() {
         initComponents();
+        thongKeController = new ThongKeController();
+        dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
+        // Set default date range to current month
+        Calendar cal = Calendar.getInstance();
+        DCDenNgay.setDate(cal.getTime());
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        DCTuNgay.setDate(cal.getTime());
+
+        // Load initial data
+        loadData();
+    }
+
+    private void loadData() {
+        // Show loading state
+        setLoadingState(true);
+
+        // Run in background to prevent UI freeze
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    Date fromDate = DCTuNgay.getDate();
+                    Date toDate = DCDenNgay.getDate();
+
+                    if (fromDate == null || toDate == null) {
+                        JOptionPane.showMessageDialog(null, "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc");
+                        return null;
+                    }
+
+                    if (fromDate.after(toDate)) {
+                        JOptionPane.showMessageDialog(null, "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc");
+                        return null;
+                    }
+
+                    // Get data
+                    double doanhThu = thongKeController.getDoanhThuTheoKhoangThoiGian(fromDate, toDate);
+                    int soHoaDon = thongKeController.getSoHoaDonTheoKhoangThoiGian(fromDate, toDate);
+                    int soHoaDonHuy = thongKeController.getSoHoaDonHuyTheoKhoangThoiGian(fromDate, toDate);
+                    int soKhachHang = thongKeController.getTongSoKhachHang();
+
+                    // Update UI on EDT
+                    java.awt.EventQueue.invokeLater(() -> {
+                        // Update statistics cards
+                        lbl_hienthidoanhthu.setText(thongKeController.formatCurrency(doanhThu));
+                        jLabelSoHoaDon2.setText(String.valueOf(soHoaDon));
+                        lbDonHuy1.setText(String.valueOf(soHoaDonHuy));
+                        lbKhachHang2.setText(String.valueOf(soKhachHang));
+
+                        // Update date range label
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                        String dateRange = String.format("Từ %s đến %s",
+                                sdf.format(fromDate),
+                                sdf.format(toDate));
+                        lbKhachHang3.setText(dateRange);
+
+                        // Load data tables
+                        loadTableData(fromDate, toDate);
+                    });
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    java.awt.EventQueue.invokeLater(() -> {
+                        JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu: " + e.getMessage());
+                    });
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                setLoadingState(false);
+            }
+        }.execute();
+    }
+
+    private void setLoadingState(boolean isLoading) {
+        // Disable/enable controls during loading
+        btnTim1.setEnabled(!isLoading);
+        DCTuNgay.setEnabled(!isLoading);
+        DCDenNgay.setEnabled(!isLoading);
+    }
+
+    private void loadTableData(Date fromDate, Date toDate) {
+        // Load data into tblDoanhThu (revenue table)
+        DefaultTableModel modelDoanhThu = (DefaultTableModel) tblDoanhThu.getModel();
+        modelDoanhThu.setRowCount(0); // Clear existing data
+
+        // TODO: Load revenue data into tblDoanhThu
+        // Example:
+        // List<Map<String, Object>> data = thongKeService.getRevenueData(fromDate, toDate);
+        // for (Map<String, Object> row : data) {
+        //     modelDoanhThu.addRow(new Object[]{
+        //         row.get("orderCode"),
+        //         row.get("orderDate"),
+        //         row.get("quantity"),
+        //         thongKeController.formatCurrency((Double)row.get("totalAmount"))
+        //     });
+        // }
+        // Load data into tbDonHuy (canceled orders table)
+        DefaultTableModel modelDonHuy = (DefaultTableModel) tbDonHuy.getModel();
+        modelDonHuy.setRowCount(0); // Clear existing data
+
+        // TODO: Load canceled orders data into tbDonHuy
+        // Example:
+        // List<Map<String, Object>> canceledData = thongKeService.getCanceledOrdersData(fromDate, toDate);
+        // for (Map<String, Object> row : canceledData) {
+        //     modelDonHuy.addRow(new Object[]{
+        //         row.get("orderCode"),
+        //         row.get("orderDate"),
+        //         row.get("quantity"),
+        //         thongKeController.formatCurrency((Double)row.get("totalAmount"))
+        //     });
+        // }
+    }
+
+    private void showChart() {
+        // Create dataset for the chart
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+        // Get data for the selected year
+        int selectedYear = Integer.parseInt(cbbLocNam1.getSelectedItem().toString());
+
+        // Add monthly data for the selected year
+        for (int month = 1; month <= 12; month++) {
+            double revenue = thongKeController.layDoanhThu(month, selectedYear);
+            dataset.addValue(revenue, "Doanh thu", "Tháng " + month);
+        }
+
+        // Create chart
+        JFreeChart chart = ChartFactory.createBarChart(
+                "Biểu đồ doanh thu năm " + selectedYear, // chart title
+                "Tháng", // domain axis label
+                "Doanh thu (VND)", // range axis label
+                dataset, // data
+                PlotOrientation.VERTICAL, // orientation
+                true, // include legend
+                true, // tooltips
+                false // urls
+        );
+
+        // Customize chart
+        CategoryPlot plot = chart.getCategoryPlot();
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
+
+        // Create and set up the chart frame
+        ChartFrame frame = new ChartFrame("Biểu đồ doanh thu", chart);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
 
     /**
